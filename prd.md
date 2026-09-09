@@ -39,19 +39,19 @@ Keberadaan satwa liar di lingkungan bandar udara (seperti burung migran, biawak,
 
 ```mermaid
 graph TD
-    subgraph Pengguna Lapangan (Field Officers)
-        AMC[Unit AMC - Apron Movement Control]
-        ARFF[Unit ARFF - Rescue & Fire Fighting]
-        SEC[Unit Avsec / Security Perimeter]
-        SMS[Unit SMS & OHS - Safety Management]
+    subgraph Field_Officers ["Pengguna Lapangan (Field Officers)"]
+        AMC["Unit AMC - Apron Movement Control"]
+        ARFF["Unit ARFF - Rescue & Fire Fighting"]
+        SEC["Unit Avsec / Security Perimeter"]
+        SMS["Unit SMS & OHS - Safety Management"]
     end
 
-    subgraph Manajemen & Pengendali
-        ADM[Admin Operasional / General Manager]
-        AUD[Auditor Keselamatan Penerbangan]
+    subgraph Management ["Manajemen & Pengendali"]
+        ADM["Admin Operasional / General Manager"]
+        AUD["Auditor Keselamatan Penerbangan"]
     end
 
-    AMC -->|Input Laporan Temuan Satwa| System[Portal Satwa Liar Angkasa Pura]
+    AMC -->|Input Laporan Temuan Satwa| System["Portal Satwa Liar Angkasa Pura"]
     ARFF -->|Input Tindakan Pemadaman/Pengusiran| System
     SEC -->|Input Monitoring Perimeter| System
     SMS -->|Monitoring K3 & Hazard Sisi Udara| System
@@ -82,23 +82,23 @@ Sistem dibangun menggunakan pola arsitektur **Model-View-Controller (MVC)** mode
 
 ```mermaid
 graph LR
-    subgraph Client Tier
-        Browser[Browser Desktop / Tablet / Smartphone]
-        Tailwind[Tailwind CSS v4 + DM Sans Typography]
-        Vite[Vite Bundler Hot Reload]
+    subgraph Client_Tier ["Client Tier"]
+        Browser["Browser Desktop / Tablet / Smartphone"]
+        Tailwind["Tailwind CSS v4 + DM Sans Typography"]
+        Vite["Vite Bundler Hot Reload"]
     end
 
-    subgraph Application Tier (Laravel 12)
-        Route[Router / routes/web.php]
-        AuthMid[Auth & RoleMiddleware]
-        Controllers[App Controllers]
-        Blade[Blade Template Views]
+    subgraph App_Tier ["Application Tier (Laravel 12)"]
+        Route["Router / routes/web.php"]
+        AuthMid["Auth & RoleMiddleware"]
+        Controllers["App Controllers"]
+        Blade["Blade Template Views"]
     end
 
-    subgraph Data Tier (MySQL 8 / MariaDB)
-        Eloquent[Eloquent ORM Engine]
-        DB[(Database logbook_project_baru)]
-        Storage[(Local Storage / Public Uploads)]
+    subgraph Data_Tier ["Data Tier (MySQL 8 / MariaDB)"]
+        Eloquent["Eloquent ORM Engine"]
+        DB[("Database logbook_project_baru")]
+        Storage[("Local Storage / Public Uploads")]
     end
 
     Browser -->|HTTP Requests| Route
@@ -247,7 +247,7 @@ erDiagram
         string password
         string namalengkap
         string jabatan
-        enum role "admin, pegawai"
+        string role
         tinyint aktif
         timestamp created_at
         timestamp updated_at
@@ -268,8 +268,8 @@ erDiagram
         string aktivitas_satwa
         string tindak_lanjut
         text detail_pengusiran
-        longtext tanda_tangan "Base64 PNG"
-        enum status "belum, sudah"
+        string tanda_tangan
+        string status
         json extra_data
         timestamp created_at
         timestamp updated_at
@@ -342,14 +342,14 @@ sequenceDiagram
     Petugas->>Web: Login ke sistem (/login)
     Web->>Server: Verifikasi username & password
     Server-->>Web: Redirect ke Dashboard Pegawai (/dashboard)
-    Petugas->>Web: Klik "Buat Laporan Baru" (/laporan/create)
+    Petugas->>Web: Klik Buat Laporan Baru (/laporan/create)
     Web-->>Petugas: Tampilkan Form 5 Bagian + Denah Gridmap
     Petugas->>Web: Pilih Satwa, Isi Jumlah & Kode Grid (misal: K-10)
     Petugas->>Web: Tuliskan tindakan pengusiran & Gambar TTD di kanvas
-    Petugas->>Web: Klik "Kirim Laporan Logbook"
+    Petugas->>Web: Klik Kirim Laporan Logbook
     Web->>Server: Kirim Payload Form (termasuk DataURL TTD & Berkas Foto)
     Server->>Storage: Simpan berkas gambar satwa tak terdaftar
-    Server->>DB: INSERT ke `laporan` & `detail_satwa`
+    Server->>DB: INSERT ke tabel laporan & detail_satwa
     Server-->>Web: Sukses! Redirect dengan Flash Message
     Web-->>Petugas: Laporan Berhasil Dikirim
 ```
@@ -365,10 +365,10 @@ sequenceDiagram
     participant Rep as Modul Cetak & Excel
 
     Admin->>Web: Pantau daftar laporan baru (Status: Belum Ditangani)
-    Admin->>Web: Buka modal "Detail" laporan #ID
+    Admin->>Web: Buka modal Detail laporan
     Web-->>Admin: Tampilkan modal 2 halaman (Data lokasi, satwa, & TTD)
-    Admin->>Web: Buka modal "Edit / Validasi"
-    Admin->>Web: Ubah status menjadi "Sudah Ditangani"
+    Admin->>Web: Buka modal Edit / Validasi
+    Admin->>Web: Ubah status menjadi Sudah Ditangani
     Web-->>Admin: Simpan pembaruan status ke basis data
     Admin->>Stat: Buka halaman Statistik Sebaran Satwa
     Stat-->>Admin: Tampilkan fluktuasi bulanan & 5 spesies terbanyak
