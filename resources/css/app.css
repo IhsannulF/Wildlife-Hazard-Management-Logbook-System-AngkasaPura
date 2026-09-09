@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
+
+@theme {
+    --font-sans: 'DM Sans', 'Nunito', ui-sans-serif, system-ui, sans-serif;
+    --color-brand-teal: #00A9C1;
+    --color-brand-teal-dark: #007fa3;
+    --color-brand-cyan: #00C4DF;
+    --color-brand-red: #d94f4f;
+    --color-brand-green: #6aa84f;
+    --color-brand-yellow: #f0b14b;
+    --color-brand-border: #cce3f0;
+    --color-brand-bg: #eef6fb;
+}
+
+@layer utilities {
+    .glassmorphism {
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+}
