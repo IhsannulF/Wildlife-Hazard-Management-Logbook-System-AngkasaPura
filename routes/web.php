@@ -22,11 +22,15 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Rute Laporan (Pegawai & Admin)
+Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
+    Route::get('/laporan/create', [LaporanController::class, 'create'])->name('laporan.create');
+    Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
+});
+
 // Rute Pegawai
 Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
-    Route::get('/laporan/create', [LaporanController::class, 'create'])->name('laporan.create');
-    Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
 });
 
 // Rute Admin

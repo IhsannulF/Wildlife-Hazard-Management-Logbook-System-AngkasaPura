@@ -43,29 +43,8 @@
 @section('content')
 <div class="min-h-screen bg-slate-50/80 font-sans" style="background-image: url('{{ asset('images/watermark_injourney.jpeg') }}'); background-repeat: repeat; background-size: 280px auto; background-attachment: fixed;">
 
-  <!-- Brand Color Bar -->
-  <div class="h-1 w-full bg-gradient-to-r from-[#00A9C1] via-[#4FADC9] via-[#88B146] via-[#F0B14B] to-[#D94F4F]"></div>
-
-  <!-- Topbar -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 sm:px-10 h-16 flex items-center justify-between shadow-xs">
-    <div class="flex items-center">
-      <img src="{{ asset('images/logo_login.png') }}" alt="InJourney Airports" class="h-8 object-contain">
-    </div>
-    <div class="flex items-center gap-3">
-      <a href="{{ route('user.dashboard') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        <span>Kembali</span>
-      </a>
-      <div class="flex items-center gap-2 bg-teal-50 border border-teal-200/60 rounded-full py-1 px-3">
-        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-[#00A9C1] to-[#00C4DF] text-white text-[11px] font-bold flex items-center justify-center">
-          {{ strtoupper(substr($user->namalengkap ?: $user->username, 0, 2)) }}
-        </div>
-        <span class="text-xs font-semibold text-slate-700">{{ $user->namalengkap ?: $user->username }}</span>
-      </div>
-    </div>
-  </header>
+  <!-- Shared Unified Top Navigation Bar -->
+  @include('partials.navbar', ['activePage' => 'create'])
 
   <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6">
     <!-- Header Title -->

@@ -5,29 +5,8 @@
 @section('content')
 <div class="min-h-screen flex flex-col bg-cover bg-center bg-no-repeat bg-fixed" style="background-image: linear-gradient(180deg, rgba(220,235,245,0.7) 0%, rgba(180,215,235,0.85) 100%), url('{{ asset('images/bg_login.jpeg') }}');">
 
-  <!-- Top Color Gradient Bar -->
-  <div class="h-1.5 w-full bg-gradient-to-r from-[#00A9C1] via-[#4FADC9] via-[#88B146] via-[#F0B14B] to-[#D94F4F]"></div>
-
-  <!-- Topbar -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-6 sm:px-10 h-16 flex items-center justify-between shadow-xs">
-    <div class="flex items-center gap-3">
-      <img src="{{ asset('images/logo_login.png') }}" alt="InJourney Airports" class="h-8 sm:h-9 object-contain">
-    </div>
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 bg-teal-50/80 border border-teal-200/60 rounded-full py-1 px-3 sm:px-4">
-        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#00A9C1] to-[#00C4DF] text-white text-xs font-bold flex items-center justify-center shadow-xs">
-          {{ strtoupper(substr($user->namalengkap ?: $user->username, 0, 2)) }}
-        </div>
-        <span class="text-xs sm:text-sm font-semibold text-slate-700">{{ $user->namalengkap ?: $user->username }}</span>
-      </div>
-      <form action="{{ route('logout') }}" method="POST" class="m-0">
-        @csrf
-        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs sm:text-sm font-semibold transition-all cursor-pointer">
-          Keluar
-        </button>
-      </form>
-    </div>
-  </header>
+  <!-- Shared Unified Top Navigation Bar -->
+  @include('partials.navbar', ['activePage' => 'dashboard'])
 
   <!-- Main Hero Content -->
   <main class="flex-1 flex items-center justify-center p-6 sm:p-10">

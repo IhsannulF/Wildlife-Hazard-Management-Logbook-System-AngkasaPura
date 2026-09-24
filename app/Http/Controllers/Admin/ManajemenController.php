@@ -15,10 +15,20 @@ class ManajemenController extends Controller
 {
     public function index(Request $request)
     {
-        $tab = $request->query('tab', 'fields');
+        $tab = $request->query('tab', 'satwa');
 
-        $fields = FormField::with('options')->orderBy('urutan', 'asc')->get();
+        // Metrics for Katalog Satwa
+        $totalSpesies = JenisSatwa::count();
+        $avianCount = JenisSatwa::where('kategori', 'burung')->orWhere('nama', 'like', '%Burung%')->count();
+        $reptilCount = JenisSatwa::where('kategori', 'reptil')->orWhere('nama', 'like', '%Biawak%')->orWhere('nama', 'like', '%Ular%')->count();
+        $mamaliaCount = max(0, $totalSpesies - ($avianCount + $reptilCount));
+
+        $kritisCount = JenisSatwa::where('tingkat_risiko', 'kritis')->count();
+        $sedangCount = JenisSatwa::where('tingkat_risiko', 'sedang')->count();
+        $rendahCount = JenisSatwa::where('tingkat_risiko', 'rendah')->count();
+
         $satwaList = JenisSatwa::orderBy('id', 'asc')->get();
+        $fields = FormField::with('options')->orderBy('urutan', 'asc')->get();
         $users = User::orderBy('id', 'asc')->get();
 
         $gridField = FormField::where('tipe', 'grid')->first();
@@ -29,7 +39,14 @@ class ManajemenController extends Controller
             'fields',
             'satwaList',
             'users',
-            'gridmapPath'
+            'gridmapPath',
+            'totalSpesies',
+            'avianCount',
+            'reptilCount',
+            'mamaliaCount',
+            'kritisCount',
+            'sedangCount',
+            'rendahCount'
         ));
     }
 
@@ -67,7 +84,7 @@ class ManajemenController extends Controller
             }
         }
 
-        return redirect()->route('admin.manajemen', ['tab' => 'fields'])->with('sukses', "Field \"$label\" berhasil ditambahkan.");
+        return redirect()->route('admin.manajemen', ['tab' => 'fields'])->with('sukses', "Field \"{$label}\" berhasil ditambahkan.");
     }
 
     public function updateField(Request $request, int $id)
@@ -79,14 +96,14 @@ class ManajemenController extends Controller
             'tipe'  => 'required|string',
         ]);
 
-        $field->label       = $request->label;
+        $field->label       = trim($request->label);
         $field->tipe        = $request->tipe;
         $field->placeholder = $request->placeholder ?: '';
         $field->wajib       = $request->boolean('wajib');
         $field->keterangan  = $request->keterangan ?: '';
 
-        if ($request->tipe === 'grid' && $request->hasFile('gridmap_file')) {
-            $file = $request->file('gridmap_file');
+        if ($request->hasFile('gridmap')) {
+            $file = $request->file('gridmap');
             $ext = $file->getClientOriginalExtension();
             $filename = 'gridmap_injourney.' . $ext;
             $file->move(public_path('images'), $filename);
@@ -133,8 +150,15 @@ class ManajemenController extends Controller
     public function storeSatwa(Request $request)
     {
         $request->validate([
-            'nama' => 'required|string|max:100',
-            'foto' => 'nullable|image|max:5120',
+            'nama'           => 'required|string|max:100',
+            'kategori'       => 'nullable|string',
+            'tingkat_risiko' => 'nullable|string',
+            'grid_hotspot'   => 'nullable|string|max:50',
+            'deskripsi'      => 'nullable|string',
+            'sop_pengusiran' => 'nullable|string',
+            'jam_puncak'     => 'nullable|string',
+            'bobot_rata_rata'=> 'nullable|string',
+            'foto'           => 'nullable|image|max:5120',
         ]);
 
         $fotoPath = null;
@@ -146,11 +170,18 @@ class ManajemenController extends Controller
         }
 
         JenisSatwa::create([
-            'nama'      => $request->nama,
-            'foto_path' => $fotoPath,
+            'nama'            => $request->nama,
+            'kategori'        => $request->kategori ?: 'burung',
+            'tingkat_risiko'  => $request->tingkat_risiko ?: 'sedang',
+            'grid_hotspot'    => $request->grid_hotspot,
+            'deskripsi'       => $request->deskripsi,
+            'sop_pengusiran'  => $request->sop_pengusiran,
+            'jam_puncak'      => $request->jam_puncak,
+            'bobot_rata_rata' => $request->bobot_rata_rata,
+            'foto_path'       => $fotoPath,
         ]);
 
-        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Satwa \"{$request->nama}\" berhasil ditambahkan.");
+        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Spesies satwa \"{$request->nama}\" berhasil ditambahkan.");
     }
 
     public function updateSatwa(Request $request, int $id)
@@ -158,11 +189,25 @@ class ManajemenController extends Controller
         $satwa = JenisSatwa::findOrFail($id);
 
         $request->validate([
-            'nama' => 'required|string|max:100',
-            'foto' => 'nullable|image|max:5120',
+            'nama'           => 'required|string|max:100',
+            'kategori'       => 'nullable|string',
+            'tingkat_risiko' => 'nullable|string',
+            'grid_hotspot'   => 'nullable|string|max:50',
+            'deskripsi'      => 'nullable|string',
+            'sop_pengusiran' => 'nullable|string',
+            'jam_puncak'     => 'nullable|string',
+            'bobot_rata_rata'=> 'nullable|string',
+            'foto'           => 'nullable|image|max:5120',
         ]);
 
-        $satwa->nama = $request->nama;
+        $satwa->nama            = $request->nama;
+        $satwa->kategori        = $request->kategori ?: $satwa->kategori;
+        $satwa->tingkat_risiko  = $request->tingkat_risiko ?: $satwa->tingkat_risiko;
+        $satwa->grid_hotspot    = $request->grid_hotspot;
+        $satwa->deskripsi       = $request->deskripsi;
+        $satwa->sop_pengusiran  = $request->sop_pengusiran;
+        if ($request->filled('jam_puncak')) $satwa->jam_puncak = $request->jam_puncak;
+        if ($request->filled('bobot_rata_rata')) $satwa->bobot_rata_rata = $request->bobot_rata_rata;
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
@@ -173,33 +218,35 @@ class ManajemenController extends Controller
 
         $satwa->save();
 
-        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Data satwa berhasil diperbarui.");
+        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Data spesies satwa \"{$satwa->nama}\" berhasil diperbarui.");
     }
 
     public function destroySatwa(int $id)
     {
         $satwa = JenisSatwa::findOrFail($id);
+        $nama = $satwa->nama;
         $satwa->delete();
 
-        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Satwa berhasil dihapus.");
+        return redirect()->route('admin.manajemen', ['tab' => 'satwa'])->with('sukses', "Spesies satwa \"{$nama}\" berhasil dihapus.");
     }
 
     // ── User Management ──
     public function storeUser(Request $request)
     {
         $request->validate([
-            'nama'     => 'required|string|max:150',
-            'username' => 'required|string|max:100|unique:users,username',
-            'password' => 'required|string|min:4',
-            'role'     => 'required|in:admin,pegawai',
+            'namalengkap' => 'required|string|max:100',
+            'username'    => 'required|string|max:50|unique:users,username',
+            'password'    => 'required|string|min:6',
+            'role'        => 'required|in:admin,pegawai',
+            'jabatan'     => 'nullable|string|max:50',
         ]);
 
         User::create([
-            'namalengkap' => $request->nama,
+            'namalengkap' => trim($request->namalengkap),
             'username'    => trim($request->username),
             'password'    => Hash::make($request->password),
             'role'        => $request->role,
-            'jabatan'     => ucfirst($request->role),
+            'jabatan'     => $request->jabatan ?: ($request->role === 'admin' ? 'Administrator' : 'Pegawai Lapangan'),
             'aktif'       => true,
         ]);
 
@@ -211,24 +258,25 @@ class ManajemenController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'nama'     => 'required|string|max:150',
-            'username' => "required|string|max:100|unique:users,username,{$id}",
-            'password' => 'nullable|string|min:4',
-            'role'     => 'required|in:admin,pegawai',
+            'namalengkap' => 'required|string|max:100',
+            'username'    => 'required|string|max:50|unique:users,username,' . $id,
+            'password'    => 'nullable|string|min:6',
+            'role'        => 'required|in:admin,pegawai',
+            'jabatan'     => 'nullable|string|max:50',
         ]);
 
-        $user->namalengkap = $request->nama;
+        $user->namalengkap = trim($request->namalengkap);
         $user->username    = trim($request->username);
         $user->role        = $request->role;
-        $user->jabatan     = ucfirst($request->role);
+        $user->jabatan     = $request->jabatan ?: ($request->role === 'admin' ? 'Administrator' : 'Pegawai Lapangan');
 
-        if ($request->filled('password')) {
+        if (!empty($request->password)) {
             $user->password = Hash::make($request->password);
         }
 
         $user->save();
 
-        return redirect()->route('admin.manajemen', ['tab' => 'users'])->with('sukses', "User berhasil diperbarui.");
+        return redirect()->route('admin.manajemen', ['tab' => 'users'])->with('sukses', "User \"{$user->username}\" berhasil diperbarui.");
     }
 
     public function toggleUser(int $id)
@@ -243,8 +291,12 @@ class ManajemenController extends Controller
     public function destroyUser(int $id)
     {
         $user = User::findOrFail($id);
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.manajemen', ['tab' => 'users'])->with('error', "Anda tidak dapat menghapus akun Anda sendiri.");
+        }
+        $username = $user->username;
         $user->delete();
 
-        return redirect()->route('admin.manajemen', ['tab' => 'users'])->with('sukses', "User berhasil dihapus.");
+        return redirect()->route('admin.manajemen', ['tab' => 'users'])->with('sukses', "User \"{$username}\" berhasil dihapus.");
     }
 }
