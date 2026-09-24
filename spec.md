@@ -12,8 +12,8 @@
 | **Sistem** | Wildlife Hazard Management Logbook System (Portal Satwa Liar) |
 | **Versi Spesifikasi** | 2.0.0-PROD |
 | **Framework Inti** | Laravel 12.x (PHP 8.2+ / 8.5 compatible) |
-| **Frontend Stack** | Blade Templates, Tailwind CSS v4, Vite 8.x, Vanilla JS ES6+ |
-| **Pustaka Pendukung** | `Chart.js` (Visualisasi Data), `SignaturePad.js` (Canvas TTD), `barryvdh/laravel-dompdf` (PDF Engine), `phpoffice/phpspreadsheet` (Excel Engine) |
+| **Frontend Stack** | Blade Templates, Tailwind CSS v4, Vite 8.x, Vanilla JS ES6+, **shadcn UI Blade Components Architecture** |
+| **Pustaka Pendukung & Aset** | **Google Material Symbols (Google Icon Family)**, `Chart.js` (Visualisasi Data), `SignaturePad.js` (Canvas TTD), `barryvdh/laravel-dompdf` (PDF Engine), `phpoffice/phpspreadsheet` (Excel Engine) |
 | **Basis Data** | MySQL 8.0+ / MariaDB 10.5+ (Engine: InnoDB, Charset: utf8mb4) |
 | **Kepatuhan Regulasi**| ICAO Annex 14 Bab 9, ICAO Doc 9137 Part 3, Pedoman Ditjen Hubud (DKPPU) |
 
@@ -29,6 +29,8 @@ graph TB
 
     subgraph Presentation_Tier ["Presentation & Routing Tier"]
         Vite["Vite Asset Bundler (Tailwind v4)"]
+        Shadcn["shadcn UI Blade Component System"]
+        GoogleIcons["Google Material Symbols (Icon Family)"]
         Routes["Laravel Router (routes/web.php)"]
         AuthMid["AuthMiddleware & RoleMiddleware (RBAC)"]
         Blade["Blade Views (User, Admin, Reports)"]
@@ -444,9 +446,181 @@ Sebelum foto bukti satwa diunggah dari peramban ke peladen, peramban memproses g
 
 ---
 
-## 5. Spesifikasi Mesin Pelaporan & Ekspor Dokumen
+## 5. Spesifikasi Desain Antarmuka (UI/UX), Komponen shadcn, & Google Icon Family
 
-### 5.1 Spesifikasi Berita Acara PDF Server-Side (`barryvdh/laravel-dompdf`)
+Untuk mempercepat pengembangan antarmuka pengguna (*rapid UI development*), memastikan konsistensi visual di seluruh modul dinas, serta menghadirkan pengalaman pengguna (*user experience*) yang elegan dan responsif, sistem mengadopsi pendekatan desain modular berbasis **shadcn UI** yang disesuaikan untuk Laravel Blade dan pustaka ikon **Google Material Symbols (Google Family Icons)**.
+
+### 5.1 Arsitektur Desain Sistem shadcn UI untuk Laravel Blade
+
+Filosofi shadcn UI mengedepankan prinsip kepemilikan kode penuh (*code ownership*), ketiadaan beban ketergantungan runtime berlebih (*zero runtime overhead*), serta pemanfaatan kelas utilitas Tailwind CSS. Pada aplikasi ini, arsitektur shadcn diwujudkan dalam bentuk pustaka komponen Blade atomik mandiri (`resources/views/components/ui/`) yang dikombinasikan dengan sistem variabel token desain:
+
+```mermaid
+graph TD
+    subgraph Design_Tokens ["Design Tokens (CSS Variables & Tailwind v4)"]
+        Colors["InJourney Corporate Palette (Teal, Cyan, Slate, Danger, Warning, Success)"]
+        Radius["Border Radius & Focus Rings (Aksesibilitas WCAG 2.1)"]
+        Glass["Glassmorphism & Elevation Shadow Tokens"]
+    end
+
+    subgraph Shadcn_Blade_Core ["shadcn Blade Component Primitives (/components/ui/)"]
+        Btn["<x-ui.button> (Varian: Default, Destructive, Outline, Ghost, Link)"]
+        Crd["<x-ui.card> (Header, Title, Description, Content, Footer)"]
+        Dlg["<x-ui.dialog> (Modal Backdrop Blur & Focus Trap)"]
+        Inp["<x-ui.input>, <x-ui.select>, <x-ui.textarea>, <x-ui.label>"]
+        Bdg["<x-ui.badge> (Status Operasional & Matriks Risiko ICAO)"]
+        Tbl["<x-ui.table> (Responsive Data Tables)"]
+        Alt["<x-ui.alert> (Feedback Draf Offline PWA & Flash Session)"]
+        Tabs["<x-ui.tabs> & <x-ui.dropdown>"]
+    end
+
+    subgraph Icon_Provider ["Icon Provider (Google Family)"]
+        GMat["Google Material Symbols Outlined / Rounded"]
+        IconComp["<x-icon name='...' /> Component Helper"]
+    end
+
+    subgraph App_Views ["Antarmuka Operasional Bandara"]
+        UserDash["Dashboard Petugas (AMC / ARFF / Avsec)"]
+        ReportForm["Formulir Multi-Bagian & Canvas TTD"]
+        AdminDash["Admin Master Dashboard & Statistik"]
+        DispersalView["Monitoring Logistik Amunisi Satwa"]
+    end
+
+    Design_Tokens --> Shadcn_Blade_Core
+    Icon_Provider --> Shadcn_Blade_Core
+    Shadcn_Blade_Core --> App_Views
+```
+
+#### 5.1.1 Definisi Token Warna & Tema (Tailwind CSS v4 `@theme`)
+Sistem mengadopsi skema warna korporat PT Angkasa Pura Indonesia (InJourney) yang dipadukan dengan standar netral modern shadcn UI:
+
+```css
+@theme {
+    /* Brand Corporate InJourney */
+    --color-primary: #00A9C1;              /* InJourney Teal */
+    --color-primary-hover: #008fa3;        /* Darker Teal */
+    --color-primary-foreground: #ffffff;
+    --color-brand-cyan: #00C4DF;           /* InJourney Cyan */
+    --color-brand-navy: #0f172a;           /* Deep Slate / Navy */
+
+    /* shadcn Semantic Tokens */
+    --color-background: #f8fafc;          /* Slate 50 */
+    --color-foreground: #0f172a;          /* Slate 900 */
+    --color-card: #ffffff;
+    --color-card-foreground: #0f172a;
+    --color-popover: #ffffff;
+    --color-popover-foreground: #0f172a;
+    --color-muted: #f1f5f9;               /* Slate 100 */
+    --color-muted-foreground: #64748b;    /* Slate 500 */
+    --color-border: #e2e8f0;              /* Slate 200 */
+    --color-input: #e2e8f0;
+    --color-ring: #00A9C1;                /* Focus Ring Primary */
+
+    /* Status & ICAO Risk Tokens */
+    --color-risk-low: #10b981;            /* Emerald 500 (Skor 1-3) */
+    --color-risk-medium: #f59e0b;         /* Amber 500 (Skor 4-6) */
+    --color-risk-high: #f97316;           /* Orange 500 (Skor 7-9) */
+    --color-risk-critical: #ef4444;       /* Red 500 (Skor >= 10) */
+    --color-destructive: #dc2626;         /* Red 600 */
+    --color-destructive-foreground: #ffffff;
+
+    /* Radius & Typography */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+```
+
+---
+
+### 5.2 Katalog Komponen Standar shadcn UI (Blade Component Library)
+
+Pustaka antarmuka dibangun menggunakan Blade component native (`<x-ui.*>`) yang dapat dikombinasikan dengan mudah:
+
+| Komponen Blade | Varian (*Variants*) | Ukuran (*Sizes*) | Implementasi & Penerapan di Sistem |
+| :--- | :--- | :--- | :--- |
+| `<x-ui.button>` | `default`, `destructive`, `outline`, `secondary`, `ghost`, `link` | `sm`, `default`, `lg`, `icon` | Tombol simpan laporan, hapus baris satwa, cetak PDF, aksi sinkronisasi offline, dan navigasi tab. Dilengkapi efek mikro-interaksi `active:scale-[0.98]` dan state loading spinner. |
+| `<x-ui.card>` | `default`, `glassmorphism`, `interactive` | Auto / Full | Membungkus widget KPI statistik, kartu profil dinas petugas, kontainer form pelaporan, dan ringkasan eksekutif logbook. Terdiri dari `<x-ui.card-header>`, `<x-ui.card-title>`, `<x-ui.card-description>`, `<x-ui.card-content>`, `<x-ui.card-footer>`. |
+| `<x-ui.badge>` | `default`, `secondary`, `outline`, `destructive`, `risk-low`, `risk-med`, `risk-high`, `risk-crit` | `sm`, `default` | Menampilkan kategori tingkat bahaya ICAO, unit kerja pelapor (`AMC`, `ARFF`), status validasi (`Selesai`, `Menunggu`), serta kategori amunisi dispersal. |
+| `<x-ui.dialog>` | Standard Modal, Fullscreen Image Preview | `sm`, `md`, `lg`, `xl`, `full` | Dialog pratinjau lengkap detail laporan berita acara, modal riwayat tanggapan dua arah, inspeksi foto bukti satwa resolusi tinggi, dan konfirmasi validasi/penghapusan data. Dilengkapi transisi fade-in & backdrop blur. |
+| `<x-ui.input>` | Text, Number, Date, Time, File, GPS Geotag | Default | Elemen masukan teks dengan border halus, state validasi error (`border-destructive focus-visible:ring-destructive`), serta integrasi ikon prefix/suffix Google Family. |
+| `<x-ui.select>` | Native / Searchable Select | Default | Pemilihan unit kerja, area inspeksi sisi udara (`Runway`, `Taxiway`, `Apron`), kondisi cuaca, dan kategori alat pengusir satwa liar. |
+| `<x-ui.textarea>` | Auto-expand / Fixed rows | Default | Uraian aktivitas satwa, morfologi satwa, instruksi dinas evaluasi Safety Manager, dan detail tindakan pengusiran. |
+| `<x-ui.table>` | Striped, Hoverable, Borderless | Responsive | Tabel pemantauan logbook bandara, daftar inventaris stok amunisi dispersal, dan riwayat tanggapan dinas dengan paginasi terintegrasi. |
+| `<x-ui.alert>` | `info`, `success`, `warning`, `destructive` | Default | Banner status koneksi PWA (Online vs Offline), notifikasi hasil sinkronisasi antrean laporan, serta pesan sukses penyimpanan data. |
+| `<x-ui.tabs>` | Segmented Pills, Underline Tab | `sm`, `default` | Navigasi beralih antar 5 bagian formulir pelaporan (*Informasi Dasar*, *Rincian Satwa*, *Dispersal*, *Foto Bukti*, *Pengesahan TTD*). |
+
+---
+
+### 5.3 Standar Iconography: Google Material Symbols (Google Family Icons)
+
+Seluruh ikon antarmuka menggunakan **Google Material Symbols (Google Font & Icon Family)**. Standar ini dipilih karena kelengkapan glif, fleksibilitas variasi optik (*variable font*), ketajaman visual pada layar beresolusi tinggi (HiDPI), dan kesesuaian dengan standar visual modern Google Material 3.
+
+#### 5.3.1 Metode Pemuatan & Konfigurasi Google Symbols
+Ikon dimuat melalui Google Fonts CDN di `layouts/app.blade.php`:
+
+```html
+<!-- Google Material Symbols (Outlined & Rounded Variable Settings) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+```
+
+Atribut CSS Variabel Standar:
+* **Optical Size (`opsz`)**: `20px` (ikon pada badge & tombol kecil), `24px` (standar navigasi & formulir), `40px` (hero metrics).
+* **Weight (`wght`)**: `400` (normal UI), `500` (medium/penekanan), `600` (bold status).
+* **Fill (`FILL`)**: `0` (outline default untuk tampilan bersih), `1` (solid untuk status aktif/terpilih).
+* **Grade (`GRAD`)**: `0` (normal), `0.25` (kontras tinggi pada latar gelap).
+
+Sistem menyediakan helper Blade Component `<x-icon>`:
+```blade
+{{-- Penggunaan Komponen Ikon Blade --}}
+<x-icon name="pest_control" class="w-5 h-5 text-primary" />
+<x-icon name="warning" class="w-4 h-4 text-amber-500" fill />
+```
+
+#### 5.3.2 Kamus Pemetaan Ikon Standar Operasional Satwa Liar Bandara
+
+Berikut adalah standardisasi nama glif Google Material Symbols yang wajib digunakan di seluruh antarmuka sistem:
+
+| Kategori Modul | Glif Google Symbols | Nama Ikon (`name`) | Konteks Penggunaan Operasional Bandara |
+| :--- | :--- | :--- | :--- |
+| **Navigasi & Menu** | 📊 | `dashboard` | Menu utama ringkasan operasional bandara |
+| | 📝 | `description` | Modul formulir dan rekapitulasi data laporan satwa |
+| | 📈 | `analytics` | Modul visualisasi statistik bahaya satwa & tren bulanan |
+| | 📦 | `inventory_2` | Modul inventaris amunisi & peralatan pengusir satwa |
+| | ⚙️ | `tune` / `settings` | Pengaturan sistem, form builder dinamis, & manajemen user |
+| | 🔔 | `notifications` | Indikator lonceng instruksi dan tanggapan baru |
+| | 🚪 | `logout` | Keluar sesi operasional petugas/admin |
+| **Sisi Udara & Satwa**| 🪲 | `pest_control` | Indikator umum satwa liar / gangguan hazard satwa |
+| | 🦅 | `flutter_dash` | Spesies burung liar (*avian hazard*) di runway |
+| | 🦎 | `cruelty_free` / `pets`| Mamalia / reptil liar (biawak, anjing liar, ular) |
+| | 🛫 | `flight_takeoff` | Area Runway / jalur lepas landas |
+| | 🛬 | `flight_land` | Area Taxiway & Apron / pergerakan pesawat |
+| | 🗺️ | `grid_on` | Pemilihan dan penandaan Grid Lokasi Bandara (A-L, 1-29) |
+| | 📍 | `location_on` / `my_location`| Akuisisi koordinat GPS otomatis via peramban lapangan |
+| | 📸 | `photo_camera` | Pengambilan foto bukti temuan satwa liar langsung dari kamera |
+| | ✍️ | `draw` | Kanvas tanda tangan digital (*electronic sign-off*) |
+| **Tingkat Risiko ICAO**| 🟢 | `check_circle` | Tingkat risiko Rendah (Low Risk — Hijau) |
+| | 🟡 | `warning` | Tingkat risiko Sedang (Medium Risk — Kuning) |
+| | 🟠 | `error` | Tingkat risiko Tinggi (High Risk — Oranye) |
+| | 🔴 | `dangerous` | Tingkat risiko Kritis (Critical Hazard — Merah) |
+| | 🛡️ | `health_and_safety` / `shield` | Validasi kepatuhan Divisi Safety & OHS |
+| **Peralatan Dispersal**| 📢 | `campaign` | Pengusiran metode Akustik (Sirine, Megafon, Suara Predator) |
+| | 💥 | `flare` | Pengusiran metode Piroteknik (Bird Scaring Cartridge 12GA) |
+| | 🔦 | `flash_on` / `light_mode` | Pengusiran metode Optik (Handheld Green Laser 532nm) |
+| | ✋ | `back_hand` | Pengusiran/Penanganan metode Fisik & Penjebakan |
+| **Konektivitas & Ekspor**| 🌐 | `wifi` | Status peramban terhubung internet (Online) |
+| | ⚡ | `wifi_off` | Status peramban terputus / bekerja offline di runway |
+| | 🔄 | `sync` | Tombol sinkronisasi antrean draf laporan IndexedDB ke server |
+| | 📄 | `picture_as_pdf` | Unduh Berita Acara resmi format PDF server-side |
+| | 📑 | `table_chart` | Unduh Spreadsheet Excel standar Ditjen Hubud (DKPPU) |
+| | 🖨️ | `print` | Perintah cetak langsung format formulir fisik |
+
+---
+
+## 6. Spesifikasi Mesin Pelaporan & Ekspor Dokumen
+
+### 6.1 Spesifikasi Berita Acara PDF Server-Side (`barryvdh/laravel-dompdf`)
 * **Ukuran Kertas**: ISO A4 ($210 \times 297$ mm), Orientasi Portrait.
 * **Margin Halaman**: Atas 15mm, Kiri 20mm, Kanan 15mm, Bawah 15mm.
 * **Elemen Kop Surat**:
@@ -461,7 +635,7 @@ Sebelum foto bukti satwa diunggah dari peramban ke peladen, peramban memproses g
   3. *Tindakan Pengendalian / Dispersal*: Kronologi tindakan pengusiran, amunisi yang ditembakkan, dan hasil akhir.
   4. *Kolom Validasi & Tanda Tangan*: Tanda Tangan Basah Digital Pelapor berdampingan dengan Tanda Tangan Pengesahan Safety Manager.
 
-### 5.2 Spesifikasi Ekspor Spreadsheet Excel Standar DKPPU / Kemenhub
+### 6.2 Spesifikasi Ekspor Spreadsheet Excel Standar DKPPU / Kemenhub
 * **Format Berkas**: OpenXML Spreadsheet (`.xlsx`).
 * **Struktur Kolom**:
   * `Kolom A`: Nomor Urut (`No`)
@@ -490,7 +664,7 @@ Sebelum foto bukti satwa diunggah dari peramban ke peladen, peramban memproses g
 
 ---
 
-## 6. Persyaratan Keamanan & Non-Fungsional
+## 7. Persyaratan Keamanan & Non-Fungsional
 
 | Kategori | Parameter | Kriteria Spesifikasi Teknis |
 | :--- | :--- | :--- |
@@ -503,7 +677,7 @@ Sebelum foto bukti satwa diunggah dari peramban ke peladen, peramban memproses g
 
 ---
 
-## 7. Rencana Pengujian & Verifikasi (Test Suite Matrix)
+## 8. Rencana Pengujian & Verifikasi (Test Suite Matrix)
 
 ```mermaid
 graph LR
@@ -512,12 +686,14 @@ graph LR
         T2["Feature & Route Testing"]
         T3["PWA & Offline Simulation Test"]
         T4["PDF & Excel Export Integrity Test"]
+        T5["UI Design System & Icon Test"]
     end
 
     T1 --> Build["CI / Local Build Pass"]
     T2 --> Build
     T3 --> Build
     T4 --> Build
+    T5 --> Build
     Build --> Deploy["Production Deployment Readiness"]
 ```
 
@@ -529,3 +705,5 @@ graph LR
 | `TEST-SYNC-01` | PWA Offline Sync Deduplication | Pengunggahan draf dengan `offline_sync_id` yang sama ditolak peladen untuk mencegah duplikasi data. |
 | `TEST-PDF-01` | Server-side PDF Compilation | Berita Acara PDF berhasil digenerate dalam format A4 murni lengkap dengan gambar tanda tangan dan logo. |
 | `TEST-XLS-01` | Ekspor Spreadsheet DKPPU | Berkas Excel memuat seluruh kolom baku dan formula hitung otomatis berfungsi tanpa *corrupt*. |
+| `TEST-UI-01` | shadcn Blade Component System | Tombol, Card, Dialog, Badge, dan Input ter-render sesuai token tema Tailwind v4 dan lolos uji responsif multi-device. |
+| `TEST-ICON-01` | Google Symbols Font Delivery | Seluruh glif Material Symbols (opsz 20/24, FILL 0/1) terpanggil tanpa kegagalan aset CDN / FOUT. |
