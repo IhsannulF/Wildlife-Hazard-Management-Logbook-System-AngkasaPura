@@ -142,7 +142,7 @@
 </head>
 <body class="bg-canvas-light text-on-surface font-body-md min-h-screen antialiased flex flex-col selection:bg-injourney-teal selection:text-white">
 
-  <!-- TOP APP BAR (Unified Navbar) -->
+  <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'statistic'])
 
   <!-- SUB-HEADER & BREADCRUMB COMMAND STRIP -->

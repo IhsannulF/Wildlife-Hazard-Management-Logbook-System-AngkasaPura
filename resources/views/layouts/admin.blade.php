@@ -35,7 +35,7 @@
       max-width: 1680px;
       margin: 0 auto;
       padding: 24px 32px 48px;
-      min-height: calc(100vh - 56px);
+      min-height: 100vh;
     }
 
     .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; justify-content: space-between; }
@@ -49,7 +49,7 @@
   @yield('styles')
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased">
-  <!-- Shared Unified Top Navigation Bar -->
+  <!-- Shared Unified Side Navigation Bar -->
   @include('partials.navbar', ['activePage' => $activePage ?? ''])
 
   <!-- Main Content -->

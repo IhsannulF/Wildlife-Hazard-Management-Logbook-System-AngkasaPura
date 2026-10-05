@@ -5,7 +5,7 @@
 @section('content')
 <div class="min-h-screen flex flex-col bg-cover bg-center bg-no-repeat bg-fixed" style="background-image: linear-gradient(180deg, rgba(220,235,245,0.7) 0%, rgba(180,215,235,0.85) 100%), url('{{ asset('images/bg_login.jpeg') }}');">
 
-  <!-- Shared Unified Top Navigation Bar -->
+  <!-- Shared Unified Side Navigation Bar -->
   @include('partials.navbar', ['activePage' => 'dashboard'])
 
   <!-- Main Hero Content -->

@@ -1,7 +1,7 @@
 # PRODUCT REQUIREMENTS DOCUMENT (PRD) v2.0
 ## Wildlife Hazard Management System (Portal Satwa Liar)
 ### PT Angkasa Pura (Persero) — InJourney Airports
-**Fokus Pengembangan: Field & Mobile UX, ICAO Risk Assessment, & Standardized Reporting**
+**Fokus Pengembangan: Field & Mobile UX, ICAO Risk Assessment, Predictive AI Birdstrike Mitigation (Gemini API), & Standardized Reporting**
 
 ---
 
@@ -17,10 +17,11 @@
 | **Target Pengguna** | Unit AMC (*Apron Movement Control*), ARFF (*Rescue & Fire Fighting*), Avsec/Perimeter Security, SMS & OHS, Safety Manager, Auditor Kemenhub/DKPPU |
 
 ### 1.1 Visi Pengembangan
-Mengembangkan sistem logbook pemantauan satwa liar dari sekadar sistem pencatatan pasif menjadi **platform mitigasi bahaya satwa liar terpadu dan proaktif**. Versi 2.0 berfokus pada 3 pilar strategis:
+Mengembangkan sistem logbook pemantauan satwa liar dari sekadar sistem pencatatan pasif menjadi **platform mitigasi bahaya satwa liar terpadu, proaktif, dan prediktif**. Versi 2.0 berfokus pada 4 pilar strategis:
 1. **Pemberdayaan Petugas Lapangan (*Field Officer Experience*)**: Dashboard personal riwayat laporan, kemampuan pelaporan *offline* (PWA) di area perimeter bandara, serta otomasi koordinat GPS ke Grid bandara.
 2. **Kepatuhan Regulasi & Manajemen Risiko (*Safety & Risk Assessment*)**: Penilaian bahaya kuantitatif berbasis standar ICAO Doc 9137, komunikasi tindak lanjut dua arah (*Feedback/Tanggapan*), dan inventarisasi peralatan pengusir satwa (*dispersal gear*).
 3. **Standarisasi Dokumen & Otomasi Ekspor (*Official Reporting*)**: Pembangkitan dokumen PDF resmi siap audit (single & bulk bundle) langsung dari server, serta ekspor spreadsheet berformat baku Ditjen Hubud (DKPPU).
+4. **Kecerdasan Buatan & Mitigasi Prediktif (*AI Predictive Bird Strike Risk Management*)**: Integrasi Google Gemini API untuk memprediksi kemungkinan terjadinya insiden *bird strike* secara proaktif dengan mengorelasikan data historis insiden, catatan pemantauan satwa harian (*avian surveillance*), jadwal lalu lintas penerbangan, dan variabel lingkungan/cuaca.
 
 ---
 
@@ -35,6 +36,7 @@ Mengembangkan sistem logbook pemantauan satwa liar dari sekadar sistem pencatata
 | **Klasifikasi Risiko Satwa**| Belum ada pembobotan risiko; semua satwa dianggap memiliki dampak yang sama. | Matriks Risiko ICAO Doc 9137 otomatis (*Risk Score = Severity × Probability*) dengan penanda risiko: Rendah, Sedang, Tinggi, Kritis. |
 | **Komunikasi Dua Arah** | Tabel `tanggapan` belum difungsikan; komunikasi feedback admin ke pelapor terputus. | Fitur Tanggapan & Instruksi Lanjutan langsung di detail laporan antara pelapor dan safety manager. |
 | **Inventaris Alat Dispersal**| Tidak ada pencatatan pemakaian peralatan/amunisi pengusir satwa. | Modul logbook pemakaian amunisi petasan (*flare gun*), *gas cannon*, dan peralatan pengusir satwa lainnya. |
+| **Prediksi Insiden Birdstrike**| Sistem pasif-reaktif; data satwa hanya dicatat setelah terlihat atau setelah insiden terjadi tanpa estimasi probabilitas ke depan. | **Predictive Bird Strike Risk Management (Google Gemini API)**: Menghitung probabilitas insiden birdstrike secara kuantitatif, memetakan jam & area rawan, serta memberikan rekomendasi tindakan mitigasi preventif sebelum insiden terjadi. |
 | **Pembangkitan Dokumen PDF**| Bergantung pada fitur *Print to PDF* peramban web pengguna. | Mesin PDF *server-side* murni (DomPDF/Snappy) dengan sekali klik unduh, layout A4 baku, dan bundle bulanan. |
 | **Format Rekapitulasi Excel**| File tabel HTML sederhana bertipe `.xls`. | Format XLSX standar audit kepatuhan Ditjen Perhubungan Udara (DKPPU) lengkap dengan kop dan formula rekap. |
 
@@ -63,9 +65,16 @@ graph TD
         R3["Format Excel Rekap DKPPU/Kemenhub"]
     end
 
+    subgraph Pilar_4 ["Pilar 4: Predictive AI Safety Intelligence"]
+        AI1["Predictive Bird Strike Engine (Gemini API)"]
+        AI2["Avian Surveillance & Historical Correlation"]
+        AI3["AI Species ID & SOP Advisory (Gemini Vision)"]
+    end
+
     Pilar_1 --> System["Wildlife Hazard System v2.0"]
     Pilar_2 --> System
     Pilar_3 --> System
+    Pilar_4 --> System
 ```
 
 ---
@@ -207,6 +216,89 @@ graph TD
 
 ---
 
+### PILAR 4: KECERDASAN BUATAN & MITIGASI PREDIKTIF BIRDSTRIKE (PREDICTIVE AI SAFETY INTELLIGENCE)
+
+#### Modul 4.1: Sistem Prediksi Risiko Birdstrike & Early Warning AI (*Predictive Bird Strike Risk Management with Google Gemini API*)
+* **ID Kebutuhan**: `REQ-AI-001`
+* **Deskripsi**: Modul analitik prediktif berbasis kecerdasan buatan (*Google Gemini API*) yang mengintegrasikan data historis insiden tabrakan burung (*birdstrike*), data inspeksi pengamatan pergerakan satwa di sisi udara (*avian surveillance*), dan faktor lingkungan operasional untuk memprediksi probabilitas terjadinya *birdstrike* secara proaktif sebelum insiden terjadi (*proactive mitigation*).
+
+* **Prinsip Kerja & Sumber Data yang Diproses AI**:
+  Untuk menghasilkan estimasi probabilitas dan tingkat risiko yang akurat, sistem mengintegrasikan tiga pilar sumber data utama dan mengirimkannya ke Google Gemini API:
+  1. **Data Historis Insiden (*Historical Birdstrike Data*)**:
+     * **Stempel Waktu**: Jam kejadian, tanggal, bulan, dan siklus musim migrasi burung tahunan.
+     * **Lokasi Spesifik**: Titik *runway* (Runway 10/28 atau 07L/25R), koordinat *touchdown zone*, *threshold*, dan ketinggian pesawat saat insiden (< 500 ft AGL / *flare zone*).
+     * **Data Operasional Pesawat**: Jenis/tipe pesawat (*narrow-body* vs *wide-body*, tipe mesin jet turbofan/turboprop), serta fase penerbangan saat kejadian (*take-off roll*, *initial climb*, *approach*, *landing roll*).
+     * **Komponen Terdampak**: Bagian pesawat yang tertabrak (*engine ingestion*, *windshield*, *radome/nose cone*, sayap/*flap*, *landing gear*).
+     * **Spesies Terlibat**: Jenis spesies burung, massa rata-rata, dan pola kawanan (*flocking behaviour*).
+  2. **Data Inspeksi Sisi Udara (*Airside / Avian Surveillance Data*)**:
+     * Data hasil pengamatan visual dan patroli berkala petugas *Airside Facilities / Airport Safety* (AMC dan ARFF) yang tercatat dalam logbook WHMS.
+     * **Parameter Populasi**: Estimasi jumlah individu/ekor dan fluktuasi populasi harian.
+     * **Pola Pergerakan (*Flyway Patterns*)**: Arah lintasan terbang satwa melintasi koridor lepas landas/pendaratan.
+     * **Titik Aktivitas Kritis**: Titik makan (*feeding grounds*), sumber air (*drainage ponds*), dan tempat bersarang (*nesting/roosting sites*) di sekitar *runway strip* dan perimeter.
+     * **Perilaku Kelompok**: Soliter vs kawanan padat (*flocking*).
+  3. **Data Lingkungan & Operasional Eksternal (*External Factors*)**:
+     * **Kondisi Cuaca Real-Time**: Kecepatan dan arah angin, curah hujan/presipitasi, temperatur, kelembaban, dan jarak pandang (*visibility*).
+     * **Jadwal & Kepadatan Lalu Lintas Penerbangan (*Traffic Density*)**: Jam sibuk (*peak hours*) pergerakan pesawat lepas landas dan mendarat.
+     * **Kondisi Habitat Sekitar Runway**: Ketinggian vegetasi rumput di *runway shoulder*, genangan air pada saluran drainase terbuka pasca hujan, dan siklus musim panen pertanian di luar pagar perimeter bandara.
+
+* **Alur Pemrosesan & Arsitektur Gemini API**:
+  1. **Data Pipeline & Context Aggregator**:
+     * Service backend Laravel (`GeminiApiService`) mengagregasikan data logbook inspeksi 30–90 hari terakhir, rekaman histori insiden terdekat, kondisi cuaca aktual, dan jadwal kepadatan penerbangan aktif ke dalam payload JSON terstruktur.
+  2. **Inferensi Model Bahasa & Reasoning (Google Gemini 2.5 Flash / 1.5 Pro)**:
+     * Model Gemini memproses korelasi multivariat kompleks antara pergerakan satwa, cuaca, jam operasional, dan preseden historis.
+     * Penegakan format keluaran menggunakan **Structured JSON Schema Output** (`responseSchema`) untuk menjamin konsistensi integrasi sistem:
+       ```json
+       {
+         "probability_score": 0.78,
+         "hazard_level": "tinggi",
+         "critical_time_window": "06:00 - 08:30 WIB",
+         "critical_zones": ["K-08", "K-09", "L-08"],
+         "target_species": [
+           {
+             "nama_lokal": "Blekok Sawah",
+             "nama_latin": "Ardeola speciosa",
+             "risiko_ancaman": "Kawanan melintas rendah dari area persawahan timur ke drainase runway 10 saat jam sibuk kedatangan"
+           }
+         ],
+         "contributing_factors": [
+           "Hujan lebat semalam memicu genangan air di drainase Grid K-08",
+           "Aktivitas pergerakan pesawat jam sibuk pagi (14 pergerakan/jam)",
+           "Musim migrasi burung air lokal"
+         ],
+         "confidence_score": 0.89,
+         "executive_summary": "Peningkatan signifikan risiko birdstrike terdeteksi pada Runway 10 koridor timur pada rentang pukul 06:00-08:30 WIB akibat kombinasi genangan air pasca hujan dan kawanan Blekok Sawah.",
+         "actionable_recommendations": [
+           "Tingkatkan patroli mobile Unit AMC di Grid K-08 dan K-09 mulai pukul 05:45 WIB.",
+           "Lakukan pengusiran preventif menggunakan Gas Cannon dengan interval 5 menit di area threshold Runway 10.",
+           "Kordinasikan dengan tower ATC untuk menerbitkan informasi kewaspadaan bird hazard kepada penerbang pada fase final approach Runway 10.",
+           "Instruksikan tim fasilitas bandara untuk inspeksi pompa drainase di sekitar strip Runway 10."
+         ]
+       }
+       ```
+
+* **Fitur Antarmuka & Kriteria Penerimaan**:
+  1. **Dashboard Widget & Peta Sebaran Grid AI Heatmap**:
+     * *Risk Probability Gauge*: Indikator visual persentase probabilitas birdstrike (0–100%) dengan skala warna dinamis (Hijau, Kuning, Oranye, Merah).
+     * *Predictive Grid Highlight*: Layer khusus pada Peta Sebaran Grid (`/admin/statistik`) yang menandai grid-grid kritis prediksi AI dalam 24 jam ke depan.
+     * *AI Executive Safety Briefing Card*: Panel narasi resmi siap pakai untuk bahan *safety briefing* harian tim AMC/ARFF.
+  2. **Automated Early Warning & Scheduled Inference**:
+     * *Daily Automatic Prediction*: *Cron job* harian yang otomatis mengeksekusi inferensi AI setiap pukul 05:00 WIB (sebelum *first flight* pagi) dan mengirimkan notifikasi ringkasan ke Safety Manager.
+     * *On-Demand Run*: Tombol *"Jalankan Analisis AI Gemini"* bagi Safety Manager untuk memperbarui estimasi risiko sewaktu-waktu saat terjadi perubahan cuaca drastis atau pergerakan kawanan satwa tak terduga.
+  3. **Penyimpanan Audit Trail & Log Prediksi**:
+     * Setiap hasil prediksi tersimpan rapi ke tabel `prediksi_birdstrike_ai` lengkap dengan stempel waktu, nilai probabilitas, parameter masukan, dan evaluasi akurasi pasca-operasi (*ground-truth validation*).
+
+#### Modul 4.2: Asisten Identifikasi Satwa & Rekomendasi SOP Pengusiran via Gemini Vision
+* **ID Kebutuhan**: `REQ-AI-002`
+* **Deskripsi**: Pemanfaatan kapabilitas multimodal *Gemini Vision API* untuk membantu petugas lapangan memvalidasi foto temuan/bangkai satwa, mengenali spesies secara otomatis, dan merekomendasikan SOP penanganan yang selaras dengan ICAO Doc 9137.
+* **Fitur & Kriteria Penerimaan**:
+  1. Pada form pelaporan satwa (Bagian Foto Bukti), tersedia tombol *"Identifikasi Satwa via AI"*.
+  2. Foto yang diunggah dikirimkan ke endpoint Gemini Multimodal:
+     * AI mendeteksi nama spesies satwa, nama latin ilmiah, klasifikasi taksonomi, dan estimasi biomassa (berat rata-rata).
+     * AI menampilkan rekomendasi SOP pengusiran (*Dispersal SOP*) instan (misal: frekuensi suara sirene akustik, penggunaan jaring perangkap, atau amunisi petasan berjarak aman).
+  3. Petugas dapat menyetujui hasil identifikasi AI dengan satu klik untuk otomatis mengisi *field* formulir, memangkas waktu penginputan di lapangan.
+
+---
+
 ## 4. Pembaruan Skema Basis Data (Database Architecture Delta)
 
 ```mermaid
@@ -216,6 +308,9 @@ erDiagram
     LAPORAN ||--o{ TANGGAPAN : "memiliki feedback"
     LAPORAN ||--o{ PENGGUNAAN_ALAT : "mencatat pemakaian"
     MASTER_ALAT ||--o{ PENGGUNAAN_ALAT : "digunakan di"
+    HISTORI_BIRDSTRIKE ||--o{ PREDIKSI_BIRDSTRIKE_AI : "dianalisis oleh"
+    LAPORAN ||--o{ PREDIKSI_BIRDSTRIKE_AI : "menjadi konteks"
+    USERS ||--o{ PREDIKSI_BIRDSTRIKE_AI : "mengevaluasi"
 
     LAPORAN {
         int id PK
@@ -265,6 +360,43 @@ erDiagram
         int jumlah_digunakan
         text keterangan
     }
+
+    HISTORI_BIRDSTRIKE {
+        int id PK
+        date tanggal_kejadian
+        time jam_kejadian
+        string kode_runway
+        string titik_lokasi
+        decimal koordinat_lat
+        decimal koordinat_lng
+        string jenis_pesawat
+        string fase_penerbangan
+        string bagian_pesawat
+        string spesies_satwa
+        int jumlah_satwa
+        string tingkat_kerusakan
+        text keterangan
+    }
+
+    PREDIKSI_BIRDSTRIKE_AI {
+        int id PK
+        date tanggal_prediksi
+        timestamp waktu_analisis
+        int user_id FK
+        decimal skor_probabilitas
+        string level_bahaya
+        time jam_rawan_mulai
+        time jam_rawan_selesai
+        json grid_kritis
+        json spesies_target
+        json faktor_penyebab
+        text ringkasan_eksekutif
+        json rekomendasi_taktis
+        decimal confidence_score
+        string model_version
+        json raw_response
+        string status_advisory
+    }
 ```
 
 ### 4.1 Rincian Migrasi Penambahan Kolom & Tabel Baru:
@@ -288,12 +420,18 @@ erDiagram
 4. **Tabel Baru `penggunaan_alat_dispersal`**:
    * `id` (int PK), `laporan_id` (int FK), `alat_id` (int FK), `jumlah_digunakan` (int), `keterangan` (string).
 
+5. **Tabel Baru `histori_birdstrike`**:
+   * `id` (int PK), `tanggal_kejadian` (date), `jam_kejadian` (time), `kode_runway` (string: 10, 28, 07L, 25R), `titik_lokasi` (string: touchdown, roll, threshold, grid), `koordinat_lat` (decimal 10,7), `koordinat_lng` (decimal 10,7), `jenis_pesawat` (string, misal B737-800, A320), `fase_penerbangan` (enum: take_off, landing, approach, climb, taxi), `bagian_pesawat` (string: engine, windshield, wing, radome, gear), `spesies_satwa` (string), `jumlah_satwa` (int), `tingkat_kerusakan` (enum: nihil, minor, substansial, fatal), `keterangan` (text).
+
+6. **Tabel Baru `prediksi_birdstrike_ai`**:
+   * `id` (int PK), `tanggal_prediksi` (date), `waktu_analisis` (timestamp), `user_id` (int FK nullable), `skor_probabilitas` (decimal 5,2), `level_bahaya` (enum: rendah, sedang, tinggi, kritis), `jam_rawan_mulai` (time), `jam_rawan_selesai` (time), `grid_kritis` (json), `spesies_target` (json), `faktor_penyebab` (json), `ringkasan_eksekutif` (text), `rekomendasi_taktis` (json), `confidence_score` (decimal 3,2), `model_version` (string), `raw_response` (json), `status_advisory` (enum: aktif, diakui, kedaluwarsa).
+
 ---
 
 ## 5. Rencana Jadwal Kerja & Matriks Implementasi (Implementation Roadmap)
 
 | No | Modul / Fitur | Komponen Teknis Terlibat | Estimasi Beban Kerja | Target Output |
-| :-: | :--- | :--- | :-: | :--- |
+| :-: | :--- | :--- | :--- | :-: |
 | **1** | **Dashboard Riwayat Laporan Pegawai** | `UserDashboardController`, `user/dashboard.blade.php` | 2 Hari Kerja | Tabel riwayat personal, 3 kartu ringkasan, modal detail laporan, dan tombol unduh PDF. |
 | **2** | **Matriks Penilaian Risiko ICAO** | `LaporanController`, `Laporan.php`, Model Migration | 2 Hari Kerja | Kolom `risk_score` & `risk_level`, kalkulasi otomatis *Severity × Probability*, badge risiko interaktif. |
 | **3** | **Modul Tanggapan Dua Arah (Feedback)** | `Tanggapan.php`, `AdminDashboardController`, UI Blade | 2 Hari Kerja | Form input tanggapan admin, timeline riwayat tanggapan, respon balik dari pelapor. |
@@ -303,21 +441,25 @@ erDiagram
 | **7** | **Kamera Watermark Dinas Otomatis** | HTML5 Canvas MediaCapture, Client Compression | 2 Hari Kerja | Foto satwa ber-watermark otomatis (tanggal, jam, grid, unit, koordinat) dengan ukuran < 1 MB. |
 | **8** | **Logbook Inventaris Dispersal Tools** | Migrasi `master_alat_dispersal`, Form Input, Controller | 3 Hari Kerja | Pencatatan amunisi flare gun/gas cannon dan monitoring sisa stok amunisi pengusir satwa. |
 | **9** | **PWA & Offline Draft (IndexedDB)** | `manifest.json`, `sw.js` (Service Worker), IndexedDB | 4 Hari Kerja | Aplikasi dapat diinstal, formulir dapat diisi offline, dan auto-sync saat koneksi kembali online. |
-| **10**| **Pengujian Kepatuhan & Verifikasi Akhir**| PHPUnit, Feature Testing, UAT Simulasi Lapangan | 2 Hari Kerja | Seluruh fungsi terverifikasi bebas *bug*, siap rilis ke lingkungan operasional bandara. |
+| **10**| **Integrasi Predictive Bird Strike Engine (Gemini API)** | `GeminiApiService`, `Admin\StatistikController`, Migrasi DB `prediksi_birdstrike_ai` | 3 Hari Kerja | Integrasi Gemini API, kalkulasi probabilitas birdstrike, early warning alert, dan layer AI predictive heatmap. |
+| **11**| **Asisten Identifikasi Satwa (Gemini Vision)** | `LaporanController`, Gemini Multimodal API, UI Form Upload | 2 Hari Kerja | Auto-detect spesies satwa dan nama latin dari foto laporan serta rekomendasi SOP penanganan instan. |
+| **12**| **Pengujian Kepatuhan & Verifikasi Akhir**| PHPUnit, Feature Testing, UAT Simulasi Lapangan | 2 Hari Kerja | Seluruh fungsi terverifikasi bebas *bug*, siap rilis ke lingkungan operasional bandara. |
 
 ---
 
 ## 6. Tabel Matriks Kebutuhan & Prioritas Rilis
 
 | ID Kebutuhan | Nama Kebutuhan | Pilar Fokus | Prioritas (MoSCoW) | Dampak Keselamatan Bandara |
-| :--- | :--- | :--- | :---: | :---: |
+| :--- | :--- | :--- | :--- | :---: |
 | `REQ-FIELD-001` | Dashboard Riwayat Laporan Pegawai | Pilar 1 (Field UX) | **Must Have** | ⭐⭐⭐⭐⭐ |
 | `REQ-RISK-001` | Matriks Penilaian Risiko Satwa ICAO | Pilar 2 (Safety Risk) | **Must Have** | ⭐⭐⭐⭐⭐ |
 | `REQ-RISK-002` | Fitur Tanggapan & Feedback Dua Arah | Pilar 2 (Safety Risk) | **Must Have** | ⭐⭐⭐⭐⭐ |
 | `REQ-REP-001` | Generator Berita Acara PDF Server-Side | Pilar 3 (Reporting) | **Must Have** | ⭐⭐⭐⭐⭐ |
+| `REQ-AI-001` | Predictive Bird Strike Risk Engine (Gemini API) | Pilar 4 (AI Intelligence) | **Should Have** | ⭐⭐⭐⭐⭐ |
 | `REQ-REP-003` | Ekspor Spreadsheet Excel Standar DKPPU | Pilar 3 (Reporting) | **Should Have** | ⭐⭐⭐⭐ |
 | `REQ-FIELD-003` | Auto-detect GPS ke Kode Grid Bandara | Pilar 1 (Field UX) | **Should Have** | ⭐⭐⭐⭐ |
 | `REQ-FIELD-004` | Kamera Terintegrasi Watermark Dinas | Pilar 1 (Field UX) | **Should Have** | ⭐⭐⭐⭐ |
 | `REQ-RISK-003` | Logbook Inventaris Alat Pengusir Satwa | Pilar 2 (Safety Risk) | **Should Have** | ⭐⭐⭐⭐ |
+| `REQ-AI-002` | Asisten Identifikasi Satwa (Gemini Vision) | Pilar 4 (AI Intelligence) | **Should Have** | ⭐⭐⭐⭐ |
 | `REQ-REP-002` | Ekspor Bundel Buku Log Bulanan (PDF) | Pilar 3 (Reporting) | **Could Have** | ⭐⭐⭐ |
 | `REQ-FIELD-002` | Progressive Web App (PWA) Offline Sync | Pilar 1 (Field UX) | **Could Have** | ⭐⭐⭐⭐ |

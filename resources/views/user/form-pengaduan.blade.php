@@ -43,7 +43,7 @@
 @section('content')
 <div class="min-h-screen bg-slate-50/80 font-sans" style="background-image: url('{{ asset('images/watermark_injourney.jpeg') }}'); background-repeat: repeat; background-size: 280px auto; background-attachment: fixed;">
 
-  <!-- Shared Unified Top Navigation Bar -->
+  <!-- Shared Unified Side Navigation Bar -->
   @include('partials.navbar', ['activePage' => 'create'])
 
   <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6">

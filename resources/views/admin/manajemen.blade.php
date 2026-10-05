@@ -143,7 +143,7 @@
 </head>
 <body class="min-h-full bg-canvas-light text-on-surface font-body-md antialiased selection:bg-injourney-teal selection:text-white flex flex-col">
 
-  <!-- TOP APP BAR (Unified Shared Navbar) -->
+  <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'manajemen'])
 
   <!-- ================= MAIN OPERATIONAL CONTENT CONTAINER ================= -->

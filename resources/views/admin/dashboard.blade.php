@@ -174,7 +174,7 @@
     $userRole = $currUser ? ($currUser->jabatan ?: 'AMC Airside Staff') : 'Airside Staff';
   @endphp
 
-  <!-- TOP APP BAR -->
+  <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'dashboard'])
 
   <!-- MAIN VIEWPORT CONTAINER -->
