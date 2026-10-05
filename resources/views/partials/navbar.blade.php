@@ -58,14 +58,9 @@
   </div>
 
   <!-- Sub-Header Strip -->
-  <div class="px-4 py-2 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between text-[11px]">
-    <div class="flex items-center gap-1.5 text-slate-600 font-semibold truncate">
-      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span class="truncate">WHMS Airside Logbook</span>
-    </div>
-    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200 shrink-0">
-      ICAO Annex 14
-    </span>
+  <div class="px-4 py-2 bg-slate-50/70 border-b border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-600 font-semibold">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span>WHMS Airside Logbook</span>
   </div>
 
   <!-- 2. User Profile Card & Primary Action -->
@@ -119,15 +114,13 @@
           <!-- Peta Sebaran Grid -->
           <a href="{{ route('admin.statistik') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'statistic' || request()->routeIs('admin.statistik')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
             <span class="material-symbols-outlined text-lg {{ ($currentPage === 'statistic' || request()->routeIs('admin.statistik')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">grid_view</span>
-            <span class="flex-1 truncate">Peta Sebaran Grid</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200/80">Heatmap</span>
+            <span class="flex-1">Peta Sebaran Grid</span>
           </a>
 
           <!-- Verifikasi Berita Acara -->
           <a href="{{ route('admin.dashboard', ['status' => 'belum']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'verifikasi' || request()->get('status') === 'belum') ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
             <span class="material-symbols-outlined text-lg {{ ($currentPage === 'verifikasi' || request()->get('status') === 'belum') ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
-            <span class="flex-1 truncate">Verifikasi BA</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>
+            <span class="flex-1">Verifikasi BA</span>
           </a>
         </div>
       </div>
@@ -139,15 +132,13 @@
           <!-- Katalog Satwa -->
           <a href="{{ route('admin.manajemen') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'manajemen' || request()->routeIs('admin.manajemen')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
             <span class="material-symbols-outlined text-lg {{ ($currentPage === 'manajemen' || request()->routeIs('admin.manajemen')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">pets</span>
-            <span class="flex-1 truncate">Katalog Satwa</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">SOP</span>
+            <span class="flex-1">Katalog Satwa</span>
           </a>
 
           <!-- Export Excel DKPPU -->
           <a href="{{ route('admin.export.excel') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors group" title="Unduh Spreadsheet Format DKPPU">
             <span class="material-symbols-outlined text-lg text-slate-400 group-hover:text-slate-600">file_download</span>
-            <span class="flex-1 truncate">Export Excel</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">DKPPU</span>
+            <span class="flex-1">Export Excel</span>
           </a>
         </div>
       </div>
@@ -155,14 +146,7 @@
   </nav>
 
   <!-- 4. Sidebar Bottom / Footer Actions -->
-  <div class="p-3 border-t border-slate-100 bg-slate-50/50 space-y-2">
-    <div class="px-2 py-1 flex items-center justify-between text-[10px] text-slate-400">
-      <span>Status Sistem</span>
-      <span class="font-semibold text-emerald-600 flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
-      </span>
-    </div>
-
+  <div class="p-3 border-t border-slate-100 bg-slate-50/50">
     <!-- Logout Form -->
     <form action="{{ route('logout') }}" method="POST" class="m-0">
       @csrf

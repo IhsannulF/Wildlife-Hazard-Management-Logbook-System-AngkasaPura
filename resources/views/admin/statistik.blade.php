@@ -147,48 +147,48 @@
 
   <!-- SUB-HEADER & BREADCRUMB COMMAND STRIP -->
   <section class="bg-card-bg border-b border-border-subtle px-4 sm:px-6 lg:px-8 py-4">
-    <div class="max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
       
       <!-- Titles & Breadcrumb -->
       <div>
-        <div class="flex items-center gap-1.5 text-xs font-semibold text-secondary mb-1">
+        <div class="flex items-center gap-1.5 text-[11px] font-semibold text-secondary mb-0.5">
           <span>Sistem WHMS</span>
           <span class="material-symbols-outlined text-xs">chevron_right</span>
           <span>Analisis Spasial</span>
           <span class="material-symbols-outlined text-xs">chevron_right</span>
           <span class="text-injourney-teal font-semibold">Peta Sebaran Grid Bandara</span>
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold text-slate-navy tracking-tight">
+        <h1 class="text-base sm:text-lg font-bold text-slate-navy tracking-tight">
           Peta Sebaran Grid &amp; Heatmap Bahaya Satwa Sisi Udara
         </h1>
-        <p class="text-xs sm:text-sm text-secondary mt-0.5 max-w-4xl">
+        <p class="text-[11px] sm:text-xs text-secondary mt-0.5 max-w-3xl leading-relaxed">
           Visualisasi geospasial konsentrasi satwa liar, zona risiko tinggi pergerakan runway 07L/25R, taxiway, dan perimeter keselamatan ICAO Annex 14.
         </p>
       </div>
 
       <!-- Quick Action Controls & Time Toggles -->
-      <div class="flex flex-wrap items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Time Filter Pills -->
-        <div class="flex items-center bg-surface-container-low rounded-lg p-1 border border-border-subtle text-xs">
-          <a href="{{ route('admin.statistik', ['time_filter' => 'month', 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-3 py-1.5 rounded font-bold transition-all {{ $timeFilter === 'month' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
+        <div class="flex items-center bg-surface-container-low rounded-lg p-1 border border-border-subtle text-[11px]">
+          <a href="{{ route('admin.statistik', ['time_filter' => 'month', 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded font-bold transition-all {{ $timeFilter === 'month' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
             Bulan Ini
           </a>
-          <a href="{{ route('admin.statistik', ['time_filter' => 'quarter', 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-3 py-1.5 rounded font-bold transition-all {{ $timeFilter === 'quarter' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
+          <a href="{{ route('admin.statistik', ['time_filter' => 'quarter', 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded font-bold transition-all {{ $timeFilter === 'quarter' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
             3 Bulan Terakhir
           </a>
-          <a href="{{ route('admin.statistik', ['time_filter' => 'year', 'tahun' => $tahun, 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-3 py-1.5 rounded font-bold transition-all {{ $timeFilter === 'year' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
+          <a href="{{ route('admin.statistik', ['time_filter' => 'year', 'tahun' => $tahun, 'kategori' => $kategori, 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded font-bold transition-all {{ $timeFilter === 'year' ? 'bg-card-bg text-injourney-teal shadow-xs' : 'text-secondary hover:text-on-surface' }}">
             Tahun {{ $tahun }}
           </a>
         </div>
 
         <!-- Export Excel -->
-        <a href="{{ route('admin.export.excel', ['tahun' => $tahun]) }}" class="inline-flex items-center gap-1.5 px-3 py-2 border border-border-subtle rounded-lg bg-card-bg text-on-surface hover:bg-surface-container-low text-xs font-semibold transition-colors shadow-2xs">
+        <a href="{{ route('admin.export.excel', ['tahun' => $tahun]) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-border-subtle rounded-lg bg-card-bg text-on-surface hover:bg-surface-container-low text-[11px] font-semibold transition-colors shadow-2xs">
           <span class="material-symbols-outlined text-sm text-secondary">file_download</span>
           <span>Export Excel</span>
         </a>
 
         <!-- Print Operational PDF Button -->
-        <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 border border-border-subtle rounded-lg bg-card-bg text-on-surface hover:bg-surface-container-low text-xs font-semibold transition-colors shadow-2xs">
+        <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-border-subtle rounded-lg bg-card-bg text-on-surface hover:bg-surface-container-low text-[11px] font-semibold transition-colors shadow-2xs">
           <span class="material-symbols-outlined text-sm text-secondary">print</span>
           <span>Cetak Peta PDF</span>
         </button>
@@ -198,79 +198,79 @@
   </section>
 
   <!-- MAIN OPERATIONAL CONTAINER -->
-  <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-[1920px] mx-auto w-full flex flex-col gap-6">
+  <main class="flex-1 px-4 sm:px-6 lg:px-8 py-5 max-w-[1920px] mx-auto w-full flex flex-col gap-5">
 
     <!-- 1. KPI SUMMARY BAR (4 CARDS) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
       
       <!-- KPI 1: Grid Terpadat -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
         <div class="absolute top-0 left-0 right-0 h-[3px] bg-warning-rose"></div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs uppercase text-secondary font-semibold tracking-wider">Grid Terpadat (Hotspot Utama)</span>
-            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-error-container text-error font-bold">
+            <span class="text-[10px] sm:text-[11px] uppercase text-secondary font-bold tracking-wider">Grid Terpadat (Hotspot Utama)</span>
+            <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-error-container text-error font-bold">
               <span class="w-1.5 h-1.5 rounded-full bg-warning-rose animate-ping"></span>
               Level Kritis
             </span>
           </div>
-          <div class="text-2xl sm:text-3xl font-bold text-slate-navy">Grid {{ $gridTerpadatTitle }}</div>
+          <div class="text-lg sm:text-xl font-bold text-slate-navy tracking-tight mt-1">Grid {{ $gridTerpadatTitle }}</div>
         </div>
-        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-secondary">
+        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
           <span>{{ $gridTerpadatCount }} Temuan / {{ $gridTerpadatPct }}% insiden</span>
           <span class="font-code-coordinate text-warning-rose font-bold">Bahu RWY 25R</span>
         </div>
       </div>
 
       <!-- KPI 2: Total Titik Terpetakan -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
         <div class="absolute top-0 left-0 right-0 h-[3px] bg-injourney-teal"></div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs uppercase text-secondary font-semibold tracking-wider">Total Titik Insiden Terpetakan</span>
-            <span class="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-injourney-teal font-semibold">
+            <span class="text-[10px] sm:text-[11px] uppercase text-secondary font-bold tracking-wider">Total Titik Insiden Terpetakan</span>
+            <span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high text-injourney-teal font-semibold">
               Aktif Terpantau
             </span>
           </div>
-          <div class="text-2xl sm:text-3xl font-bold text-slate-navy">{{ $totalTitikTerpetakan }} Titik</div>
+          <div class="text-lg sm:text-xl font-bold text-slate-navy tracking-tight mt-1">{{ $totalTitikTerpetakan }} Titik</div>
         </div>
-        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-secondary">
+        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
           <span>Tersebar di {{ $totalSelAktif }} sel grid aktif</span>
           <span class="font-code-coordinate text-injourney-teal font-bold">15 Kolom x 12 Baris</span>
         </div>
       </div>
 
       <!-- KPI 3: Zona Kritis Runway Strip -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
         <div class="absolute top-0 left-0 right-0 h-[3px] bg-alert-amber"></div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs uppercase text-secondary font-semibold tracking-wider">Status Zona Kritis Strip 35M</span>
-            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold">
+            <span class="text-[10px] sm:text-[11px] uppercase text-secondary font-bold tracking-wider">Status Zona Kritis Strip 35M</span>
+            <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold">
               Perlu Patroli
             </span>
           </div>
-          <div class="text-2xl sm:text-3xl font-bold text-slate-navy">{{ $runwayActiveCount }} Kejadian Aktif</div>
+          <div class="text-lg sm:text-xl font-bold text-slate-navy tracking-tight mt-1">{{ $runwayActiveCount }} Kejadian Aktif</div>
         </div>
-        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-secondary">
+        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
           <span>Perlu Pemantauan Mobile AMC</span>
           <span class="font-code-coordinate text-alert-amber font-bold">Siaga Unit 02</span>
         </div>
       </div>
 
       <!-- KPI 4: Efektivitas Dispersal Spasial -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
         <div class="absolute top-0 left-0 right-0 h-[3px] bg-resolved-emerald"></div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs uppercase text-secondary font-semibold tracking-wider">Efektivitas Dispersal Spasial</span>
-            <span class="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-semibold">
+            <span class="text-[10px] sm:text-[11px] uppercase text-secondary font-bold tracking-wider">Efektivitas Dispersal Spasial</span>
+            <span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-semibold">
               Target Terlampaui
             </span>
           </div>
-          <div class="text-2xl sm:text-3xl font-bold text-slate-navy">{{ $efektivitasDispersal }}% Area Steril</div>
+          <div class="text-lg sm:text-xl font-bold text-slate-navy tracking-tight mt-1">{{ $efektivitasDispersal }}% Area Steril</div>
         </div>
-        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-secondary">
+        <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
           <span>Pasca intervensi regu jaga AMC</span>
           <span class="font-code-coordinate text-resolved-emerald font-bold">{{ $totalHandledAll }}/{{ $totalTitikTerpetakan }} Ditangani</span>
         </div>
@@ -279,30 +279,30 @@
     </div>
 
     <!-- 2. MAIN 2-COLUMN OPERATIONAL LAYOUT: AIRSIDE GRID MAP (LEFT) & HOTSPOT DETAILS (RIGHT) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       
       <!-- LEFT / CENTER COLUMN: INTERACTIVE AIRSIDE RUNWAY GRID MAP (8 Cols) -->
-      <div class="lg:col-span-8 bg-card-bg rounded-xl border border-border-subtle p-4 sm:p-5 shadow-sm flex flex-col relative">
+      <div class="lg:col-span-8 bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col relative">
         
         <!-- Airside Map Top Controls & Heading Strip -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border-subtle mb-4">
-          <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-border-subtle mb-3.5">
+          <div class="flex items-center gap-2.5">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-injourney-teal text-xl">grid_4x4</span>
-              <span class="text-base sm:text-lg font-bold text-slate-navy">Denah Sektoral Grid Sisi Udara Bandara</span>
+              <span class="material-symbols-outlined text-injourney-teal text-lg">grid_4x4</span>
+              <span class="text-sm sm:text-base font-bold text-slate-navy">Denah Sektoral Grid Sisi Udara Bandara</span>
             </div>
-            <div class="hidden sm:flex items-center gap-1.5 text-xs font-code-coordinate bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle text-secondary font-semibold">
+            <div class="hidden sm:flex items-center gap-1 text-[10px] font-code-coordinate bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle text-secondary font-semibold">
               <span>RUNWAY ORIENTATION: 070° - 250° (07L / 25R)</span>
             </div>
           </div>
           
           <!-- Active Layer Chips -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-secondary hidden md:inline">Layer:</span>
-            <span class="text-xs px-2.5 py-1 rounded bg-surface-container-high text-injourney-teal font-bold flex items-center gap-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-secondary hidden md:inline">Layer:</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-injourney-teal font-bold flex items-center gap-1">
               <span class="material-symbols-outlined text-xs">check</span> Heatmap Kepadatan
             </span>
-            <span class="text-xs px-2.5 py-1 rounded bg-surface-container-low text-secondary font-medium">
+            <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-secondary font-medium">
               Runway Buffer 35m
             </span>
           </div>
@@ -497,49 +497,50 @@
       </div>
 
       <!-- RIGHT COLUMN: HOTSPOT DETAIL & INSPECTION PANEL (4 Cols) -->
-      <div class="lg:col-span-4 flex flex-col gap-4">
+      <!-- RIGHT COLUMN: DYNAMIC GRID DETAILS & HOTSPOT AUDIT PANEL (4 Cols) -->
+      <div class="lg:col-span-4 flex flex-col gap-3.5">
         
         <!-- CARD 1: DETAIL GRID TERPILIH (DYNAMIC) -->
-        <div id="detailCard" class="bg-card-bg rounded-xl border-2 border-warning-rose/30 p-5 shadow-sm relative overflow-hidden transition-all duration-200">
+        <div id="detailCard" class="bg-card-bg rounded-xl border-2 border-warning-rose/30 p-3.5 sm:p-4 shadow-sm relative overflow-hidden transition-all duration-200">
           <div id="detailTopBar" class="absolute top-0 left-0 right-0 h-1 bg-warning-rose"></div>
           
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between mb-2.5">
             <div class="flex items-center gap-2">
-              <span id="detailGridBadge" class="font-code-coordinate text-sm font-bold bg-error-container text-error px-2.5 py-1 rounded">
+              <span id="detailGridBadge" class="font-code-coordinate text-xs font-bold bg-error-container text-error px-2 py-0.5 rounded">
                 GRID {{ $selectedGrid['grid'] ?? 'K-10' }}
               </span>
-              <span id="detailRiskBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 font-bold">
+              <span id="detailRiskBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold">
                 {{ $selectedGrid['risk_category'] ?? 'Kategori 4 - Kritis' }}
               </span>
             </div>
-            <span class="text-xs text-secondary font-medium">Terpilih Aktif</span>
+            <span class="text-[11px] text-secondary font-medium">Terpilih Aktif</span>
           </div>
 
-          <h2 id="detailZoneName" class="text-base sm:text-lg font-bold text-slate-navy">
+          <h2 id="detailZoneName" class="text-sm sm:text-base font-bold text-slate-navy">
             {{ $selectedGrid['zone_name'] ?? 'Bahu Runway 25R & Kanal Selatan' }}
           </h2>
-          <p id="detailDesc" class="text-xs sm:text-sm text-secondary mt-0.5 mb-4 leading-relaxed">
+          <p id="detailDesc" class="text-[11px] text-secondary mt-0.5 mb-3 leading-relaxed">
             {{ $selectedGrid['desc'] ?? 'Zona perimeter strip aktif runway 25R berdekatan dengan jalur drainase induk sisi barat.' }}
           </p>
 
           <!-- Detail Metrics Grid -->
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="bg-surface-container-low p-3 rounded-lg border border-border-subtle">
-              <span class="text-[11px] uppercase text-secondary font-semibold block">Total Temuan</span>
-              <span id="detailCount" class="text-xl font-bold text-slate-navy">{{ $selectedGrid['count'] ?? 38 }} Kejadian</span>
-              <span id="detailFreq" class="text-[11px] text-warning-rose font-medium mt-0.5 block">Hotspot Utama</span>
+          <div class="grid grid-cols-2 gap-2.5 mb-3">
+            <div class="bg-surface-container-low p-2.5 rounded-lg border border-border-subtle">
+              <span class="text-[10px] uppercase text-secondary font-bold block">Total Temuan</span>
+              <span id="detailCount" class="text-sm sm:text-base font-bold text-slate-navy mt-0.5 block">{{ $selectedGrid['count'] ?? 38 }} Kejadian</span>
+              <span id="detailFreq" class="text-[10px] text-warning-rose font-semibold mt-0.5 block">Hotspot Utama</span>
             </div>
-            <div class="bg-surface-container-low p-3 rounded-lg border border-border-subtle">
-              <span class="text-[11px] uppercase text-secondary font-semibold block">Spesies Dominan</span>
-              <span id="detailSpecies" class="text-base font-bold text-slate-navy truncate block">{{ $selectedGrid['dominant_species'] ?? 'Biawak Air' }}</span>
-              <span id="detailStatus" class="text-[11px] text-secondary mt-0.5 block">{{ $selectedGrid['status'] ?? 'Telah Ditangani' }}</span>
+            <div class="bg-surface-container-low p-2.5 rounded-lg border border-border-subtle">
+              <span class="text-[10px] uppercase text-secondary font-bold block">Spesies Dominan</span>
+              <span id="detailSpecies" class="text-xs sm:text-sm font-bold text-slate-navy truncate mt-0.5 block">{{ $selectedGrid['dominant_species'] ?? 'Biawak Air' }}</span>
+              <span id="detailStatus" class="text-[10px] text-secondary mt-0.5 block">{{ $selectedGrid['status'] ?? 'Telah Ditangani' }}</span>
             </div>
           </div>
 
           <!-- Operational Time Pattern -->
-          <div class="mb-4 bg-surface-container-low/70 p-3 rounded-lg border border-border-subtle text-xs">
+          <div class="mb-3 bg-surface-container-low/70 p-2.5 rounded-lg border border-border-subtle text-[11px]">
             <div class="flex items-center gap-1.5 font-bold text-slate-navy mb-1">
-              <span class="material-symbols-outlined text-sm text-injourney-teal">schedule</span>
+              <span class="material-symbols-outlined text-xs text-injourney-teal">schedule</span>
               <span>Puncak Frekuensi Waktu Muncul:</span>
             </div>
             <p id="detailHours" class="text-secondary leading-relaxed">
@@ -548,12 +549,12 @@
           </div>
 
           <!-- Mitigation SOP Recommendation -->
-          <div class="mb-5 p-3 rounded-lg bg-amber-50/80 border border-amber-200 text-xs">
-            <div class="flex items-center gap-1.5 font-bold text-amber-900 mb-1.5">
-              <span class="material-symbols-outlined text-sm text-alert-amber">warning</span>
+          <div class="mb-3.5 p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 text-[11px]">
+            <div class="flex items-center gap-1.5 font-bold text-amber-900 mb-1">
+              <span class="material-symbols-outlined text-xs text-alert-amber">warning</span>
               <span>Rekomendasi Tindakan Unit AMC:</span>
             </div>
-            <ul id="detailSopList" class="text-amber-950 space-y-1 list-disc list-inside leading-relaxed">
+            <ul id="detailSopList" class="text-amber-950 space-y-1 list-disc list-inside leading-relaxed text-[11px]">
               @if(!empty($selectedGrid['mitigation_sop']))
                 @foreach($selectedGrid['mitigation_sop'] as $sop)
                   <li>{{ $sop }}</li>
@@ -567,11 +568,11 @@
           </div>
 
           <!-- Quick Action Buttons -->
-          <div class="flex items-center gap-2.5">
-            <a id="btnViewLog" href="{{ route('admin.dashboard', ['search' => $selectedGrid['grid'] ?? 'K-10']) }}" class="flex-1 py-2 px-3 border border-border-subtle rounded-lg bg-card-bg hover:bg-surface-container-low text-on-surface text-xs font-semibold transition-colors text-center shadow-2xs">
+          <div class="flex items-center gap-2">
+            <a id="btnViewLog" href="{{ route('admin.dashboard', ['search' => $selectedGrid['grid'] ?? 'K-10']) }}" class="flex-1 py-1.5 px-2.5 border border-border-subtle rounded-lg bg-card-bg hover:bg-surface-container-low text-on-surface text-xs font-semibold transition-colors text-center shadow-2xs">
               Lihat Log Terkait
             </a>
-            <button type="button" onclick="triggerDispersalAction()" class="flex-1 py-2 px-3 rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white text-xs font-semibold transition-colors text-center shadow-xs">
+            <button type="button" onclick="triggerDispersalAction()" class="flex-1 py-1.5 px-2.5 rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white text-xs font-semibold transition-colors text-center shadow-xs">
               Perintah Dispersal
             </button>
           </div>
@@ -579,28 +580,28 @@
         </div>
 
         <!-- CARD 2: TOP 5 AIRSIDE HAZARD ZONES RANKING -->
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-4 sm:p-5 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-bold text-slate-navy">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs sm:text-sm font-bold text-slate-navy">
               Peringkat 5 Grid Hotspot Teratas
             </h2>
-            <span class="text-xs text-injourney-teal font-semibold">Bulan Berjalan</span>
+            <span class="text-[11px] text-injourney-teal font-semibold">Bulan Berjalan</span>
           </div>
 
-          <div class="space-y-3.5">
+          <div class="space-y-2.5">
             @foreach($top5Grids as $top)
               <div onclick="selectGrid('{{ $top['grid'] }}')" class="cursor-pointer group">
-                <div class="flex justify-between items-center text-xs mb-1">
+                <div class="flex justify-between items-center text-[11px] mb-1">
                   <span class="font-bold text-slate-navy group-hover:text-injourney-teal transition-colors flex items-center gap-1.5">
-                    <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-700 text-center text-[10px] font-black inline-flex items-center justify-center">
+                    <span class="w-3.5 h-3.5 rounded-full bg-slate-100 text-slate-700 text-center text-[9px] font-black inline-flex items-center justify-center">
                       {{ $top['rank'] }}
                     </span>
                     Grid {{ $top['grid'] }} ({{ $top['name'] }})
                   </span>
                   <span class="font-code-coordinate font-bold text-slate-700">{{ $top['count'] }} Laporan</span>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div class="{{ $top['color'] }} h-2 rounded-full transition-all duration-500" style="width: {{ $top['bar_width'] }}%"></div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div class="{{ $top['color'] }} h-1.5 rounded-full transition-all duration-500" style="width: {{ $top['bar_width'] }}%"></div>
                 </div>
               </div>
             @endforeach
@@ -608,46 +609,46 @@
         </div>
 
         <!-- CARD 3: QUICK FILTERS (KATEGORI SATWA & ZONA) -->
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-4 sm:p-5 shadow-sm">
-          <h2 class="text-base font-bold text-slate-navy mb-3">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm">
+          <h2 class="text-xs sm:text-sm font-bold text-slate-navy mb-2.5">
             Filter Cepat Kategori Satwa &amp; Zona
           </h2>
           
-          <div class="space-y-3">
+          <div class="space-y-2.5">
             <div>
-              <span class="text-xs uppercase text-secondary font-semibold block mb-1.5">Kategori Fauna:</span>
-              <div class="flex flex-wrap gap-1.5 text-xs font-semibold">
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'all', 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded transition-colors {{ $kategori === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+              <span class="text-[10px] uppercase text-secondary font-bold block mb-1">Kategori Fauna:</span>
+              <div class="flex flex-wrap gap-1 text-[11px] font-semibold">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'all', 'zona' => $zonaFilter]) }}" class="px-2 py-0.5 rounded transition-colors {{ $kategori === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Semua Satwa
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'burung', 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded transition-colors {{ $kategori === 'burung' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'burung', 'zona' => $zonaFilter]) }}" class="px-2 py-0.5 rounded transition-colors {{ $kategori === 'burung' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Avian / Burung
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'reptil', 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded transition-colors {{ $kategori === 'reptil' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'reptil', 'zona' => $zonaFilter]) }}" class="px-2 py-0.5 rounded transition-colors {{ $kategori === 'reptil' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Reptil
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'mamalia', 'zona' => $zonaFilter]) }}" class="px-2.5 py-1 rounded transition-colors {{ $kategori === 'mamalia' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'mamalia', 'zona' => $zonaFilter]) }}" class="px-2 py-0.5 rounded transition-colors {{ $kategori === 'mamalia' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Mamalia
                 </a>
               </div>
             </div>
 
             <div class="pt-2 border-t border-border-subtle">
-              <span class="text-xs uppercase text-secondary font-semibold block mb-1.5">Zona Operasional:</span>
-              <div class="flex flex-wrap gap-1.5 text-xs font-semibold">
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'all']) }}" class="px-2.5 py-1 rounded transition-colors {{ $zonaFilter === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+              <span class="text-[10px] uppercase text-secondary font-bold block mb-1">Zona Operasional:</span>
+              <div class="flex flex-wrap gap-1 text-[11px] font-semibold">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'all']) }}" class="px-2 py-0.5 rounded transition-colors {{ $zonaFilter === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Semua Zona
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'runway']) }}" class="px-2.5 py-1 rounded transition-colors {{ $zonaFilter === 'runway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'runway']) }}" class="px-2 py-0.5 rounded transition-colors {{ $zonaFilter === 'runway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Runway Strip
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'taxiway']) }}" class="px-2.5 py-1 rounded transition-colors {{ $zonaFilter === 'taxiway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'taxiway']) }}" class="px-2 py-0.5 rounded transition-colors {{ $zonaFilter === 'taxiway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Taxiway
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'apron']) }}" class="px-2.5 py-1 rounded transition-colors {{ $zonaFilter === 'apron' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'apron']) }}" class="px-2 py-0.5 rounded transition-colors {{ $zonaFilter === 'apron' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Apron &amp; Hanggar
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'perimeter']) }}" class="px-2.5 py-1 rounded transition-colors {{ $zonaFilter === 'perimeter' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'perimeter']) }}" class="px-2 py-0.5 rounded transition-colors {{ $zonaFilter === 'perimeter' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Perimeter Luar
                 </a>
               </div>
@@ -660,14 +661,14 @@
     </div>
 
     <!-- 3. BOTTOM SECTION: ACTIVE INCIDENTS AUDIT TABLE & TEMPORAL DISPERSAL LOG -->
-    <div class="bg-card-bg rounded-xl border border-border-subtle shadow-sm p-4 sm:p-5 mb-6">
+    <div class="bg-card-bg rounded-xl border border-border-subtle shadow-sm p-3.5 sm:p-4 mb-6">
       
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border-subtle mb-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pb-2.5 border-b border-border-subtle mb-3.5">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-slate-navy">
+          <h2 class="text-sm sm:text-base font-bold text-slate-navy">
             Daftar Log Koordinat Grid Aktif &amp; Pemantauan Intervensi
           </h2>
-          <p class="text-xs text-secondary mt-0.5">
+          <p class="text-[11px] text-secondary mt-0.5">
             Integrasi langsung dengan Master Logbook Sisi Udara dan Berita Acara Ditjen Perhubungan Udara.
           </p>
         </div>
@@ -675,7 +676,7 @@
         <div class="flex items-center gap-2">
           <div class="relative">
             <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-sm">search</span>
-            <input id="gridTableSearch" onkeyup="searchGridTable()" class="pl-8 pr-3 py-1.5 text-xs border border-border-subtle rounded-lg focus:outline-none focus:border-injourney-teal bg-canvas-light w-56" placeholder="Cari Grid / Satwa..." type="text"/>
+            <input id="gridTableSearch" onkeyup="searchGridTable()" class="pl-8 pr-2.5 py-1 text-[11px] border border-border-subtle rounded-lg focus:outline-none focus:border-injourney-teal bg-canvas-light w-52" placeholder="Cari Grid / Satwa..." type="text"/>
           </div>
         </div>
       </div>
@@ -684,51 +685,51 @@
       <div class="overflow-x-auto">
         <table id="tblGridAudit" class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-surface-container-low text-secondary text-xs uppercase font-semibold border-b border-border-subtle">
-              <th class="py-2.5 px-3">Kode Grid</th>
-              <th class="py-2.5 px-3">Zona Lokasi</th>
-              <th class="py-2.5 px-3">Spesies Dominan</th>
-              <th class="py-2.5 px-3">Tingkat Risiko</th>
-              <th class="py-2.5 px-3">Jumlah Laporan</th>
-              <th class="py-2.5 px-3">Aksi Mitigasi Terakhir</th>
-              <th class="py-2.5 px-3">Status Terkini</th>
-              <th class="py-2.5 px-3 text-right">Tindakan</th>
+            <tr class="bg-surface-container-low text-secondary text-[10px] uppercase font-bold tracking-wider border-b border-border-subtle">
+              <th class="py-2 px-2.5">Kode Grid</th>
+              <th class="py-2 px-2.5">Zona Lokasi</th>
+              <th class="py-2 px-2.5">Spesies Dominan</th>
+              <th class="py-2 px-2.5">Tingkat Risiko</th>
+              <th class="py-2 px-2.5">Jumlah Laporan</th>
+              <th class="py-2 px-2.5">Aksi Mitigasi Terakhir</th>
+              <th class="py-2 px-2.5">Status Terkini</th>
+              <th class="py-2 px-2.5 text-right">Tindakan</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-border-subtle text-xs">
+          <tbody class="divide-y divide-border-subtle text-[11px]">
             @forelse($tableGrids as $gRow)
               <tr onclick="selectGrid('{{ $gRow['grid'] }}')" class="hover:bg-surface-container-low/60 transition-colors cursor-pointer group">
-                <td class="py-3 px-3">
-                  <span class="font-code-coordinate font-bold text-warning-rose bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                <td class="py-2 px-2.5">
+                  <span class="font-code-coordinate font-bold text-warning-rose bg-red-50 border border-red-200 px-1.5 py-0.5 rounded text-[10px]">
                     Grid {{ $gRow['grid'] }}
                   </span>
                 </td>
-                <td class="py-3 px-3 font-medium text-slate-navy">{{ $gRow['zone_name'] }}</td>
-                <td class="py-3 px-3">
+                <td class="py-2 px-2.5 font-medium text-slate-navy">{{ $gRow['zone_name'] }}</td>
+                <td class="py-2 px-2.5">
                   <span class="font-semibold text-slate-navy">{{ $gRow['dominant_species'] }}</span>
                 </td>
-                <td class="py-3 px-3">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold {{ $gRow['risk_badge_class'] }}">
+                <td class="py-2 px-2.5">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ $gRow['risk_badge_class'] }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $gRow['risk_level'] === 'Kritis' ? 'bg-warning-rose' : ($gRow['risk_level'] === 'Sedang' ? 'bg-alert-amber' : 'bg-injourney-teal') }}"></span>
                     {{ $gRow['risk_category'] }}
                   </span>
                 </td>
-                <td class="py-3 px-3 font-code-coordinate font-bold text-slate-navy">{{ $gRow['count'] }} Kejadian</td>
-                <td class="py-3 px-3 text-secondary">{{ $gRow['last_mitigation'] }}</td>
-                <td class="py-3 px-3">
+                <td class="py-2 px-2.5 font-code-coordinate font-bold text-slate-navy">{{ $gRow['count'] }} Kejadian</td>
+                <td class="py-2 px-2.5 text-secondary">{{ $gRow['last_mitigation'] }}</td>
+                <td class="py-2 px-2.5">
                   @if($gRow['status'] === 'Belum Ditangani')
-                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">
                       <span class="w-1.5 h-1.5 rounded-full bg-alert-amber"></span>
                       Belum Ditangani
                     </span>
                   @else
-                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full">
                       <span class="w-1.5 h-1.5 rounded-full bg-resolved-emerald"></span>
                       Telah Ditangani
                     </span>
                   @endif
                 </td>
-                <td class="py-3 px-3 text-right">
+                <td class="py-2 px-2.5 text-right">
                   <a href="{{ route('admin.dashboard', ['search' => $gRow['grid']]) }}" class="text-injourney-teal hover:text-injourney-dark-teal font-bold hover:underline">
                     Buka Log
                   </a>
@@ -736,7 +737,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="8" class="text-center py-6 text-secondary">Tidak ada data grid yang cocok dengan filter.</td>
+                <td colspan="8" class="text-center py-5 text-secondary">Tidak ada data grid yang cocok dengan filter.</td>
               </tr>
             @endforelse
           </tbody>

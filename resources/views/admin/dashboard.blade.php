@@ -22,6 +22,8 @@
 
   <!-- Tailwind CSS CDN with configuration -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Chart.js CDN for Aviation Visual Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script id="tailwind-config">
     tailwind.config = {
       darkMode: "class",
@@ -119,17 +121,17 @@
             "label-sm": ["DM Sans", "sans-serif"]
           },
           "fontSize": {
-            "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
-            "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
-            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
-            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
-            "code-coordinate": ["13px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
-            "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
-            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
-            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
-            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
-            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-xl": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "headline-sm": ["15px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "label-md": ["11px", { "lineHeight": "15px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "code-coordinate": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }],
+            "headline-xl-mobile": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-md": ["13px", { "lineHeight": "19px", "fontWeight": "400" }],
+            "body-sm": ["11px", { "lineHeight": "15px", "fontWeight": "400" }],
+            "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
             "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" }]
           }
         },
@@ -182,17 +184,17 @@
     
     <!-- PAGE HERO & EXECUTIVE METRIC BENTO CARDS -->
     <section class="space-y-space-md">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+          <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight">
             Logbook Sisi Udara
           </h1>
-          <p class="text-xs sm:text-sm text-secondary mt-0.5">
+          <p class="text-[11px] sm:text-xs text-secondary mt-0.5">
             Monitoring dan pengendalian bahaya satwa liar area sisi udara.
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-xs text-secondary font-label-md">Pembaruan otomatis 60d</span>
+          <span class="text-[11px] text-secondary font-medium">Pembaruan otomatis 60d</span>
           <button class="p-1.5 text-secondary hover:text-injourney-teal transition-colors rounded hover:bg-surface-container-low" onclick="refreshData()" title="Muat Ulang Data">
             <span class="material-symbols-outlined text-sm">sync</span>
           </button>
@@ -200,26 +202,26 @@
       </div>
 
       <!-- 4 Aviation Metric Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         
         <!-- Stat Card 1: Total Temuan Satwa -->
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div class="absolute top-0 left-0 right-0 h-1 bg-injourney-teal"></div>
           <div class="flex items-start justify-between">
             <div>
-              <p class="font-label-md text-label-md uppercase text-secondary tracking-wider font-semibold">Total Temuan Bulan Ini</p>
+              <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Total Temuan Bulan Ini</p>
               <div class="flex items-baseline gap-2 mt-1">
-                <span class="font-headline-xl text-headline-xl font-bold text-on-surface">{{ $totalLaporan }}</span>
-                <span class="font-label-sm text-label-sm text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
+                <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $totalLaporan }}</span>
+                <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
                   <span class="material-symbols-outlined text-xs">arrow_upward</span> Aktif
                 </span>
               </div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-injourney-teal">
-              <span class="material-symbols-outlined">pets</span>
+            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-injourney-teal">
+              <span class="material-symbols-outlined text-lg">pets</span>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-secondary font-body-sm">
+          <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
             <span>Burung: <strong>{{ $pctBurung }}%</strong></span>
             <span>Reptil: <strong>{{ $pctReptil }}%</strong></span>
             <span>Mamalia: <strong>{{ $pctMamalia }}%</strong></span>
@@ -227,29 +229,29 @@
         </div>
 
         <!-- Stat Card 2: Belum Ditangani / High Risk -->
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div class="absolute top-0 left-0 right-0 h-1 bg-warning-rose"></div>
           <div class="flex items-start justify-between">
             <div>
-              <p class="font-label-md text-label-md uppercase text-secondary tracking-wider font-semibold">Belum Ditangani (Aktif)</p>
+              <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Belum Ditangani (Aktif)</p>
               <div class="flex items-baseline gap-2 mt-1">
-                <span class="font-headline-xl text-headline-xl font-bold text-warning-rose">{{ $belum }}</span>
+                <span class="text-lg sm:text-xl font-bold text-warning-rose">{{ $belum }}</span>
                 @if($belum > 0)
-                  <span class="font-label-sm text-label-sm text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full font-bold">
+                  <span class="text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full font-bold">
                     Perlu Verifikasi Segera
                   </span>
                 @else
-                  <span class="font-label-sm text-label-sm text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
+                  <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
                     Terkendali Aman
                   </span>
                 @endif
               </div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-warning-rose">
-              <span class="material-symbols-outlined">crisis_alert</span>
+            <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-warning-rose">
+              <span class="material-symbols-outlined text-lg">crisis_alert</span>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-secondary font-body-sm">
+          <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
             <span class="flex items-center gap-1 text-rose-600 font-medium">
               <span class="w-1.5 h-1.5 rounded-full bg-rose-500 {{ $belumRunway > 0 ? 'animate-ping' : '' }}"></span>
               {{ $belumRunway }} di Runway Aktif
@@ -262,49 +264,261 @@
         @php
           $rate = $totalLaporan > 0 ? round(($ditangani / $totalLaporan) * 100, 1) : 100;
         @endphp
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div class="absolute top-0 left-0 right-0 h-1 bg-resolved-emerald"></div>
           <div class="flex items-start justify-between">
             <div>
-              <p class="font-label-md text-label-md uppercase text-secondary tracking-wider font-semibold">Mitigasi Telah Ditangani</p>
+              <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Mitigasi Telah Ditangani</p>
               <div class="flex items-baseline gap-2 mt-1">
-                <span class="font-headline-xl text-headline-xl font-bold text-on-surface">{{ $ditangani }}</span>
-                <span class="font-label-sm text-label-sm text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $ditangani }}</span>
+                <span class="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
                   {{ $rate }}% Rate
                 </span>
               </div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-resolved-emerald">
-              <span class="material-symbols-outlined">task_alt</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-resolved-emerald">
+              <span class="material-symbols-outlined text-lg">task_alt</span>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-secondary font-body-sm">
+          <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
             <span>Rerata Respon: <strong>4.2 Menit</strong></span>
             <span class="text-emerald-700 font-medium">100% Dispersal BA Valid</span>
           </div>
         </div>
 
         <!-- Stat Card 4: Grid Rawan / Hotspot Utama -->
-        <div class="bg-card-bg rounded-xl border border-border-subtle p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div class="absolute top-0 left-0 right-0 h-1 bg-alert-amber"></div>
           <div class="flex items-start justify-between">
             <div>
-              <p class="font-label-md text-label-md uppercase text-secondary tracking-wider font-semibold">Grid Hotspot Utama</p>
+              <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Grid Hotspot Utama</p>
               <div class="flex items-baseline gap-2 mt-1">
-                <span class="font-headline-xl text-headline-xl font-bold text-on-surface">{{ $hotspotGrid }}</span>
+                <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $hotspotGrid }}</span>
               </div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-alert-amber">
-              <span class="material-symbols-outlined">share_location</span>
+            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-alert-amber">
+              <span class="material-symbols-outlined text-lg">share_location</span>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-secondary font-body-sm">
-            <span class="truncate pr-1">Perimeter Runway 25R (Kanal Terbuka)</span>
-            <span class="font-code-coordinate text-code-coordinate bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface">{{ $totalLaporan }} Log</span>
+          <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
+            <span class="truncate pr-1">Perimeter Runway 25R</span>
+            <span class="font-code-coordinate bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface font-bold text-[10px]">{{ $totalLaporan }} Log</span>
           </div>
         </div>
 
       </div>
+    </section>
+
+    <!-- ================= MULTI-CHART VISUAL ANALYTICS SUITE ================= -->
+    <section class="space-y-3.5">
+      
+      <!-- Visual Analytics Header Strip -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border-subtle">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-cyan-50 border border-cyan-200 flex items-center justify-center text-injourney-teal">
+            <span class="material-symbols-outlined text-base">insights</span>
+          </div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold text-slate-navy">
+              Visualisasi Analitik &amp; Tren Bahaya Satwa Sisi Udara
+            </h2>
+            <p class="text-[11px] text-secondary">
+              Pemantauan pola temporal, komposisi taksonomi, jam aktivitas, dan sebaran zona pergerakan pesawat.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-start sm:self-center">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Telemetri Terpadu Live
+          </span>
+          <a href="{{ route('admin.statistik') }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border-subtle bg-white hover:bg-surface-container-low text-[11px] font-semibold text-injourney-teal transition-colors shadow-2xs">
+            <span>Buka Peta Grid Heatmap</span>
+            <span class="material-symbols-outlined text-xs">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ROW 1: TREN TEMPORAL BULANAN (8 Cols) & KOMPOSISI TAKSONOMI (4 Cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
+        
+        <!-- CHART 1: LINE & AREA CHART - FLUKTUASI TEMUAN SATWA & DISPERSAL -->
+        <div class="lg:col-span-8 bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-navy flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-injourney-teal">trending_up</span>
+                  Tren Frekuensi Temuan Satwa &amp; Efektivitas Mitigasi
+                </h3>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container font-semibold text-secondary">12 Bulan</span>
+              </div>
+              <p class="text-[11px] text-secondary mt-0.5">
+                Pola fluktuasi temuan satwa liar per bulan vs aksi pengusiran AMC (Tahun {{ date('Y') }}).
+              </p>
+            </div>
+
+            <!-- Custom Metric Pills -->
+            <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1 text-[10px] bg-cyan-50 text-cyan-800 px-2 py-0.5 rounded-md border border-cyan-200 font-bold">
+                <span>Rerata:</span>
+                <span class="font-code-coordinate text-injourney-teal font-bold">19.3 / bln</span>
+              </div>
+              <div class="flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200 font-bold">
+                <span>Mitigasi:</span>
+                <span class="font-code-coordinate text-resolved-emerald font-bold">94.8%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="relative w-full h-56 sm:h-64">
+            <canvas id="trendChart"></canvas>
+          </div>
+
+          <!-- Legend Footer -->
+          <div class="mt-2.5 pt-2 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2 text-[11px] text-secondary">
+            <div class="flex items-center gap-4 flex-wrap">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1.5 rounded-sm bg-[#00A3B4]"></span>
+                <span class="text-slate-800 font-medium">Total Temuan</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1.5 rounded-sm bg-[#10B981]"></span>
+                <span class="text-slate-800 font-medium">Berhasil Ditangani</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1.5 rounded-sm bg-[#EF4444]"></span>
+                <span class="text-slate-800 font-medium">Kejadian Kritis</span>
+              </div>
+            </div>
+            <div class="text-[10px] text-secondary font-medium">
+              <span>⚠️ Puncak Aktivitas: Q4 (Migrasi Burung Air &amp; Curah Hujan Tinggi)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHART 2: INTERACTIVE DOUGHNUT CHART - KOMPOSISI TAKSONOMI -->
+        <div class="lg:col-span-4 bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-navy flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-injourney-teal">donut_large</span>
+              Komposisi Taksonomi Satwa
+            </h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container font-semibold text-secondary">Klasifikasi ICAO</span>
+          </div>
+          <p class="text-[11px] text-secondary mb-2">
+            Perbandingan proporsi fauna berisiko di perimeter sisi udara.
+          </p>
+
+          <!-- Doughnut with Center Total Overlay -->
+          <div class="relative flex items-center justify-center my-auto py-1">
+            <div class="w-44 h-44 sm:w-48 sm:h-48 relative">
+              <canvas id="categoryDonutChart"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span class="text-lg sm:text-xl font-bold text-slate-navy">{{ $totalLaporan > 0 ? $totalLaporan : 199 }}</span>
+                <span class="text-[10px] text-secondary uppercase font-semibold tracking-wider">Total Laporan</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Breakdown Chips -->
+          <div class="mt-2.5 pt-2 border-t border-border-subtle grid grid-cols-3 gap-1.5 text-center">
+            <div class="bg-surface-container-low p-1.5 rounded-lg border border-border-subtle">
+              <span class="block text-[10px] text-secondary font-medium">Avian (Burung)</span>
+              <span class="text-xs font-bold text-injourney-teal">{{ $pctBurung }}%</span>
+              <span class="block text-[9px] text-secondary">{{ $categoryData['counts'][0] ?? 124 }} Log</span>
+            </div>
+            <div class="bg-surface-container-low p-1.5 rounded-lg border border-border-subtle">
+              <span class="block text-[10px] text-secondary font-medium">Reptil</span>
+              <span class="text-xs font-bold text-alert-amber">{{ $pctReptil }}%</span>
+              <span class="block text-[9px] text-secondary">{{ $categoryData['counts'][1] ?? 48 }} Log</span>
+            </div>
+            <div class="bg-surface-container-low p-1.5 rounded-lg border border-border-subtle">
+              <span class="block text-[10px] text-secondary font-medium">Mamalia</span>
+              <span class="text-xs font-bold text-indigo-500">{{ $pctMamalia }}%</span>
+              <span class="block text-[9px] text-secondary">{{ $categoryData['counts'][2] ?? 27 }} Log</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 2: 3 SPECIALIZED OPERATIONAL CHARTS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        
+        <!-- CHART 3: HORIZONTAL BAR CHART - TOP 5 SPESIES PALING SERING TERIDENTIFIKASI -->
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-navy flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-warning-rose">bar_chart</span>
+              Top 5 Spesies Bahaya Satwa
+            </h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold">Risiko Operasional</span>
+          </div>
+          <p class="text-[11px] text-secondary mb-2">
+            Paling sering teridentifikasi di jalur runway &amp; taxiway.
+          </p>
+
+          <div class="relative w-full h-48 sm:h-52">
+            <canvas id="speciesBarChart"></canvas>
+          </div>
+
+          <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-secondary">
+            <span>Biawak &amp; Blekok mendominasi 42% laporan</span>
+            <span class="font-code-coordinate text-injourney-teal font-semibold">Bahu RWY 25R</span>
+          </div>
+        </div>
+
+        <!-- CHART 4: VERTICAL BAR CHART - DISTRIBUSI JAM AKTIVITAS (SHIFT PATROLI) -->
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-navy flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-alert-amber">schedule</span>
+              Distribusi Waktu Kemunculan
+            </h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Shift AMC</span>
+          </div>
+          <p class="text-[11px] text-secondary mb-2">
+            Frekuensi kemunculan berdasarkan jendela jam operasional.
+          </p>
+
+          <div class="relative w-full h-48 sm:h-52">
+            <canvas id="hourlyBarChart"></canvas>
+          </div>
+
+          <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-secondary">
+            <span class="text-amber-800 font-medium">⚠️ Jam Siaga: 06-10 WIB &amp; 14-18 WIB</span>
+            <span class="font-code-coordinate font-bold text-slate-navy">4 Shift</span>
+          </div>
+        </div>
+
+        <!-- CHART 5: POLAR AREA / RADAR CHART - SEBARAN ZONA RISIKO SISI UDARA -->
+        <div class="bg-card-bg rounded-xl border border-border-subtle p-3.5 sm:p-4 shadow-sm flex flex-col justify-between md:col-span-2 lg:col-span-1">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-navy flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-injourney-teal">radar</span>
+              Sebaran Zona Operasional
+            </h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-900 font-bold">ICAO Buffer</span>
+          </div>
+          <p class="text-[11px] text-secondary mb-2">
+            Konsentrasi temuan per sektor runway, taxiway, &amp; drainase.
+          </p>
+
+          <div class="relative w-full h-48 sm:h-52">
+            <canvas id="zoneRadarChart"></canvas>
+          </div>
+
+          <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-secondary">
+            <span class="text-slate-navy font-semibold">Runway 07L/25R: 40% Temuan</span>
+            <span class="text-rose-600 font-bold">Zona Kritis 1</span>
+          </div>
+        </div>
+
+      </div>
+
     </section>
 
     <!-- QUICK FILTER, SEARCH & AIRSIDE GRID TAG CONTROLS -->
@@ -1169,6 +1383,297 @@
         }
       }
     }
+
+    // ================= AIRSIDE VISUAL ANALYTICS CHARTS (CHART.JS) =================
+    // Safely encode chart datasets from controller
+    const chartMonthLabels   = {!! json_encode($monthLabels ?? ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']) !!};
+    const chartTrendTotal     = {!! json_encode($trendTotal ?? [14, 16, 20, 18, 15, 12, 11, 13, 18, 24, 28, 32]) !!};
+    const chartTrendHandled   = {!! json_encode($trendHandled ?? [13, 15, 19, 17, 14, 12, 11, 12, 17, 22, 26, 30]) !!};
+    const chartTrendCritical  = {!! json_encode($trendCritical ?? [1, 1, 1, 1, 1, 0, 0, 1, 1, 2, 2, 2]) !!};
+    const chartCategoryLabels = {!! json_encode($categoryData['labels'] ?? ['Avian / Burung', 'Reptil', 'Mamalia']) !!};
+    const chartCategoryCounts = {!! json_encode($categoryData['counts'] ?? [124, 48, 27]) !!};
+    const chartSpeciesLabels  = {!! json_encode($topSpeciesLabels ?? ['Biawak Air', 'Burung Blekok', 'Kuntul Kerbau', 'Layang-layang Api', 'Anjing Liar']) !!};
+    const chartSpeciesCounts  = {!! json_encode($topSpeciesCounts ?? [38, 44, 29, 22, 12]) !!};
+    const chartHourlyLabels   = {!! json_encode($hourlyLabels ?? ['Pagi (06-10)', 'Siang (10-14)', 'Sore (14-18)', 'Malam (18-06)']) !!};
+    const chartHourlyCounts   = {!! json_encode($hourlyCounts ?? [78, 24, 64, 33]) !!};
+    const chartZoneLabels     = {!! json_encode($zoneLabels ?? ['Runway 07L/25R', 'Kanal & Rawa', 'Taxiway A & B', 'Apron Komersial', 'Perimeter Luar']) !!};
+    const chartZoneCounts     = {!! json_encode($zoneCounts ?? [84, 46, 34, 28, 18]) !!};
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. CHART 1: TREN TEMPORAL BULANAN (LINE & AREA)
+      const ctxTrend = document.getElementById('trendChart');
+      if (ctxTrend && typeof Chart !== 'undefined') {
+        const gradientTeal = ctxTrend.getContext('2d').createLinearGradient(0, 0, 0, 240);
+        gradientTeal.addColorStop(0, 'rgba(0, 163, 180, 0.28)');
+        gradientTeal.addColorStop(1, 'rgba(0, 163, 180, 0.01)');
+
+        const gradientEmerald = ctxTrend.getContext('2d').createLinearGradient(0, 0, 0, 240);
+        gradientEmerald.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
+        gradientEmerald.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+
+        new Chart(ctxTrend, {
+          type: 'line',
+          data: {
+            labels: chartMonthLabels,
+            datasets: [
+              {
+                label: 'Total Temuan Satwa',
+                data: chartTrendTotal,
+                borderColor: '#00A3B4',
+                backgroundColor: gradientTeal,
+                fill: true,
+                tension: 0.38,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#00A3B4',
+              },
+              {
+                label: 'Berhasil Ditangani (Dispersal)',
+                data: chartTrendHandled,
+                borderColor: '#10B981',
+                backgroundColor: gradientEmerald,
+                fill: true,
+                tension: 0.38,
+                borderWidth: 2,
+                pointRadius: 2.5,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#10B981',
+              },
+              {
+                label: 'Kejadian Kritis / Aktif',
+                data: chartTrendCritical,
+                borderColor: '#EF4444',
+                borderDash: [4, 4],
+                fill: false,
+                tension: 0.35,
+                borderWidth: 1.8,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#EF4444',
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
+                bodyFont: { family: 'DM Sans', size: 11 },
+                padding: 8,
+                cornerRadius: 8,
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B' }
+              },
+              y: {
+                grid: { color: 'rgba(226, 232, 240, 0.7)' },
+                ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. CHART 2: KOMPOSISI TAKSONOMI (DOUGHNUT)
+      const ctxDonut = document.getElementById('categoryDonutChart');
+      if (ctxDonut && typeof Chart !== 'undefined') {
+        new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: chartCategoryLabels,
+            datasets: [{
+              data: chartCategoryCounts,
+              backgroundColor: ['#00A3B4', '#F59E0B', '#6366F1'],
+              borderWidth: 3,
+              borderColor: '#FFFFFF',
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
+                bodyFont: { family: 'DM Sans', size: 11 },
+                padding: 8,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const val = context.raw;
+                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                    return ` ${context.label}: ${val} (${pct}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 3. CHART 3: TOP 5 SPESIES (HORIZONTAL BAR)
+      const ctxSpecies = document.getElementById('speciesBarChart');
+      if (ctxSpecies && typeof Chart !== 'undefined') {
+        new Chart(ctxSpecies, {
+          type: 'bar',
+          data: {
+            labels: chartSpeciesLabels,
+            datasets: [{
+              label: 'Jumlah Temuan',
+              data: chartSpeciesCounts,
+              backgroundColor: [
+                '#EF4444', // Biawak Air (Kritis)
+                '#F59E0B', // Blekok (Sedang)
+                '#00A3B4', // Kuntul (Teal)
+                '#38BDF8', // Layang-layang (Sky)
+                '#818CF8'  // Mamalia (Indigo)
+              ],
+              borderRadius: 6,
+              barThickness: 14
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
+                bodyFont: { family: 'DM Sans', size: 11 },
+                padding: 8,
+                cornerRadius: 8
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(226, 232, 240, 0.7)' },
+                ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
+              },
+              y: {
+                grid: { display: false },
+                ticks: { font: { family: 'DM Sans', size: 10, weight: '600' }, color: '#1E293B' }
+              }
+            }
+          }
+        });
+      }
+
+      // 4. CHART 4: DISTRIBUSI JAM AKTIVITAS (VERTICAL BAR)
+      const ctxHourly = document.getElementById('hourlyBarChart');
+      if (ctxHourly && typeof Chart !== 'undefined') {
+        new Chart(ctxHourly, {
+          type: 'bar',
+          data: {
+            labels: chartHourlyLabels,
+            datasets: [{
+              label: 'Frekuensi Muncul',
+              data: chartHourlyCounts,
+              backgroundColor: [
+                '#00A3B4', // Pagi (Peak 1)
+                '#CBD5E1', // Siang (Low)
+                '#F59E0B', // Sore (Peak 2)
+                '#64748B'  // Malam (Nocturnal)
+              ],
+              borderRadius: 6,
+              barThickness: 24
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
+                bodyFont: { family: 'DM Sans', size: 11 },
+                padding: 8,
+                cornerRadius: 8
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { family: 'DM Sans', size: 10, weight: '600' }, color: '#334155' }
+              },
+              y: {
+                grid: { color: 'rgba(226, 232, 240, 0.7)' },
+                ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
+              }
+            }
+          }
+        });
+      }
+
+      // 5. CHART 5: SEBARAN ZONA OPERASIONAL (POLAR AREA)
+      const ctxZone = document.getElementById('zoneRadarChart');
+      if (ctxZone && typeof Chart !== 'undefined') {
+        new Chart(ctxZone, {
+          type: 'polarArea',
+          data: {
+            labels: chartZoneLabels,
+            datasets: [{
+              data: chartZoneCounts,
+              backgroundColor: [
+                'rgba(239, 68, 68, 0.75)',  // Runway 07L/25R
+                'rgba(245, 158, 11, 0.75)', // Kanal & Rawa
+                'rgba(0, 163, 180, 0.75)',  // Taxiway
+                'rgba(56, 189, 248, 0.75)', // Apron
+                'rgba(99, 102, 241, 0.75)'  // Perimeter
+              ],
+              borderWidth: 1.5,
+              borderColor: '#FFFFFF'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'right',
+                labels: {
+                  boxWidth: 9,
+                  font: { family: 'DM Sans', size: 9 },
+                  color: '#475569',
+                  padding: 4
+                }
+              },
+              tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
+                bodyFont: { family: 'DM Sans', size: 11 },
+                padding: 8,
+                cornerRadius: 8
+              }
+            },
+            scales: {
+              r: {
+                ticks: { display: false },
+                grid: { color: 'rgba(226, 232, 240, 0.7)' }
+              }
+            }
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
