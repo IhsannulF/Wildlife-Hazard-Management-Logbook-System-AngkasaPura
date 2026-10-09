@@ -1,10 +1,13 @@
+@php
+  $isVerifikasi = (request()->get('tab') === 'verifikasi' || (isset($tab) && $tab === 'verifikasi'));
+@endphp
 <!DOCTYPE html>
 <html class="h-full bg-canvas-light text-on-surface" lang="id">
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>InJourney Airports - Wildlife Hazard Management Logbook System</title>
+  <title>{{ $isVerifikasi ? 'Verifikasi Berita Acara (BA)' : 'Logbook Sisi Udara' }} - InJourney Airports</title>
 
   <!-- Favicon InJourney Airports -->
   <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
@@ -23,7 +26,9 @@
   <!-- Tailwind CSS CDN with configuration -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <!-- Chart.js CDN for Aviation Visual Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  @if(!$isVerifikasi)
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  @endif
   <script id="tailwind-config">
     tailwind.config = {
       darkMode: "class",
@@ -177,7 +182,7 @@
   @endphp
 
   <!-- SIDEBAR NAVIGATION -->
-  @include('partials.navbar', ['activePage' => 'dashboard'])
+  @include('partials.navbar', ['activePage' => $isVerifikasi ? 'verifikasi' : 'dashboard'])
 
   <!-- MAIN VIEWPORT CONTAINER -->
   <main class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-space-xl py-space-lg space-y-space-lg">
@@ -186,12 +191,22 @@
     <section class="space-y-space-md">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
         <div>
-          <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight">
-            Logbook Sisi Udara
-          </h1>
-          <p class="text-[11px] sm:text-xs text-secondary mt-0.5">
-            Monitoring dan pengendalian bahaya satwa liar area sisi udara.
-          </p>
+          @if($isVerifikasi)
+            <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#007fa3] text-2xl">fact_check</span>
+              Verifikasi Berita Acara (BA)
+            </h1>
+            <p class="text-[11px] sm:text-xs text-secondary mt-0.5">
+              Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.
+            </p>
+          @else
+            <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight">
+              Logbook Sisi Udara
+            </h1>
+            <p class="text-[11px] sm:text-xs text-secondary mt-0.5">
+              Monitoring dan pengendalian bahaya satwa liar area sisi udara.
+            </p>
+          @endif
         </div>
         <div class="flex items-center gap-2">
           <span class="text-[11px] text-secondary font-medium">Pembaruan otomatis 60d</span>
@@ -217,9 +232,9 @@
                 </span>
               </div>
             </div>
-            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-injourney-teal">
+            <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi']) }}" class="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-injourney-teal transition-colors" title="Buka Register Laporan & Verifikasi BA">
               <span class="material-symbols-outlined text-lg">pets</span>
-            </div>
+            </a>
           </div>
           <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
             <span>Burung: <strong>{{ $pctBurung }}%</strong></span>
@@ -237,9 +252,10 @@
               <div class="flex items-baseline gap-2 mt-1">
                 <span class="text-lg sm:text-xl font-bold text-warning-rose">{{ $belum }}</span>
                 @if($belum > 0)
-                  <span class="text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full font-bold">
-                    Perlu Verifikasi Segera
-                  </span>
+                  <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi', 'status' => 'belum']) }}" class="text-[10px] text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-full font-bold transition-colors inline-flex items-center gap-0.5" title="Buka Antrean Verifikasi BA">
+                    <span>Verifikasi BA</span>
+                    <span class="material-symbols-outlined text-[10px]">arrow_forward</span>
+                  </a>
                 @else
                   <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
                     Terkendali Aman
@@ -247,9 +263,9 @@
                 @endif
               </div>
             </div>
-            <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-warning-rose">
+            <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi', 'status' => 'belum']) }}" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-warning-rose transition-colors" title="Buka Antrean Verifikasi BA">
               <span class="material-symbols-outlined text-lg">crisis_alert</span>
-            </div>
+            </a>
           </div>
           <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
             <span class="flex items-center gap-1 text-rose-600 font-medium">
@@ -307,8 +323,46 @@
         </div>
 
       </div>
+
+      @if($isVerifikasi)
+      <!-- Alert / Notice Banner Verifikasi BA (Khusus Tab Verifikasi Tanpa Grafik) -->
+      <div class="bg-cyan-50/80 border border-cyan-200/90 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-100 border border-cyan-200 text-[#007fa3] flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-2xl">fact_check</span>
+          </div>
+          <div>
+            <h2 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>Mode Verifikasi Berita Acara (BA) &amp; Intervensi Satwa</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] bg-[#007fa3] text-white font-bold">Resmi</span>
+            </h2>
+            <p class="text-[11px] text-slate-600 mt-0.5">
+              Memvalidasi laporan kejadian satwa liar sisi udara, tindakan pengusiran (dispersal), dan penerbitan berkas Berita Acara (BA) standar ICAO / DKPPU.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          @if($belum > 0)
+            <span class="px-3 py-1.5 rounded-lg bg-rose-50 text-warning-rose border border-rose-200 text-xs font-bold shadow-2xs flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-warning-rose animate-ping"></span>
+              {{ $belum }} Menunggu Verifikasi
+            </span>
+          @else
+            <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Semua Laporan Terverifikasi
+            </span>
+          @endif
+          <a href="{{ route('admin.dashboard') }}" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">space_dashboard</span>
+            <span>Dashboard Utama</span>
+          </a>
+        </div>
+      </div>
+      @endif
     </section>
 
+    @if(!$isVerifikasi)
     <!-- ================= MULTI-CHART VISUAL ANALYTICS SUITE ================= -->
     <section class="space-y-3.5">
       
@@ -520,22 +574,123 @@
       </div>
 
     </section>
+    @endif
 
+    @if(!$isVerifikasi)
+    <!-- ================= QUICK OPERATIONAL ACTION / SUMMARY CARDS (Dashboard Utama) ================= -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      
+      <!-- Card 1: Verifikasi Berita Acara (BA) -->
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm flex flex-col justify-between hover:border-injourney-teal/60 transition-all">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="w-9 h-9 rounded-lg bg-cyan-50 border border-cyan-200 flex items-center justify-center text-[#007fa3]">
+              <span class="material-symbols-outlined text-xl">fact_check</span>
+            </div>
+            @if($belum > 0)
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-warning-rose border border-rose-200 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-warning-rose animate-ping"></span>
+                {{ $belum }} Menunggu Verifikasi
+              </span>
+            @else
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Semua Terverifikasi
+              </span>
+            @endif
+          </div>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800">Verifikasi Berita Acara (BA)</h3>
+            <p class="text-[11px] text-secondary mt-0.5">
+              Kelola antrean validasi laporan kejadian satwa liar sisi udara dan terbitkan dokumen Berita Acara resmi ICAO / DKPPU.
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
+          <span class="text-[11px] text-secondary font-medium">{{ $totalLaporan }} Total Register Laporan</span>
+          <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi']) }}" class="inline-flex items-center gap-1 text-xs font-bold text-injourney-teal hover:underline group">
+            <span>Buka Verifikasi BA</span>
+            <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 2: Peta Sebaran Grid Runway -->
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm flex flex-col justify-between hover:border-injourney-teal/60 transition-all">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+              <span class="material-symbols-outlined text-xl">grid_view</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-alert-amber border border-amber-200">
+              Hotspot: {{ $hotspotGrid }}
+            </span>
+          </div>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800">Peta Sebaran Grid Runway</h3>
+            <p class="text-[11px] text-secondary mt-0.5">
+              Analisis spasial konsentrasi satwa di sepanjang runway 07L/25R, taxiway, kanal terbuka, dan perimeter bandara.
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
+          <span class="text-[11px] text-secondary font-medium">Matriks Risiko Spasial ICAO</span>
+          <a href="{{ route('admin.statistik') }}" class="inline-flex items-center gap-1 text-xs font-bold text-injourney-teal hover:underline group">
+            <span>Buka Peta Grid</span>
+            <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 3: Katalog Satwa & Rekap DKPPU -->
+      <div class="bg-card-bg rounded-xl border border-border-subtle p-4 shadow-sm flex flex-col justify-between hover:border-injourney-teal/60 transition-all">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="w-9 h-9 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700">
+              <span class="material-symbols-outlined text-xl">pets</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+              {{ $totalSatwa ?? 0 }} Spesies Terdata
+            </span>
+          </div>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800">Katalog Satwa &amp; Rekap DKPPU</h3>
+            <p class="text-[11px] text-secondary mt-0.5">
+              Kelola master data taksonomi satwa atau unduh rekap berkala logbook satwa format spreadsheet resmi DKPPU.
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
+          <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <span class="material-symbols-outlined text-xs">file_download</span>
+            <span>Export Excel</span>
+          </a>
+          <a href="{{ route('admin.manajemen') }}" class="inline-flex items-center gap-1 text-xs font-bold text-injourney-teal hover:underline group">
+            <span>Katalog Master</span>
+            <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+    </section>
+    @endif
+
+    @if($isVerifikasi)
     <!-- QUICK FILTER, SEARCH & AIRSIDE GRID TAG CONTROLS -->
     <section class="bg-card-bg rounded-xl border border-border-subtle p-space-md shadow-sm space-y-space-md">
       <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-md">
         
         <!-- Status Tabs -->
         <div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-border-subtle self-start">
-          <button class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ empty($statusFilter) ? 'bg-white text-injourney-teal font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-all" onclick="filterStatus('all')" type="button">
+          <a href="{{ $isVerifikasi ? route('admin.dashboard', ['tab' => 'verifikasi']) : route('admin.dashboard') }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ empty($statusFilter) ? 'bg-white text-injourney-teal font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-all">
             Semua Status <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface">{{ $totalLaporan }}</span>
-          </button>
-          <button class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'belum' ? 'bg-white text-warning-rose font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-pending" onclick="filterStatus('pending')" type="button">
+          </a>
+          <a href="{{ $isVerifikasi ? route('admin.dashboard', ['tab' => 'verifikasi', 'status' => 'belum']) : route('admin.dashboard', ['status' => 'belum']) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'belum' ? 'bg-white text-warning-rose font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-pending">
             Belum Ditangani <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-rose-100 text-warning-rose font-bold">{{ $belum }}</span>
-          </button>
-          <button class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'sudah' ? 'bg-white text-emerald-800 font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-resolved" onclick="filterStatus('resolved')" type="button">
+          </a>
+          <a href="{{ $isVerifikasi ? route('admin.dashboard', ['tab' => 'verifikasi', 'status' => 'sudah']) : route('admin.dashboard', ['status' => 'sudah']) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'sudah' ? 'bg-white text-emerald-800 font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-resolved">
             Sudah Ditangani <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">{{ $ditangani }}</span>
-          </button>
+          </a>
         </div>
 
         <!-- Search Input Bar -->
@@ -618,8 +773,16 @@
       <div class="px-space-md py-space-sm bg-surface-container-lowest border-b border-border-subtle flex flex-wrap items-center justify-between gap-space-sm">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-injourney-teal text-lg">flight_takeoff</span>
-          <span class="font-headline-sm text-headline-sm text-on-surface">Daftar Kejadian &amp; Intervensi Satwa Sisi Udara</span>
-          <span class="font-label-sm text-label-sm bg-surface-container text-tertiary px-2 py-0.5 rounded-full">Live Synchronized</span>
+          <span class="font-headline-sm text-headline-sm text-on-surface">
+            Daftar Kejadian &amp; Intervensi Satwa Sisi Udara
+          </span>
+          @if($isVerifikasi)
+            <span class="font-label-sm text-label-sm bg-cyan-50 text-[#007fa3] border border-cyan-200 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">fact_check</span> Verifikasi Berita Acara (BA)
+            </span>
+          @else
+            <span class="font-label-sm text-label-sm bg-surface-container text-tertiary px-2 py-0.5 rounded-full">Live Synchronized</span>
+          @endif
         </div>
         <div class="flex items-center gap-2">
           <button class="text-xs font-label-md text-secondary hover:text-on-surface flex items-center gap-1 px-2.5 py-1 rounded border border-border-subtle bg-white cursor-pointer" onclick="window.print()">
@@ -806,9 +969,11 @@
         </div>
       </div>
     </section>
+    @endif
 
   </main>
 
+  @if($isVerifikasi)
   <!-- MODAL: PRATINJAU DETAIL LAPORAN 2-HALAMAN -->
   <div class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" id="detailModal">
     <div class="bg-card-bg w-full max-w-5xl rounded-2xl border border-border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
@@ -1016,6 +1181,7 @@
 
     </div>
   </div>
+  @endif
 
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3" id="toast">
@@ -1025,6 +1191,41 @@
 
   <!-- INLINE JAVASCRIPT FOR DYNAMIC LOGBOOK & MODAL INTERACTIONS -->
   <script>
+    // Universal Toast Notification Utility
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      if (toastMsg) toastMsg.innerText = message;
+      if (toastIcon) {
+        if (type === 'success') {
+          toastIcon.innerText = 'check_circle';
+          toastIcon.className = 'material-symbols-outlined text-resolved-emerald';
+        } else if (type === 'info') {
+          toastIcon.innerText = 'info';
+          toastIcon.className = 'material-symbols-outlined text-injourney-teal';
+        } else if (type === 'error') {
+          toastIcon.innerText = 'error';
+          toastIcon.className = 'material-symbols-outlined text-warning-rose';
+        }
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3400);
+    }
+
+    function refreshData() {
+      showToast('Memperbarui data telemetri satwa sisi udara...', 'info');
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
+    }
+
+    @if($isVerifikasi)
     let activeModalLaporanId = null;
 
     // Tab switching in Two-Page Verification Modal
@@ -1199,30 +1400,6 @@
       showToast('Canvas tanda tangan telah dibersihkan.', 'info');
     }
 
-    // Toast Notification Utility
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toastMessage');
-      const toastIcon = document.getElementById('toastIcon');
-
-      toastMsg.innerText = message;
-      if (type === 'success') {
-        toastIcon.innerText = 'check_circle';
-        toastIcon.className = 'material-symbols-outlined text-resolved-emerald';
-      } else if (type === 'info') {
-        toastIcon.innerText = 'info';
-        toastIcon.className = 'material-symbols-outlined text-injourney-teal';
-      } else if (type === 'error') {
-        toastIcon.innerText = 'error';
-        toastIcon.className = 'material-symbols-outlined text-warning-rose';
-      }
-
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3400);
-    }
-
     // Validate & Resolve Action via AJAX
     function validateAndResolve() {
       if (!activeModalLaporanId) return;
@@ -1306,13 +1483,6 @@
       });
     }
 
-    function refreshData() {
-      showToast('Memperbarui data telemetri satwa sisi udara...', 'info');
-      setTimeout(() => {
-        window.location.reload();
-      }, 700);
-    }
-
     // Search & Filter Utilities
     let currentStatusFilter = 'all';
 
@@ -1344,12 +1514,16 @@
     }
 
     function resetFilters() {
-      document.getElementById('searchInput').value = '';
-      const fUnit = document.getElementById('filterUnit');
-      if (fUnit) fUnit.value = '';
-      const fArea = document.getElementById('filterArea');
-      if (fArea) fArea.value = '';
-      filterStatus('all');
+      @if(!empty($statusFilter) || !empty($search))
+        window.location.href = "{{ $isVerifikasi ? route('admin.dashboard', ['tab' => 'verifikasi']) : route('admin.dashboard') }}";
+      @else
+        document.getElementById('searchInput').value = '';
+        const fUnit = document.getElementById('filterUnit');
+        if (fUnit) fUnit.value = '';
+        const fArea = document.getElementById('filterArea');
+        if (fArea) fArea.value = '';
+        filterStatus('all');
+      @endif
     }
 
     function searchTable() {
@@ -1383,7 +1557,9 @@
         }
       }
     }
+    @endif
 
+    @if(!$isVerifikasi)
     // ================= AIRSIDE VISUAL ANALYTICS CHARTS (CHART.JS) =================
     // Safely encode chart datasets from controller
     const chartMonthLabels   = {!! json_encode($monthLabels ?? ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']) !!};
@@ -1674,6 +1850,7 @@
         });
       }
     });
+    @endif
   </script>
 </body>
 </html>

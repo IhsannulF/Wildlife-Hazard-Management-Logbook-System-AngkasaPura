@@ -223,7 +223,7 @@
       <!-- ================= TAB: KATALOG MASTER SATWA ================= -->
 
       <!-- 2. SUMMARY METRIC CARDS (ICAO AVIATION STAT CARDS) -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
         
         <!-- Card 1: Total Spesies -->
         <div class="bg-card-bg border border-border-subtle rounded-xl p-3.5 shadow-sm relative overflow-hidden flex flex-col justify-between">
@@ -373,7 +373,7 @@
       </section>
 
       <!-- 4. GRID KATALOG KARTU SATWA INTERAKTIF -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="catalogGridView">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5" id="catalogGridView">
         @foreach($satwaList as $satwa)
           @php
             $cat = strtolower($satwa->kategori ?: (str_contains($satwa->nama, 'Burung') ? 'burung' : (str_contains($satwa->nama, 'Biawak') || str_contains($satwa->nama, 'Ular') ? 'reptil' : 'mamalia')));
@@ -390,51 +390,56 @@
                data-habitat="{{ $habitat }}"
                data-name="{{ strtolower($satwa->nama) }}"
                data-risk="{{ $risk }}">
-            <div>
+            <div class="flex-1 flex flex-col">
               <!-- Visual Photo Container with Badges -->
-              <div class="relative h-48 w-full bg-slate-900 overflow-hidden group">
+              <div class="relative h-44 sm:h-48 w-full bg-slate-900 overflow-hidden group">
                 <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="{{ $satwa->foto_url }}" alt="{{ $satwa->nama }}" onerror="this.src='{{ asset('images/biawak.jpeg') }}'"/>
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-navy/80 via-transparent to-black/30"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-navy/85 via-black/20 to-black/40"></div>
                 
-                <!-- Category Tag -->
-                <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-slate-navy/80 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 border border-white/10">
-                  <span class="material-symbols-outlined text-xs text-cyan-300">
-                    {{ $cat === 'burung' ? 'flight' : ($cat === 'reptil' ? 'pest_control' : 'pets') }}
+                <!-- Top Badges Flex Row: Prevents collision/overlapping at any viewport width -->
+                <div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between gap-1.5 z-10">
+                  <!-- Category Tag -->
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-900/85 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider border border-white/15 shadow-xs shrink-0">
+                    <span class="material-symbols-outlined text-xs text-cyan-300">
+                      {{ $cat === 'burung' ? 'flight' : ($cat === 'reptil' ? 'pest_control' : 'pets') }}
+                    </span>
+                    <span>{{ $cat === 'burung' ? 'Avian' : ($cat === 'reptil' ? 'Reptil' : 'Mamalia') }}</span>
                   </span>
-                  {{ $satwa->kategori_label }}
-                </span>
 
-                <!-- Risk Badge -->
-                @if($risk === 'kritis')
-                  <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-rose-500 text-white text-[11px] font-bold tracking-wide flex items-center gap-1 shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-white badge-pulse"></span>
-                    Risiko Kritis (Kategori 4)
-                  </span>
-                @elseif($risk === 'rendah')
-                  <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold tracking-wide flex items-center gap-1 shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-white"></span>
-                    Risiko Rendah (Kategori 2)
-                  </span>
-                @else
-                  <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-amber-500 text-white text-[11px] font-bold tracking-wide flex items-center gap-1 shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-white"></span>
-                    Risiko Sedang (Kategori 3)
-                  </span>
-                @endif
+                  <!-- Risk Level Badge -->
+                  @if($risk === 'kritis')
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/95 backdrop-blur-xs text-white text-[11px] font-bold tracking-wide shadow-xs shrink-0">
+                      <span class="w-1.5 h-1.5 rounded-full bg-white badge-pulse"></span>
+                      <span>Kat. 4 (Kritis)</span>
+                    </span>
+                  @elseif($risk === 'rendah')
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/95 backdrop-blur-xs text-white text-[11px] font-bold tracking-wide shadow-xs shrink-0">
+                      <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      <span>Kat. 2 (Rendah)</span>
+                    </span>
+                  @else
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/95 backdrop-blur-xs text-white text-[11px] font-bold tracking-wide shadow-xs shrink-0">
+                      <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      <span>Kat. 3 (Sedang)</span>
+                    </span>
+                  @endif
+                </div>
 
-                <div class="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white">
-                  <span class="text-xs font-code-coordinate text-cyan-300 bg-slate-navy/60 px-2 py-0.5 rounded backdrop-blur-xs font-bold">{{ $idCode }}</span>
-                  <span class="text-xs flex items-center gap-1 text-slate-200">
-                    <span class="material-symbols-outlined text-xs">pin_drop</span> Grid {{ $gridDisplay }}
+                <!-- Bottom Photo Identifier Bar -->
+                <div class="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between gap-2 text-white z-10">
+                  <span class="text-xs font-code-coordinate text-cyan-300 bg-slate-900/80 px-2 py-0.5 rounded backdrop-blur-xs font-bold border border-white/10 shrink-0">{{ $idCode }}</span>
+                  <span class="text-xs flex items-center gap-1 text-slate-200 bg-slate-900/60 px-2 py-0.5 rounded backdrop-blur-xs border border-white/10 font-medium shrink-0">
+                    <span class="material-symbols-outlined text-xs text-injourney-teal">pin_drop</span>
+                    <span>Grid {{ $gridDisplay }}</span>
                   </span>
                 </div>
               </div>
 
               <!-- Card Content Body -->
-              <div class="p-4 space-y-3">
+              <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 class="text-base font-bold text-slate-navy hover:text-injourney-teal transition-colors">{{ $satwa->nama }}</h3>
-                  <p class="text-xs text-secondary mt-0.5 line-clamp-2 leading-relaxed">
+                  <h3 class="text-sm sm:text-base font-bold text-slate-navy hover:text-injourney-teal transition-colors line-clamp-1" title="{{ $satwa->nama }}">{{ $satwa->nama }}</h3>
+                  <p class="text-xs text-secondary mt-1 line-clamp-2 leading-relaxed min-h-[2rem]">
                     {{ $descText }}
                   </p>
                 </div>
@@ -442,23 +447,23 @@
                 <!-- Habitat & Hotspot Tag -->
                 <div class="bg-surface-container-low rounded-lg p-2.5 border border-border-subtle">
                   <div class="flex items-center justify-between text-xs mb-1">
-                    <span class="text-secondary text-[10px] uppercase font-semibold">Hotspot &amp; Habitat Utama</span>
-                    <span class="px-1.5 py-0.2 rounded bg-injourney-teal/10 text-injourney-teal font-code-coordinate text-[11px] font-bold">Grid {{ $gridDisplay }}</span>
+                    <span class="text-secondary text-[10px] uppercase font-bold tracking-wider">Hotspot &amp; Habitat</span>
+                    <span class="px-1.5 py-0.2 rounded bg-injourney-teal/10 text-injourney-teal font-code-coordinate text-[11px] font-bold shrink-0">Grid {{ $gridDisplay }}</span>
                   </div>
-                  <p class="text-xs font-medium text-slate-navy flex items-center gap-1.5 truncate">
-                    <span class="material-symbols-outlined text-sm text-injourney-teal">location_on</span>
-                    {{ $satwa->grid_hotspot ?: 'Runway 07L/25R & Perimeter' }}
+                  <p class="text-xs font-medium text-slate-navy flex items-center gap-1.5 truncate" title="{{ $satwa->grid_hotspot ?: 'Runway 07L/25R & Perimeter' }}">
+                    <span class="material-symbols-outlined text-sm text-injourney-teal shrink-0">location_on</span>
+                    <span class="truncate">{{ $satwa->grid_hotspot ?: 'Runway 07L/25R & Perimeter' }}</span>
                   </p>
                 </div>
 
                 <!-- SOP Dispersal Badges -->
                 <div>
-                  <span class="text-[10px] font-semibold uppercase text-secondary block mb-1.5">Metode Pengusiran Resmi (ICAO):</span>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-secondary block mb-1">Metode Pengusiran (ICAO):</span>
                   <div class="flex flex-wrap gap-1.5">
                     @foreach(array_slice($sopLines, 0, 2) as $sopLine)
-                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-navy text-[11px] font-medium border border-slate-200">
-                        <span class="material-symbols-outlined text-xs text-injourney-teal">shield</span>
-                        {{ $sopLine }}
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-navy text-[11px] font-medium border border-slate-200/80 truncate max-w-full" title="{{ $sopLine }}">
+                        <span class="material-symbols-outlined text-xs text-injourney-teal shrink-0">shield</span>
+                        <span class="truncate">{{ $sopLine }}</span>
                       </span>
                     @endforeach
                   </div>
@@ -469,19 +474,21 @@
             <!-- Card Footer Actions -->
             <div class="p-4 pt-0">
               <div class="pt-3 border-t border-border-subtle flex items-center justify-between gap-2">
-                <button type="button" class="flex-1 py-1.5 px-3 rounded-lg bg-injourney-teal/10 hover:bg-injourney-teal hover:text-white text-injourney-teal text-xs font-semibold text-center transition-colors"
+                <button type="button" class="flex-1 py-1.5 px-3 rounded-lg bg-injourney-teal/10 hover:bg-injourney-teal hover:text-white text-injourney-teal text-xs font-semibold text-center transition-colors truncate"
                         onclick="openSpeciesDetail('{{ addslashes($satwa->nama) }}', '{{ addslashes($satwa->kategori_label) }}', '{{ addslashes($satwa->risiko_label) }}', '{{ addslashes($gridDisplay) }}', '{{ addslashes($descText) }}', '{{ addslashes($satwa->jam_puncak ?: '08:00 - 15:00 WIB') }}', '{{ addslashes($satwa->bobot_rata_rata ?: 'FOD Ringan - Sedang') }}')">
                   Detail Profil &amp; SOP
                 </button>
-                <button type="button" onclick="openEditSpeciesModal({{ $satwa->id }}, '{{ addslashes($satwa->nama) }}', '{{ $cat }}', '{{ $risk }}', '{{ addslashes($gridDisplay) }}', '{{ addslashes($descText) }}', '{{ addslashes($satwa->sop_pengusiran ?: '') }}')" class="p-1.5 text-secondary hover:text-injourney-teal hover:bg-surface-container rounded-lg transition-colors" title="Edit Spesies">
-                  <span class="material-symbols-outlined text-base">edit</span>
-                </button>
-                <form action="{{ route('admin.manajemen.satwa.delete', $satwa->id) }}" method="POST" class="inline m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data spesies {{ addslashes($satwa->nama) }}?');">
-                  @csrf
-                  <button type="submit" class="p-1.5 text-secondary hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus Spesies">
-                    <span class="material-symbols-outlined text-base">delete</span>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button type="button" onclick="openEditSpeciesModal({{ $satwa->id }}, '{{ addslashes($satwa->nama) }}', '{{ $cat }}', '{{ $risk }}', '{{ addslashes($gridDisplay) }}', '{{ addslashes($descText) }}', '{{ addslashes($satwa->sop_pengusiran ?: '') }}')" class="p-1.5 text-secondary hover:text-injourney-teal hover:bg-surface-container rounded-lg transition-colors border border-border-subtle bg-white" title="Edit Spesies">
+                    <span class="material-symbols-outlined text-base">edit</span>
                   </button>
-                </form>
+                  <form action="{{ route('admin.manajemen.satwa.delete', $satwa->id) }}" method="POST" class="inline m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data spesies {{ addslashes($satwa->nama) }}?');">
+                    @csrf
+                    <button type="submit" class="p-1.5 text-secondary hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-border-subtle bg-white" title="Hapus Spesies">
+                      <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -506,11 +513,16 @@
             <tbody class="divide-y divide-border-subtle">
               @foreach($satwaList as $satwa)
                 @php
-                  $cat = strtolower($satwa->kategori ?: 'burung');
+                  $cat = strtolower($satwa->kategori ?: (str_contains($satwa->nama, 'Burung') ? 'burung' : (str_contains($satwa->nama, 'Biawak') || str_contains($satwa->nama, 'Ular') ? 'reptil' : 'mamalia')));
                   $risk = strtolower($satwa->tingkat_risiko ?: 'sedang');
+                  $habitat = strtolower($satwa->grid_hotspot ?: 'runway');
                   $gridDisplay = $satwa->grid_hotspot ?: 'K-10';
                 @endphp
-                <tr class="hover:bg-surface-container-low transition-colors">
+                <tr class="species-table-row hover:bg-surface-container-low transition-colors"
+                    data-category="{{ $cat }}"
+                    data-habitat="{{ $habitat }}"
+                    data-name="{{ strtolower($satwa->nama) }}"
+                    data-risk="{{ $risk }}">
                   <td class="py-3.5 px-4 font-bold text-slate-navy flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full {{ $risk === 'kritis' ? 'bg-rose-500' : ($risk === 'rendah' ? 'bg-emerald-500' : 'bg-amber-500') }}"></span>
                     {{ $satwa->nama }}
@@ -540,6 +552,42 @@
         </div>
       </div>
 
+      <!-- 4b. EMPTY SEARCH STATE -->
+      <div id="catalogEmptyState" class="hidden bg-card-bg border border-border-subtle rounded-xl p-8 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-secondary mx-auto">
+          <span class="material-symbols-outlined text-2xl">search_off</span>
+        </div>
+        <h4 class="text-sm font-bold text-slate-navy">Tidak Ada Satwa Liar Ditemukan</h4>
+        <p class="text-xs text-secondary max-w-sm mx-auto">Tidak ada spesies yang sesuai dengan kata kunci pencarian atau kombinasi filter saat ini.</p>
+        <button type="button" onclick="resetCatalogFilters()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-injourney-teal text-white text-xs font-semibold hover:bg-injourney-dark-teal transition-all shadow-2xs">
+          <span class="material-symbols-outlined text-sm">restart_alt</span>
+          Reset Semua Filter
+        </button>
+      </div>
+
+      <!-- 4c. DYNAMIC 2-ROW PAGINATION BAR -->
+      <div id="catalogPaginationContainer" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 pb-1 border-t border-border-subtle">
+        <div class="text-xs text-secondary font-medium">
+          Menampilkan <span id="paginationRangeText" class="font-bold text-slate-navy">1 - 6</span> dari <span id="paginationTotalText" class="font-bold text-slate-navy">{{ $totalSpesies }}</span> spesies satwa <span class="text-slate-400 font-normal">(maksimal 2 baris)</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button type="button" id="prevPageBtn" onclick="changeCatalogPage(-1)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-xs font-semibold text-slate-navy hover:bg-surface-container hover:text-injourney-teal transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none shadow-2xs" title="Halaman Sebelumnya">
+            <span class="material-symbols-outlined text-base">chevron_left</span>
+            <span class="hidden sm:inline">Sebelumnya</span>
+          </button>
+
+          <div id="pageNumberButtons" class="flex items-center gap-1">
+            <!-- Dynamic Page Numbers -->
+          </div>
+
+          <button type="button" id="nextPageBtn" onclick="changeCatalogPage(1)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-xs font-semibold text-slate-navy hover:bg-surface-container hover:text-injourney-teal transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none shadow-2xs" title="Halaman Selanjutnya">
+            <span class="hidden sm:inline">Selanjutnya</span>
+            <span class="material-symbols-outlined text-base">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 5. AIRSIDE RUNWAY GRID MAP TELEMETRY PREVIEW -->
       <section class="bg-card-bg border border-border-subtle rounded-xl p-5 shadow-sm">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
@@ -552,7 +600,7 @@
               Integrasi zonasi grid operasi ICAO Annex 14 dengan konsentrasi populasi satwa liar aktif
             </p>
           </div>
-          <div class="flex items-center gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-3 text-xs">
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-rose-500"></span> Zona Kritis (K-10, F-5)</span>
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-amber-400"></span> Zona Sedang (D-9, E-12)</span>
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-injourney-teal"></span> Terpantau Aman</span>
@@ -560,19 +608,19 @@
         </div>
 
         <!-- Compact Visual Grid representation -->
-        <div class="grid grid-cols-6 sm:grid-cols-12 gap-2 mt-4 text-center font-code-coordinate text-xs font-bold">
-          <div class="p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary">A-1</div>
-          <div class="p-2.5 rounded border border-injourney-teal bg-cyan-50 text-injourney-teal">A-2 (Apron)</div>
-          <div class="p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary">B-3</div>
-          <div class="p-2.5 rounded border border-rose-300 bg-red-50 text-rose-700">B-4 (Anjing)</div>
-          <div class="p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary">C-5</div>
-          <div class="p-2.5 rounded border border-rose-300 bg-red-50 text-rose-700">C-6 (Sanca)</div>
-          <div class="p-2.5 rounded border border-amber-300 bg-amber-50 text-amber-700">D-9 (Blekok)</div>
-          <div class="p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary">E-10</div>
-          <div class="p-2.5 rounded border border-amber-300 bg-amber-50 text-amber-700">E-12 (Kuntul)</div>
-          <div class="p-2.5 rounded border border-rose-400 bg-red-100 text-rose-800 font-extrabold shadow-xs">F-5 (Kera)</div>
-          <div class="p-2.5 rounded border border-rose-400 bg-red-100 text-rose-800 font-extrabold shadow-xs ring-2 ring-rose-400/40">K-10 (Biawak)</div>
-          <div class="p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary">Z-20</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-12 gap-2 mt-4 text-center font-code-coordinate text-xs font-bold">
+          <div class="p-2 sm:p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary truncate" title="A-1">A-1</div>
+          <div class="p-2 sm:p-2.5 rounded border border-injourney-teal bg-cyan-50 text-injourney-teal truncate" title="A-2 (Apron)">A-2 (Apron)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary truncate" title="B-3">B-3</div>
+          <div class="p-2 sm:p-2.5 rounded border border-rose-300 bg-red-50 text-rose-700 truncate" title="B-4 (Anjing)">B-4 (Anjing)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary truncate" title="C-5">C-5</div>
+          <div class="p-2 sm:p-2.5 rounded border border-rose-300 bg-red-50 text-rose-700 truncate" title="C-6 (Sanca)">C-6 (Sanca)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-amber-300 bg-amber-50 text-amber-700 truncate" title="D-9 (Blekok)">D-9 (Blekok)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary truncate" title="E-10">E-10</div>
+          <div class="p-2 sm:p-2.5 rounded border border-amber-300 bg-amber-50 text-amber-700 truncate" title="E-12 (Kuntul)">E-12 (Kuntul)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-rose-400 bg-red-100 text-rose-800 font-extrabold shadow-xs truncate" title="F-5 (Kera)">F-5 (Kera)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-rose-400 bg-red-100 text-rose-800 font-extrabold shadow-xs ring-2 ring-rose-400/40 truncate" title="K-10 (Biawak)">K-10 (Biawak)</div>
+          <div class="p-2 sm:p-2.5 rounded border border-border-subtle bg-surface-container-low text-secondary truncate" title="Z-20">Z-20</div>
         </div>
       </section>
 
@@ -1077,28 +1125,74 @@
       }
     }
 
-    // Category Filter Chips handler
+    // ================= KATALOG SATWA DYNAMIC PAGINATION & FILTER (2 BARIS MAKSIMAL) =================
     let currentCategory = 'all';
+    let currentCatalogPage = 1;
+    let filteredCards = [];
+    let filteredTableRows = [];
+
+    // Hitung jumlah kolom aktif pada CSS Grid agar tepat 2 baris ditampilkan
+    function getCardsPerRow() {
+      const gridView = document.getElementById('catalogGridView');
+      if (!gridView) return 3;
+      
+      // Jika grid sedang hidden atau display: none, gunakan deteksi lebar layar
+      if (gridView.classList.contains('hidden') || gridView.offsetParent === null) {
+        const w = window.innerWidth;
+        if (w >= 1536) return 4;
+        if (w >= 1280) return 3;
+        if (w >= 640) return 2;
+        return 1;
+      }
+
+      // Deteksi computed CSS grid-template-columns aktual
+      try {
+        const computedCols = window.getComputedStyle(gridView).getPropertyValue('grid-template-columns');
+        if (computedCols && computedCols !== 'none') {
+          const colCount = computedCols.split(' ').filter(Boolean).length;
+          if (colCount > 0) return colCount;
+        }
+      } catch (e) {}
+
+      const w = window.innerWidth;
+      if (w >= 1536) return 4;
+      if (w >= 1280) return 3;
+      if (w >= 640) return 2;
+      return 1;
+    }
+
+    // Tampilkan MAKSIMAL 2 ROW saja sesuai permintaan
+    function getItemsPerPage() {
+      const cardsPerRow = getCardsPerRow();
+      return Math.max(2, cardsPerRow * 2);
+    }
+
+    // Category Filter Chips handler
     function setCategoryFilter(category, buttonEl) {
       currentCategory = category;
       document.querySelectorAll('.category-chip').forEach(btn => {
         btn.className = 'category-chip px-3 py-1.5 rounded-lg bg-surface-container text-slate-navy hover:bg-surface-container-high transition-all flex items-center gap-1.5';
       });
       buttonEl.className = 'category-chip px-3 py-1.5 rounded-lg bg-injourney-teal text-white transition-all shadow-xs flex items-center gap-1.5';
-      filterCatalog();
+      filterCatalog(false);
     }
 
-    // Comprehensive Dynamic Catalog Search & Filter
-    function filterCatalog() {
+    // Filter katalog dan terapkan pagination 2 baris
+    function filterCatalog(keepCurrentPage = false) {
       const searchInput = document.getElementById('speciesSearch');
       if (!searchInput) return;
 
-      const searchTerm = searchInput.value.toLowerCase();
+      const searchTerm = searchInput.value.toLowerCase().trim();
       const riskValue = document.getElementById('riskFilter').value;
       const habitatValue = document.getElementById('habitatFilter').value;
-      const cards = document.querySelectorAll('.species-card');
 
-      cards.forEach(card => {
+      const cards = Array.from(document.querySelectorAll('.species-card'));
+      const tableRows = Array.from(document.querySelectorAll('.species-table-row'));
+
+      filteredCards = [];
+      filteredTableRows = [];
+
+      cards.forEach((card, index) => {
         const name = (card.getAttribute('data-name') || '').toLowerCase();
         const cat = card.getAttribute('data-category') || '';
         const risk = card.getAttribute('data-risk') || '';
@@ -1110,11 +1204,142 @@
         const matchesHabitat = (habitatValue === 'all' || habitat.includes(habitatValue));
 
         if (matchesSearch && matchesCategory && matchesRisk && matchesHabitat) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
+          filteredCards.push(card);
+          if (tableRows[index]) filteredTableRows.push(tableRows[index]);
         }
       });
+
+      if (!keepCurrentPage) {
+        currentCatalogPage = 1;
+      }
+
+      renderCatalogPage();
+    }
+
+    // Render halaman aktif dengan pemotongan 2 baris
+    function renderCatalogPage() {
+      const itemsPerPage = getItemsPerPage();
+      const totalItems = filteredCards.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+      if (currentCatalogPage > totalPages) {
+        currentCatalogPage = totalPages;
+      }
+      if (currentCatalogPage < 1) {
+        currentCatalogPage = 1;
+      }
+
+      const allCards = document.querySelectorAll('.species-card');
+      const allRows = document.querySelectorAll('.species-table-row');
+
+      // Sembunyikan semua item terlebih dahulu
+      allCards.forEach(c => c.style.display = 'none');
+      allRows.forEach(r => r.style.display = 'none');
+
+      const emptyState = document.getElementById('catalogEmptyState');
+      const paginationContainer = document.getElementById('catalogPaginationContainer');
+
+      if (totalItems === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (paginationContainer) paginationContainer.classList.add('hidden');
+        return;
+      }
+
+      if (emptyState) emptyState.classList.add('hidden');
+      if (paginationContainer) paginationContainer.classList.remove('hidden');
+
+      const startIndex = (currentCatalogPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+      // Tampilkan kartu & baris hanya yang masuk dalam halaman saat ini (maks 2 baris)
+      for (let i = startIndex; i < endIndex; i++) {
+        if (filteredCards[i]) filteredCards[i].style.display = 'flex';
+        if (filteredTableRows[i]) filteredTableRows[i].style.display = '';
+      }
+
+      // Update teks rentang & total
+      const rangeText = document.getElementById('paginationRangeText');
+      const totalText = document.getElementById('paginationTotalText');
+      if (rangeText) rangeText.innerText = `${startIndex + 1} - ${endIndex}`;
+      if (totalText) totalText.innerText = totalItems;
+
+      // Update tombol Prev & Next
+      const prevBtn = document.getElementById('prevPageBtn');
+      const nextBtn = document.getElementById('nextPageBtn');
+      if (prevBtn) prevBtn.disabled = (currentCatalogPage <= 1);
+      if (nextBtn) nextBtn.disabled = (currentCatalogPage >= totalPages);
+
+      // Render nomor halaman
+      const pageNumbersContainer = document.getElementById('pageNumberButtons');
+      if (pageNumbersContainer) {
+        pageNumbersContainer.innerHTML = '';
+        for (let p = 1; p <= totalPages; p++) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerText = p;
+          if (p === currentCatalogPage) {
+            btn.className = 'w-8 h-8 rounded-lg bg-injourney-teal text-white text-xs font-bold shadow-xs';
+          } else {
+            btn.className = 'w-8 h-8 rounded-lg bg-white border border-border-subtle text-slate-navy hover:bg-surface-container hover:text-injourney-teal text-xs font-semibold transition-all';
+          }
+          btn.onclick = () => goToCatalogPage(p);
+          pageNumbersContainer.appendChild(btn);
+        }
+      }
+    }
+
+    function changeCatalogPage(delta) {
+      goToCatalogPage(currentCatalogPage + delta);
+    }
+
+    function goToCatalogPage(page) {
+      const itemsPerPage = getItemsPerPage();
+      const totalPages = Math.max(1, Math.ceil(filteredCards.length / itemsPerPage));
+      if (page < 1 || page > totalPages) return;
+      currentCatalogPage = page;
+      renderCatalogPage();
+
+      // Smooth scroll kembali ke toolbar katalog jika scrolled ke bawah
+      const searchBox = document.getElementById('speciesSearch');
+      if (searchBox && window.scrollY > 400) {
+        searchBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function resetCatalogFilters() {
+      const searchInput = document.getElementById('speciesSearch');
+      if (searchInput) searchInput.value = '';
+      const riskFilter = document.getElementById('riskFilter');
+      if (riskFilter) riskFilter.value = 'all';
+      const habitatFilter = document.getElementById('habitatFilter');
+      if (habitatFilter) habitatFilter.value = 'all';
+
+      currentCategory = 'all';
+      document.querySelectorAll('.category-chip').forEach((btn, idx) => {
+        if (idx === 0) {
+          btn.className = 'category-chip px-3 py-1.5 rounded-lg bg-injourney-teal text-white transition-all shadow-xs flex items-center gap-1.5';
+        } else {
+          btn.className = 'category-chip px-3 py-1.5 rounded-lg bg-surface-container text-slate-navy hover:bg-surface-container-high transition-all flex items-center gap-1.5';
+        }
+      });
+
+      filterCatalog(false);
+    }
+
+    // Listener resize dengan debounce agar konsisten 2 baris saat ukuran viewport berubah
+    let catalogResizeTimeout;
+    window.addEventListener('resize', function() {
+      clearTimeout(catalogResizeTimeout);
+      catalogResizeTimeout = setTimeout(() => {
+        filterCatalog(true);
+      }, 150);
+    });
+
+    // Jalankan inisialisasi pagination saat load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => filterCatalog(false));
+    } else {
+      filterCatalog(false);
     }
 
     // Modal Handlers

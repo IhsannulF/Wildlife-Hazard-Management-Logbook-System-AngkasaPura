@@ -15,6 +15,7 @@ class DashboardController extends Controller
     {
         $search = $request->query('search', '');
         $statusFilter = $request->query('status', '');
+        $tab = $request->query('tab', '');
 
         $totalLaporan = Laporan::count();
         $belum        = Laporan::where('status', 'belum')->orWhereNull('status')->count();
@@ -155,9 +156,11 @@ class DashboardController extends Controller
             'laporans',
             'search',
             'statusFilter',
+            'tab',
             'hotspotGrid',
             'belumRunway',
             'belumPerimeter',
+            'totalSatwa',
             'pctBurung',
             'pctReptil',
             'pctMamalia',

@@ -65,17 +65,20 @@ class StatistikController extends Controller
 
         $details = $query->get();
 
-        // Prototype baseline grids to ensure complete realistic airside representation
+        // Baseline data grid terkalibrasi dengan Denah Resmi Bandara Internasional Juanda
         $baselineGrids = [
-            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Bahu Runway 25R & Kanal Selatan', 'type' => 'runway', 'desc' => 'Zona perimeter strip aktif runway 25R berdekatan dengan jalur drainase induk sisi barat.'],
-            'D-9'  => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 07L', 'type' => 'perimeter', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
-            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Runway End Safety Area (RESA) 25L', 'type' => 'runway', 'desc' => 'Area ujung landasan berumput lembab menjadi tempat mencari serangga.'],
-            'A-2'  => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Apron Terminal 1 Garbarata', 'type' => 'apron', 'desc' => 'Burung walet dan layang-layang bersarang di struktur atap kanopi apron.'],
-            'H-8'  => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Approach Lights PALS 07R', 'type' => 'runway', 'desc' => 'Burung pemangsa bertengger di tiang lampu approach runway 07R.'],
-            'F-5'  => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Taxiway Alpha & Perimeter Hutan', 'type' => 'taxiway', 'desc' => 'Kawanan kera dari hutan perimeter utara melompati kawat pagar bandara.'],
-            'B-4'  => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Apron Kargo Utara', 'type' => 'apron', 'desc' => 'Anjing liar terpantau melintas dekat area ground support equipment.'],
+            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Kanal Drainase Perimeter Selatan Terminal 2', 'type' => 'perimeter', 'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.'],
+            'D-9'  => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 10 Approach', 'type' => 'perimeter', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
+            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Apron C & Taxiway NP-2', 'type' => 'apron', 'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.'],
+            'A-2'  => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Perimeter Barat Laut', 'type' => 'perimeter', 'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.'],
+            'G-18' => ['count' => 28, 'satwa' => 'Burung Cangak Abu', 'total' => 28, 'area' => 'Bahu Runway 10/28 (Tengah Landasan)', 'type' => 'runway', 'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.'],
+            'H-8'  => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Runway Strip 10 (Barat)', 'type' => 'runway', 'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.'],
+            'F-5'  => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Regulating Pond 1 & Perimeter Barat', 'type' => 'perimeter', 'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.'],
+            'B-4'  => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Perimeter Utara Buffer', 'type' => 'perimeter', 'desc' => 'Anjing liar terpantau melintas di area perimeter utara.'],
             'L-10' => ['count' => 11, 'satwa' => 'Biawak Air', 'total' => 11, 'area' => 'Kanal Drainase Perimeter Selatan', 'type' => 'perimeter', 'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.'],
-            'C-6'  => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Hanggar Perawatan Pesawat', 'type' => 'apron', 'desc' => 'Ditemukan di sudut saluran drainase sekitar hanggar perawatan teknis.'],
+            'C-6'  => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Perimeter Barat Hanggar', 'type' => 'perimeter', 'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.'],
+            'J-11' => ['count' => 17, 'satwa' => 'Kucing Liar', 'total' => 17, 'area' => 'Apron A Terminal 2', 'type' => 'apron', 'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.'],
+            'E-18' => ['count' => 14, 'satwa' => 'Burung Blekok Sawah', 'total' => 14, 'area' => 'Apron B Terminal 1', 'type' => 'apron', 'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.'],
         ];
 
         $gridAgg = [];
@@ -108,8 +111,8 @@ class StatistikController extends Controller
             
             if (!isset($gridAgg[$rawG])) {
                 $rowLetter = substr($rawG, 0, 1);
-                $zoneType = in_array($rowLetter, ['J', 'K']) ? 'runway' : (in_array($rowLetter, ['F', 'G']) ? 'taxiway' : (in_array($rowLetter, ['A', 'B', 'C']) ? 'apron' : 'perimeter'));
-                $zoneName = $zoneType === 'runway' ? 'Bahu Runway 07L/25R' : ($zoneType === 'taxiway' ? 'Taxiway Area' : ($zoneType === 'apron' ? 'Apron Area' : 'Perimeter Sisi Udara'));
+                $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
+                $zoneName = $zoneType === 'runway' ? 'Bahu Runway 10/28 Juanda' : ($zoneType === 'taxiway' ? 'Taxiway & Rawa Buffer' : ($zoneType === 'apron' ? 'Apron Area Pergerakan' : 'Perimeter Sisi Udara'));
 
                 $gridAgg[$rawG] = [
                     'grid'             => $rawG,

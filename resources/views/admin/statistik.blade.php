@@ -123,6 +123,12 @@
       0%, 100% { opacity: 0.95; }
       50% { opacity: 0.65; }
     }
+    .juanda-grid-row {
+      display: grid;
+      grid-template-columns: 32px repeat(29, minmax(32px, 1fr));
+      gap: 2px;
+      align-items: center;
+    }
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -289,147 +295,151 @@
           <div class="flex items-center gap-2.5">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-injourney-teal text-lg">grid_4x4</span>
-              <span class="text-sm sm:text-base font-bold text-slate-navy">Denah Sektoral Grid Sisi Udara Bandara</span>
+              <span class="text-sm sm:text-base font-bold text-slate-navy">Denah Sektoral Grid Sisi Udara — Bandara Juanda</span>
             </div>
             <div class="hidden sm:flex items-center gap-1 text-[10px] font-code-coordinate bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle text-secondary font-semibold">
-              <span>RUNWAY ORIENTATION: 070° - 250° (07L / 25R)</span>
+              <span>RUNWAY 10/28 (3.000m × 45m) • 29 KOLOM × 12 BARIS</span>
             </div>
           </div>
           
-          <!-- Active Layer Chips -->
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] text-secondary hidden md:inline">Layer:</span>
-            <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-injourney-teal font-bold flex items-center gap-1">
-              <span class="material-symbols-outlined text-xs">check</span> Heatmap Kepadatan
-            </span>
-            <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-secondary font-medium">
-              Runway Buffer 35m
-            </span>
+          <!-- Layer Switcher -->
+          <div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-border-subtle">
+            <button type="button" id="btnLayerSatellite" onclick="showMapLayer('satellite')" class="text-[11px] px-2.5 py-1 rounded-md bg-injourney-teal text-white font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-xs">satellite_alt</span>
+              <span>Satelit Resmi Juanda</span>
+            </button>
+            <button type="button" id="btnLayerTactical" onclick="showMapLayer('tactical')" class="text-[11px] px-2.5 py-1 rounded-md bg-surface-container-low text-secondary hover:text-slate-navy hover:bg-surface-container font-medium flex items-center gap-1 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-xs">grid_on</span>
+              <span>Matriks 29 Kolom</span>
+            </button>
+            <button type="button" id="btnLayerHybrid" onclick="showMapLayer('hybrid')" class="text-[11px] px-2.5 py-1 rounded-md bg-surface-container-low text-secondary hover:text-slate-navy hover:bg-surface-container font-medium flex items-center gap-1 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-xs">layers</span>
+              <span>Hybrid Overlay</span>
+            </button>
           </div>
         </div>
 
         <!-- AIRSIDE INTERACTIVE SPATIAL CANVAS -->
-        <div class="relative w-full overflow-x-auto bg-slate-900 rounded-xl p-4 sm:p-5 border border-runway-grid select-none shadow-inner">
+        <div class="relative w-full overflow-x-auto bg-slate-900 rounded-xl p-3 sm:p-4 border border-runway-grid select-none shadow-inner min-h-[520px]">
           
           <!-- Floating Map Tools (Overlay Controls) -->
-          <div class="absolute top-4 right-4 z-20 flex flex-col gap-1.5 bg-slate-navy/90 backdrop-blur-md p-1.5 rounded-lg border border-runway-grid shadow-lg">
-            <button type="button" onclick="zoomMap(0.1)" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95" title="Perbesar">
+          <div class="absolute top-4 right-4 z-30 flex flex-col gap-1.5 bg-slate-navy/90 backdrop-blur-md p-1.5 rounded-lg border border-runway-grid shadow-lg">
+            <button type="button" onclick="zoomMap(0.1)" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95 cursor-pointer" title="Perbesar">
               <span class="material-symbols-outlined text-base">add</span>
             </button>
-            <button type="button" onclick="zoomMap(-0.1)" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95" title="Perkecil">
+            <button type="button" onclick="zoomMap(-0.1)" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95 cursor-pointer" title="Perkecil">
               <span class="material-symbols-outlined text-base">remove</span>
             </button>
-            <button type="button" onclick="resetMap()" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95" title="Reset Posisi Peta">
+            <button type="button" onclick="resetMap()" class="w-8 h-8 rounded flex items-center justify-center text-white hover:bg-slate-surface transition-colors active:scale-95 cursor-pointer" title="Reset Posisi Peta">
               <span class="material-symbols-outlined text-base">restart_alt</span>
             </button>
             <div class="w-full h-px bg-runway-grid my-0.5"></div>
             <!-- Wind Compass Heading -->
-            <div class="w-8 h-8 rounded flex items-center justify-center text-injourney-teal" title="Arah Angin WSW 250°">
-              <span class="material-symbols-outlined text-base transform rotate-[65deg]">navigation</span>
+            <div class="w-8 h-8 rounded flex items-center justify-center text-injourney-teal" title="Orientasi Runway 10/28 WNW 276°">
+              <span class="material-symbols-outlined text-base transform rotate-[86deg]">navigation</span>
             </div>
           </div>
 
           <!-- Zone Indicators Left Sticky Legend -->
-          <div class="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-navy/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-runway-grid text-xs text-slate-300">
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Apron A-C</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span> Rawa/Taxi D-G</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Strip RWY H-K</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Kanal L</span>
+          <div class="absolute top-4 left-4 z-30 flex items-center gap-2 bg-slate-navy/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-runway-grid text-xs text-slate-300">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Apron B/C (E)</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Runway 10/28 (G-H)</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span> Apron A / T2 (J)</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Kanal Selatan (L)</span>
           </div>
 
-          <!-- The Precise Grid Layout: 16 columns (1 Header Col + 15 Grid Cols) -->
-          <div id="gridMatrixContainer" class="min-w-[780px] w-full pt-8 transition-transform duration-200 origin-top-left">
+          <!-- ================= LAYER 1: SATELLITE JUANDA MAP LAYER ================= -->
+          <div id="mapSatelliteLayer" class="pt-10 transition-transform duration-200 origin-top-left">
+            <div class="relative max-w-full rounded-lg overflow-hidden border border-slate-700 shadow-2xl bg-slate-950">
+              <img src="{{ asset('images/gridmap_juanda.jpg') }}" alt="Gridmap Bandar Udara Internasional Juanda" class="w-full h-auto block select-none pointer-events-none" onerror="this.src='{{ asset('images/gridmap_injourney.jpeg') }}'">
+              
+            </div>
             
-            <!-- Column Numbers Axis (01 - 15) -->
-            <div class="grid grid-cols-16 gap-1 mb-1 text-center font-code-coordinate text-xs text-slate-400 font-bold">
-              <div class="py-1"></div> <!-- Empty corner for Row label -->
-              @for($c = 1; $c <= 15; $c++)
+            <div class="mt-2 text-center text-xs text-slate-400 flex items-center justify-center gap-3">
+              <span class="text-slate-300 font-medium">Citra Asli Gridmap Udara Internasional Juanda (29 Kolom × 12 Baris)</span>
+              <span>•</span>
+              <button type="button" onclick="showMapLayer('tactical')" class="text-injourney-teal hover:underline font-semibold cursor-pointer">Buka Matriks Data 29 Kolom &rarr;</button>
+            </div>
+          </div>
+
+          <!-- ================= LAYER 2: TACTICAL 29-COLUMN MATRIX LAYER ================= -->
+          <div id="mapTacticalLayer" class="hidden min-w-[960px] w-full pt-10 transition-transform duration-200 origin-top-left">
+            
+            <!-- Column Numbers Axis (01 - 29) -->
+            <div class="juanda-grid-row mb-1 text-center font-code-coordinate text-[11px] text-slate-400 font-bold">
+              <div class="py-1 text-slate-500 text-[10px]">GRID</div>
+              @for($c = 1; $c <= 29; $c++)
                 <div class="py-1">{{ str_pad($c, 2, '0', STR_PAD_LEFT) }}</div>
               @endfor
             </div>
 
-            <!-- GRID ROWS A through L -->
+            <!-- GRID ROWS A through L (12 ROWS) -->
             @php
               $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
             @endphp
 
             @foreach($rows as $r)
-              @if($r === 'I')
-                <!-- ROW I (Runway Strip North Buffer 35M) -->
-                <div class="grid grid-cols-16 gap-1 mb-1 items-center">
-                  <div class="text-center font-code-coordinate font-bold text-amber-400 text-xs">I</div>
-                  <div class="col-span-15 h-5 rounded bg-slate-800/70 border border-dashed border-amber-500/40 flex items-center justify-center px-4">
-                    <span class="text-[10px] font-code-coordinate text-amber-300 tracking-wider font-semibold">
-                      ▲ RUNWAY STRIP BUFFER ZONE 35M (ICAO ANNEX 14 STANDARD COMPLIANCE AREA) ▲
-                    </span>
-                  </div>
-                </div>
-              @elseif($r === 'J')
-                <!-- ROW J & K (PRIMARY RUNWAY 07L / 25R - ASPHALT SURFACE WITH MARKINGS) -->
-                <div class="relative py-2 my-1 bg-slate-950 rounded border-2 border-slate-600 shadow-2xl">
-                  <!-- Threshold Markings Left (07L) -->
-                  <div class="absolute left-2 top-2 bottom-2 w-8 flex flex-col justify-between py-1 border-r border-dashed border-white/40">
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="text-center font-code-coordinate text-[11px] font-bold text-white tracking-tighter">07L</div>
-                  </div>
-                  <!-- Threshold Markings Right (25R) -->
-                  <div class="absolute right-2 top-2 bottom-2 w-8 flex flex-col justify-between py-1 border-l border-dashed border-white/40">
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="h-1 bg-white"></div>
-                    <div class="text-center font-code-coordinate text-[11px] font-bold text-white tracking-tighter">25R</div>
-                  </div>
-                  <!-- Centerline dashed line -->
-                  <div class="absolute left-14 right-14 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-white/50 pointer-events-none"></div>
+              @if($r === 'G')
+                <!-- ROW G & H (PRIMARY RUNWAY 10 / 28 - ASPHALT SURFACE WITH MARKINGS) -->
+                <div class="relative py-1.5 my-1 bg-slate-950 rounded-lg border-2 border-slate-600 shadow-2xl">
                   
-                  <!-- Runway Grid Matrix J -->
-                  <div class="grid grid-cols-16 gap-1 mb-1 items-center pl-10 pr-10">
-                    <div class="text-center font-code-coordinate font-bold text-white text-xs">J</div>
-                    @for($col = 1; $col <= 15; $col++)
+                  <!-- Runway Row G Matrix -->
+                  <div class="juanda-grid-row mb-1">
+                    <div class="text-center font-code-coordinate font-bold text-amber-400 text-xs">G</div>
+                    @for($col = 1; $col <= 29; $col++)
                       @php
-                        $code = 'J-' . $col;
+                        $code = 'G-' . $col;
                         $hasData = isset($gridAgg[$code]);
                         $item = $hasData ? $gridAgg[$code] : null;
+                        $isRunway = ($col >= 5 && $col <= 26);
                       @endphp
                       @if($hasData)
-                        <div onclick="selectGrid('{{ $code }}')" class="h-11 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex items-center justify-between px-1.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
-                          <span class="text-xs font-code-coordinate {{ $item['risk_text'] }} font-bold">{{ $code }}</span>
-                          <span class="text-[11px] font-bold bg-white text-slate-navy px-1 rounded">{{ $item['count'] }}</span>
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                          <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-bold leading-none">{{ $code }}</span>
+                          <span class="text-[9px] font-bold bg-white text-slate-navy px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
+                        </div>
+                      @elseif($isRunway)
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border border-slate-700/80 hover:border-injourney-teal bg-slate-900/90 flex flex-col items-center justify-center cursor-pointer text-slate-400 hover:text-white text-[10px] font-code-coordinate transition-colors" title="Grid {{ $code }} (Runway 10/28 Steril)">
+                          <span class="text-[9px] opacity-70">{{ $col }}</span>
+                          <div class="w-3 h-0.5 bg-white/30 mt-0.5"></div>
                         </div>
                       @else
-                        <div onclick="selectGrid('{{ $code }}')" class="h-11 rounded border border-slate-700/50 hover:border-injourney-teal bg-slate-900/60 flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-300 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border border-slate-800 bg-slate-950/60 flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-400 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
                           {{ $col }}
                         </div>
                       @endif
                     @endfor
                   </div>
 
-                  <!-- ROW K (MAIN RUNWAY BODY & CRITICAL HOTSPOT K-10) -->
-                  <div class="grid grid-cols-16 gap-1 items-center pl-10 pr-10">
-                    <div class="text-center font-code-coordinate font-bold text-white text-xs">K</div>
-                    @for($col = 1; $col <= 15; $col++)
+                  <!-- Centerline Runway Markings Strip across Col 5-26 -->
+                  <div class="h-1 my-0.5 flex items-center justify-between px-8 pointer-events-none opacity-60">
+                    <span class="text-[9px] font-code-coordinate font-bold text-white tracking-widest pl-4">◄ RWY 10</span>
+                    <div class="flex-1 border-t-2 border-dashed border-white mx-4"></div>
+                    <span class="text-[9px] font-code-coordinate font-bold text-white tracking-widest pr-4">RWY 28 ►</span>
+                  </div>
+
+                  <!-- Runway Row H Matrix -->
+                  <div class="juanda-grid-row mt-1">
+                    <div class="text-center font-code-coordinate font-bold text-amber-400 text-xs">H</div>
+                    @for($col = 1; $col <= 29; $col++)
                       @php
-                        $code = 'K-' . $col;
+                        $code = 'H-' . $col;
                         $hasData = isset($gridAgg[$code]);
                         $item = $hasData ? $gridAgg[$code] : null;
+                        $isRunway = ($col >= 5 && $col <= 26);
                       @endphp
                       @if($hasData)
-                        <div onclick="selectGrid('{{ $code }}')" class="h-11 rounded-md border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse shadow-lg ring-2 ring-warning-rose/40' : '' }} hover:border-white transition-all flex items-center justify-between px-1.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
-                          <span class="text-xs font-code-coordinate {{ $item['risk_text'] }} font-bold">{{ $code }}</span>
-                          <span class="text-[11px] font-bold bg-white text-slate-navy px-1 rounded shadow-xs">{{ $item['count'] }}</span>
-                          @if($item['risk_level'] === 'Kritis')
-                            <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-400"></span>
-                            </span>
-                          @endif
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                          <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-bold leading-none">{{ $code }}</span>
+                          <span class="text-[9px] font-bold bg-white text-slate-navy px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
+                        </div>
+                      @elseif($isRunway)
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border border-slate-700/80 hover:border-injourney-teal bg-slate-900/90 flex flex-col items-center justify-center cursor-pointer text-slate-400 hover:text-white text-[10px] font-code-coordinate transition-colors" title="Grid {{ $code }} (Runway 10/28 Steril)">
+                          <span class="text-[9px] opacity-70">{{ $col }}</span>
+                          <div class="w-3 h-0.5 bg-white/30 mt-0.5"></div>
                         </div>
                       @else
-                        <div onclick="selectGrid('{{ $code }}')" class="h-11 rounded border border-slate-700/50 hover:border-injourney-teal bg-slate-900/60 flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-300 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
+                        <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border border-slate-800 bg-slate-950/60 flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-400 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
                           {{ $col }}
                         </div>
                       @endif
@@ -437,25 +447,25 @@
                   </div>
 
                 </div>
-              @elseif($r === 'K')
-                {{-- Row K is rendered inside the Runway block above --}}
+              @elseif($r === 'H')
+                {{-- Row H is rendered inside the Runway block above --}}
               @else
-                <!-- STANDARD ROW: {{ $r }} -->
-                <div class="grid grid-cols-16 gap-1 mb-1 items-center">
-                  <div class="text-center font-code-coordinate font-bold text-slate-400 text-xs">{{ $r }}</div>
-                  @for($col = 1; $col <= 15; $col++)
+                <!-- STANDARD ROWS (A, B, C, D, E, F, I, J, K, L) -->
+                <div class="juanda-grid-row mb-1">
+                  <div class="text-center font-code-coordinate font-bold {{ in_array($r, ['E', 'D']) ? 'text-emerald-400' : (in_array($r, ['J', 'K']) ? 'text-sky-400' : 'text-slate-400') }} text-xs">{{ $r }}</div>
+                  @for($col = 1; $col <= 29; $col++)
                     @php
                       $code = $r . '-' . $col;
                       $hasData = isset($gridAgg[$code]);
                       $item = $hasData ? $gridAgg[$code] : null;
                     @endphp
                     @if($hasData)
-                      <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex items-center justify-between px-1.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
-                        <span class="text-xs font-code-coordinate {{ $item['risk_text'] }} font-semibold">{{ $code }}</span>
-                        <span class="text-[11px] font-bold bg-white/20 text-white px-1 rounded">{{ $item['count'] }}</span>
+                      <div onclick="selectGrid('{{ $code }}')" class="h-9 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                        <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-semibold leading-none">{{ $code }}</span>
+                        <span class="text-[9px] font-bold bg-white/20 text-white px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
                       </div>
                     @else
-                      <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border border-slate-700/60 bg-slate-800/40 hover:border-injourney-teal transition-all flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-400 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
+                      <div onclick="selectGrid('{{ $code }}')" class="h-9 rounded border border-slate-700/60 bg-slate-800/40 hover:border-injourney-teal transition-all flex items-center justify-center cursor-pointer text-slate-600 hover:text-slate-400 text-[10px] font-code-coordinate" title="Grid {{ $code }} (Steril)">
                         {{ $col }}
                       </div>
                     @endif
@@ -466,10 +476,44 @@
 
           </div>
 
+          <!-- ================= LAYER 3: HYBRID OVERLAY LAYER ================= -->
+          <div id="mapHybridLayer" class="hidden min-w-[960px] w-full pt-10 transition-transform duration-200 origin-top-left relative">
+            <div class="relative rounded-lg overflow-hidden border border-slate-700 shadow-2xl">
+              <!-- Background Satellite Image with Darkness Filter -->
+              <img src="{{ asset('images/gridmap_juanda.jpg') }}" alt="Gridmap Juanda" class="w-full h-auto block select-none pointer-events-none filter brightness-75 contrast-125">
+              
+              <!-- Transparent Grid Cell Overlay -->
+              <div class="absolute inset-0 p-2 sm:p-4 flex flex-col justify-between">
+                @foreach($rows as $r)
+                  <div class="juanda-grid-row flex-1">
+                    <div class="text-center font-code-coordinate font-bold text-cyan-300 text-xs bg-black/60 rounded px-1">{{ $r }}</div>
+                    @for($col = 1; $col <= 29; $col++)
+                      @php
+                        $code = $r . '-' . $col;
+                        $hasData = isset($gridAgg[$code]);
+                        $item = $hasData ? $gridAgg[$code] : null;
+                      @endphp
+                      @if($hasData)
+                        <div onclick="selectGrid('{{ $code }}')" class="h-full rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} backdrop-blur-xs flex flex-col items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-md" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                          <span class="text-[9px] font-code-coordinate font-extrabold text-white">{{ $code }}</span>
+                          <span class="text-[8px] bg-white text-slate-900 font-bold px-1 rounded">{{ $item['count'] }}</span>
+                        </div>
+                      @else
+                        <div onclick="selectGrid('{{ $code }}')" class="h-full border border-white/10 hover:border-cyan-400/80 hover:bg-cyan-500/20 transition-all cursor-pointer rounded flex items-center justify-center text-[8px] font-code-coordinate text-white/40 hover:text-white" title="Grid {{ $code }}">
+                          {{ $col }}
+                        </div>
+                      @endif
+                    @endfor
+                  </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+
           <!-- BOTTOM MAP FOOTER: RISK LEVEL LEGEND -->
           <div class="mt-5 pt-3 border-t border-runway-grid flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-4 flex-wrap">
-              <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px]">Legenda Tingkat Risiko:</span>
+            <div id="mapRiskLegend" class="hidden flex items-center gap-4 flex-wrap">
+              <span class="text-slate-400 font-bold uppercase tracking-wider text-[11px]">Legenda Tingkat Risiko ICAO:</span>
               <div class="flex items-center gap-1.5">
                 <span class="w-3 h-3 rounded bg-warning-rose"></span>
                 <span class="text-white">Kritis / Kategori 4 (&gt;30 Temuan)</span>
@@ -487,8 +531,12 @@
                 <span class="text-slate-400">Steril / Tanpa Laporan</span>
               </div>
             </div>
+            <div id="mapSatelliteStatus" class="flex items-center gap-2 text-slate-300">
+              <span class="material-symbols-outlined text-sm text-injourney-teal">satellite_alt</span>
+              <span class="font-medium text-xs">Citra Satelit Resmi Juanda — Tampilan murni foto udara bebas dari penanda laporan grid.</span>
+            </div>
             <div class="text-slate-400 font-code-coordinate text-xs">
-              Sistem Koordinat WGS84: -6.1275° S, 106.6537° E
+              Bandara Internasional Juanda (SUB/WARR) • Koordinat: 07°22′47″S, 112°47′15″E
             </div>
           </div>
 
@@ -777,16 +825,66 @@
     // Zoom level state
     let currentZoom = 1.0;
 
+    function getActiveMapLayer() {
+      const sat = document.getElementById('mapSatelliteLayer');
+      const tac = document.getElementById('mapTacticalLayer');
+      if (sat && !sat.classList.contains('hidden')) return sat;
+      if (tac && !tac.classList.contains('hidden')) return tac;
+      return document.getElementById('mapHybridLayer');
+    }
+
     function zoomMap(delta) {
-      currentZoom = Math.min(Math.max(0.7, currentZoom + delta), 1.5);
-      const container = document.getElementById('gridMatrixContainer');
-      container.style.transform = `scale(${currentZoom})`;
+      currentZoom = Math.min(Math.max(0.7, currentZoom + delta), 1.6);
+      const container = getActiveMapLayer();
+      if (container) container.style.transform = `scale(${currentZoom})`;
     }
 
     function resetMap() {
       currentZoom = 1.0;
-      const container = document.getElementById('gridMatrixContainer');
-      container.style.transform = 'scale(1)';
+      ['mapSatelliteLayer', 'mapTacticalLayer', 'mapHybridLayer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.transform = 'scale(1)';
+      });
+    }
+
+    function showMapLayer(mode) {
+      const satLayer = document.getElementById('mapSatelliteLayer');
+      const tacLayer = document.getElementById('mapTacticalLayer');
+      const hybLayer = document.getElementById('mapHybridLayer');
+      const riskLegend = document.getElementById('mapRiskLegend');
+      const satStatus = document.getElementById('mapSatelliteStatus');
+
+      const btnSat = document.getElementById('btnLayerSatellite');
+      const btnTac = document.getElementById('btnLayerTactical');
+      const btnHyb = document.getElementById('btnLayerHybrid');
+
+      const activeClass = 'text-[11px] px-2.5 py-1 rounded-md bg-injourney-teal text-white font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer';
+      const inactiveClass = 'text-[11px] px-2.5 py-1 rounded-md bg-surface-container-low text-secondary hover:text-slate-navy hover:bg-surface-container font-medium flex items-center gap-1 transition-all cursor-pointer';
+
+      if (btnSat) btnSat.className = (mode === 'satellite') ? activeClass : inactiveClass;
+      if (btnTac) btnTac.className = (mode === 'tactical') ? activeClass : inactiveClass;
+      if (btnHyb) btnHyb.className = (mode === 'hybrid') ? activeClass : inactiveClass;
+
+      if (mode === 'satellite') {
+        if (satLayer) satLayer.classList.remove('hidden');
+        if (tacLayer) tacLayer.classList.add('hidden');
+        if (hybLayer) hybLayer.classList.add('hidden');
+        if (riskLegend) riskLegend.classList.add('hidden');
+        if (satStatus) satStatus.classList.remove('hidden');
+      } else if (mode === 'tactical') {
+        if (satLayer) satLayer.classList.add('hidden');
+        if (tacLayer) tacLayer.classList.remove('hidden');
+        if (hybLayer) hybLayer.classList.add('hidden');
+        if (riskLegend) riskLegend.classList.remove('hidden');
+        if (satStatus) satStatus.classList.add('hidden');
+      } else {
+        if (satLayer) satLayer.classList.add('hidden');
+        if (tacLayer) tacLayer.classList.add('hidden');
+        if (hybLayer) hybLayer.classList.remove('hidden');
+        if (riskLegend) riskLegend.classList.remove('hidden');
+        if (satStatus) satStatus.classList.add('hidden');
+      }
+      resetMap();
     }
 
     // Dynamic Grid Selection on Click

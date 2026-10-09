@@ -48,19 +48,18 @@
 <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/90 shadow-xl lg:shadow-xs flex flex-col transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 select-none">
   
   <!-- 1. Brand Logo & System Info Header -->
-  <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-b from-cyan-50/30 to-transparent">
-    <a href="{{ $homeRoute }}" class="flex items-center gap-2.5 group">
-      <img src="{{ asset('images/logo_login.png') }}" alt="InJourney Airports" class="h-8 w-auto object-contain transition-transform group-hover:scale-[1.02]">
+  <div class="px-3.5 py-3 border-b border-slate-100 flex items-center justify-between bg-gradient-to-b from-cyan-50/30 to-transparent relative">
+    <a href="{{ $homeRoute }}" class="flex items-center gap-2 group min-w-0 pr-6 lg:pr-0">
+      <img src="{{ asset('images/logo_login.png') }}" alt="InJourney Airports" class="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-[1.02] shrink-0">
+      <div class="h-7 w-px bg-slate-200 shrink-0"></div>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">WHMS Airside Logbook</span>
+      </div>
     </a>
-    <button type="button" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" onclick="toggleSidebar(false)" aria-label="Tutup Menu">
+    <button type="button" class="lg:hidden p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0" onclick="toggleSidebar(false)" aria-label="Tutup Menu">
       <span class="material-symbols-outlined text-xl leading-none">close</span>
     </button>
-  </div>
-
-  <!-- Sub-Header Strip -->
-  <div class="px-4 py-2 bg-slate-50/70 border-b border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-600 font-semibold">
-    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span>WHMS Airside Logbook</span>
   </div>
 
   <!-- 2. User Profile Card & Primary Action -->
@@ -90,9 +89,12 @@
     <div>
       <div class="px-2 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Menu Operasional</div>
       <div class="space-y-1">
+        @php
+          $isVerifNav = ($currentPage === 'verifikasi' || request()->get('tab') === 'verifikasi');
+        @endphp
         <!-- Dashboard -->
-        <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && request()->get('status') !== 'belum' ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-          <span class="material-symbols-outlined text-lg {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && request()->get('status') !== 'belum' ? 'text-[#00A9C1]' : 'text-slate-400' }}">space_dashboard</span>
+        <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && !$isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+          <span class="material-symbols-outlined text-lg {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && !$isVerifNav ? 'text-[#00A9C1]' : 'text-slate-400' }}">space_dashboard</span>
           <span class="flex-1">Dashboard</span>
         </a>
 
@@ -118,8 +120,8 @@
           </a>
 
           <!-- Verifikasi Berita Acara -->
-          <a href="{{ route('admin.dashboard', ['status' => 'belum']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'verifikasi' || request()->get('status') === 'belum') ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-            <span class="material-symbols-outlined text-lg {{ ($currentPage === 'verifikasi' || request()->get('status') === 'belum') ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
+          <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ $isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+            <span class="material-symbols-outlined text-lg {{ $isVerifNav ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
             <span class="flex-1">Verifikasi BA</span>
           </a>
         </div>
