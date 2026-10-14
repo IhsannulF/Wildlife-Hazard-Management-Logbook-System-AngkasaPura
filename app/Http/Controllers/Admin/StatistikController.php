@@ -6,17 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\DetailSatwa;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class StatistikController extends Controller
 {
     public function index(Request $request)
     {
-        $tahun       = (int)$request->query('tahun', date('Y'));
-        $timeFilter  = $request->query('time_filter', 'month'); // 'month', 'quarter', 'year', 'all'
-        $kategori    = $request->query('kategori', 'all');
-        $zonaFilter  = $request->query('zona', 'all');
-        $search      = trim($request->query('search', ''));
+        $tahun = (int) $request->query('tahun', date('Y'));
+        $timeFilter = $request->query('time_filter', 'month'); // 'month', 'quarter', 'year', 'all'
+        $kategori = $request->query('kategori', 'all');
+        $zonaFilter = $request->query('zona', 'all');
+        $search = trim($request->query('search', ''));
 
         // Query data detail_satwa with eager loading laporan
         $query = DetailSatwa::with('laporan')
@@ -26,7 +25,7 @@ class StatistikController extends Controller
         if ($timeFilter === 'month') {
             $query->whereHas('laporan', function ($q) {
                 $q->whereMonth('tanggal', now()->month)
-                  ->whereYear('tanggal', now()->year);
+                    ->whereYear('tanggal', now()->year);
             });
         } elseif ($timeFilter === 'quarter') {
             $query->whereHas('laporan', function ($q) {
@@ -40,25 +39,25 @@ class StatistikController extends Controller
 
         if ($kategori !== 'all') {
             if ($kategori === 'burung') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('nama_satwa', 'like', '%Burung%')
-                      ->orWhere('nama_satwa', 'like', '%Blekok%')
-                      ->orWhere('nama_satwa', 'like', '%Kuntul%')
-                      ->orWhere('nama_satwa', 'like', '%Elang%')
-                      ->orWhere('nama_satwa', 'like', '%Layang%');
+                        ->orWhere('nama_satwa', 'like', '%Blekok%')
+                        ->orWhere('nama_satwa', 'like', '%Kuntul%')
+                        ->orWhere('nama_satwa', 'like', '%Elang%')
+                        ->orWhere('nama_satwa', 'like', '%Layang%');
                 });
             } elseif ($kategori === 'reptil') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('nama_satwa', 'like', '%Biawak%')
-                      ->orWhere('nama_satwa', 'like', '%Ular%');
+                        ->orWhere('nama_satwa', 'like', '%Ular%');
                 });
             } elseif ($kategori === 'mamalia') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('nama_satwa', 'like', '%Kera%')
-                      ->orWhere('nama_satwa', 'like', '%Monyet%')
-                      ->orWhere('nama_satwa', 'like', '%Kucing%')
-                      ->orWhere('nama_satwa', 'like', '%Anjing%')
-                      ->orWhere('nama_satwa', 'like', '%Tikus%');
+                        ->orWhere('nama_satwa', 'like', '%Monyet%')
+                        ->orWhere('nama_satwa', 'like', '%Kucing%')
+                        ->orWhere('nama_satwa', 'like', '%Anjing%')
+                        ->orWhere('nama_satwa', 'like', '%Tikus%');
                 });
             }
         }
@@ -67,71 +66,86 @@ class StatistikController extends Controller
 
         // Baseline data grid terkalibrasi dengan Denah Resmi Bandara Internasional Juanda
         $baselineGrids = [
-            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Kanal Drainase Perimeter Selatan Terminal 2', 'type' => 'perimeter', 'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.'],
-            'D-9'  => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 10 Approach', 'type' => 'perimeter', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
-            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Apron C & Taxiway NP-2', 'type' => 'apron', 'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.'],
-            'A-2'  => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Perimeter Barat Laut', 'type' => 'perimeter', 'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.'],
-            'G-18' => ['count' => 28, 'satwa' => 'Burung Cangak Abu', 'total' => 28, 'area' => 'Bahu Runway 10/28 (Tengah Landasan)', 'type' => 'runway', 'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.'],
-            'H-8'  => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Runway Strip 10 (Barat)', 'type' => 'runway', 'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.'],
-            'F-5'  => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Regulating Pond 1 & Perimeter Barat', 'type' => 'perimeter', 'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.'],
-            'B-4'  => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Perimeter Utara Buffer', 'type' => 'perimeter', 'desc' => 'Anjing liar terpantau melintas di area perimeter utara.'],
-            'L-10' => ['count' => 11, 'satwa' => 'Biawak Air', 'total' => 11, 'area' => 'Kanal Drainase Perimeter Selatan', 'type' => 'perimeter', 'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.'],
-            'C-6'  => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Perimeter Barat Hanggar', 'type' => 'perimeter', 'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.'],
-            'J-11' => ['count' => 17, 'satwa' => 'Kucing Liar', 'total' => 17, 'area' => 'Apron A Terminal 2', 'type' => 'apron', 'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.'],
-            'E-18' => ['count' => 14, 'satwa' => 'Burung Blekok Sawah', 'total' => 14, 'area' => 'Apron B Terminal 1', 'type' => 'apron', 'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.'],
+            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Kanal Drainase Perimeter Selatan Terminal 2', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.'],
+            'D-9' => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 10 Approach', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
+            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Apron C & Taxiway NP-2', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.'],
+            'A-2' => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Perimeter Barat Laut', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.'],
+            'G-18' => ['count' => 28, 'satwa' => 'Burung Cangak Abu', 'total' => 28, 'area' => 'Bahu Runway 10/28 (Tengah Landasan)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.'],
+            'H-8' => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Runway Strip 10 (Barat)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.'],
+            'F-5' => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Regulating Pond 1 & Perimeter Barat', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.'],
+            'B-4' => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Perimeter Utara Buffer', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Anjing liar terpantau melintas di area perimeter utara.'],
+            'L-10' => ['count' => 11, 'satwa' => 'Biawak Air', 'total' => 11, 'area' => 'Kanal Drainase Perimeter Selatan', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.'],
+            'C-6' => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Perimeter Barat Hanggar', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.'],
+            'J-11' => ['count' => 17, 'satwa' => 'Kucing Liar', 'total' => 17, 'area' => 'Apron A Terminal 2', 'type' => 'apron', 'category' => 'mamalia', 'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.'],
+            'E-18' => ['count' => 14, 'satwa' => 'Burung Blekok Sawah', 'total' => 14, 'area' => 'Apron B Terminal 1', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.'],
         ];
+
+        if ($kategori !== 'all') {
+            $baselineGrids = array_filter($baselineGrids, fn ($b) => ($b['category'] ?? '') === $kategori);
+        }
+        if ($zonaFilter !== 'all') {
+            $baselineGrids = array_filter($baselineGrids, fn ($b) => ($b['type'] ?? '') === $zonaFilter);
+        }
 
         $gridAgg = [];
         foreach ($baselineGrids as $bgKey => $bgVal) {
             $gridAgg[$bgKey] = [
-                'grid'             => $bgKey,
-                'count'            => $bgVal['count'],
-                'total_satwa'      => $bgVal['total'],
+                'grid' => $bgKey,
+                'count' => $bgVal['count'],
+                'total_satwa' => $bgVal['total'],
                 'dominant_species' => $bgVal['satwa'],
-                'dominant_count'   => $bgVal['total'],
-                'species_counts'   => [$bgVal['satwa'] => $bgVal['total']],
-                'status'           => 'Telah Ditangani',
-                'zone_name'        => $bgVal['area'],
-                'zone_type'        => $bgVal['type'],
-                'desc'             => $bgVal['desc'],
-                'last_mitigation'  => 'Aktivasi Sirene Patroli & Repellent Trap',
-                'peak_hours'       => '06:30 - 08:30 WIB & 16:00 - 17:30 WIB',
-                'mitigation_sop'   => [
+                'dominant_count' => $bgVal['total'],
+                'species_counts' => [$bgVal['satwa'] => $bgVal['total']],
+                'status' => 'Telah Ditangani',
+                'zone_name' => $bgVal['area'],
+                'zone_type' => $bgVal['type'],
+                'desc' => $bgVal['desc'],
+                'last_mitigation' => 'Aktivasi Sirene Patroli & Repellent Trap',
+                'peak_hours' => '06:30 - 08:30 WIB & 16:00 - 17:30 WIB',
+                'mitigation_sop' => [
                     'Peningkatan patroli kendaraan bersirene unit AMC interval 30 menit.',
                     'Pembersihan vegetasi gulma pada saluran gorong-gorong sekitar sel.',
-                    'Aktivasi repellent trap & pagar penghalau satwa melata.'
-                ]
+                    'Aktivasi repellent trap & pagar penghalau satwa melata.',
+                ],
             ];
         }
 
         // Overlay with live database records
         foreach ($details as $d) {
             $rawG = strtoupper(trim(str_replace('=', '-', $d->grid)));
-            if (empty($rawG)) continue;
-            
-            if (!isset($gridAgg[$rawG])) {
+            if (empty($rawG)) {
+                continue;
+            }
+
+            $rowLetter = substr($rawG, 0, 1);
+            $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
+            if ($zonaFilter !== 'all' && $zoneType !== $zonaFilter) {
+                continue;
+            }
+
+            if (! isset($gridAgg[$rawG])) {
                 $rowLetter = substr($rawG, 0, 1);
                 $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
                 $zoneName = $zoneType === 'runway' ? 'Bahu Runway 10/28 Juanda' : ($zoneType === 'taxiway' ? 'Taxiway & Rawa Buffer' : ($zoneType === 'apron' ? 'Apron Area Pergerakan' : 'Perimeter Sisi Udara'));
 
                 $gridAgg[$rawG] = [
-                    'grid'             => $rawG,
-                    'count'            => 0,
-                    'total_satwa'      => 0,
+                    'grid' => $rawG,
+                    'count' => 0,
+                    'total_satwa' => 0,
                     'dominant_species' => $d->nama_satwa ?: 'Satwa Liar',
-                    'dominant_count'   => 0,
-                    'species_counts'   => [],
-                    'status'           => 'Belum Ditangani',
-                    'zone_name'        => $zoneName,
-                    'zone_type'        => $zoneType,
-                    'desc'             => 'Zona sisi udara bandara dipantau oleh regu jaga patroli AMC.',
-                    'last_mitigation'  => $d->laporan?->tindak_lanjut ?: 'Penyisiran Regu Jaga AMC',
-                    'peak_hours'       => '07:00 - 09:00 WIB & 15:30 - 17:00 WIB',
-                    'mitigation_sop'   => [
+                    'dominant_count' => 0,
+                    'species_counts' => [],
+                    'status' => 'Belum Ditangani',
+                    'zone_name' => $zoneName,
+                    'zone_type' => $zoneType,
+                    'desc' => 'Zona sisi udara bandara dipantau oleh regu jaga patroli AMC.',
+                    'last_mitigation' => $d->laporan?->tindak_lanjut ?: 'Penyisiran Regu Jaga AMC',
+                    'peak_hours' => '07:00 - 09:00 WIB & 15:30 - 17:00 WIB',
+                    'mitigation_sop' => [
                         'Patroli mobile rutin AMC Airside.',
                         'Pengusiran akustik menggunakan sirene mobil patroli.',
-                        'Inspeksi perimeter kawat pembatas secara berkala.'
-                    ]
+                        'Inspeksi perimeter kawat pembatas secara berkala.',
+                    ],
                 ];
             }
 
@@ -154,7 +168,7 @@ class StatistikController extends Controller
         $runwayActiveCount = 0;
 
         foreach ($gridAgg as $gCode => &$gItem) {
-            if (!empty($gItem['species_counts'])) {
+            if (! empty($gItem['species_counts'])) {
                 arsort($gItem['species_counts']);
                 $gItem['dominant_species'] = array_key_first($gItem['species_counts']);
                 $gItem['dominant_count'] = reset($gItem['species_counts']);
@@ -194,55 +208,68 @@ class StatistikController extends Controller
         unset($gItem);
 
         // Sort grids by count descending
-        uasort($gridAgg, fn($a, $b) => $b['count'] <=> $a['count']);
+        uasort($gridAgg, fn ($a, $b) => $b['count'] <=> $a['count']);
 
         // Top 5 Hotspot Grids
         $top5 = array_slice($gridAgg, 0, 5, true);
-        $maxCount = !empty($top5) ? reset($top5)['count'] : 1;
+        $maxCount = ! empty($top5) ? reset($top5)['count'] : 1;
         $top5Grids = [];
         $rankIdx = 1;
         foreach ($top5 as $tCode => $tVal) {
             $pctWidth = round(($tVal['count'] / max(1, $maxCount)) * 100);
             $top5Grids[] = [
-                'rank'      => $rankIdx++,
-                'grid'      => $tCode,
-                'name'      => $tVal['zone_name'],
-                'count'     => $tVal['count'],
-                'dominant'  => $tVal['dominant_species'],
+                'rank' => $rankIdx++,
+                'grid' => $tCode,
+                'name' => $tVal['zone_name'],
+                'count' => $tVal['count'],
+                'dominant' => $tVal['dominant_species'],
                 'bar_width' => $pctWidth,
-                'color'     => $tVal['risk_level'] === 'Kritis' ? 'bg-warning-rose' : ($tVal['risk_level'] === 'Sedang' ? 'bg-alert-amber' : 'bg-injourney-teal')
+                'color' => $tVal['risk_level'] === 'Kritis' ? 'bg-warning-rose' : ($tVal['risk_level'] === 'Sedang' ? 'bg-alert-amber' : 'bg-injourney-teal'),
             ];
         }
 
         // Selected Grid (Default to Top Grid, e.g. K-10)
         $selectedGridCode = $request->query('selected_grid', array_key_first($gridAgg) ?: 'K-10');
-        $selectedGrid = $gridAgg[$selectedGridCode] ?? reset($gridAgg);
+        $selectedGrid = $gridAgg[$selectedGridCode] ?? (! empty($gridAgg) ? reset($gridAgg) : [
+            'grid' => 'Steril',
+            'count' => 0,
+            'total_satwa' => 0,
+            'dominant_species' => 'Tidak Ada',
+            'dominant_count' => 0,
+            'status' => 'Steril Aman',
+            'risk_category' => 'Steril / Terkendali',
+            'zone_name' => 'Area Steril Terkendali',
+            'desc' => 'Tidak ada catatan insiden satwa liar pada kategori dan zona terpilih.',
+            'last_mitigation' => 'Patroli Regu Jaga AMC',
+            'peak_hours' => 'Kondisi steril terpantau 24 jam.',
+            'mitigation_sop' => ['Pertahankan inspeksi patroli berkala regu AMC.'],
+        ]);
 
         // Filter Grids for bottom table if search is provided
         $tableGrids = $gridAgg;
-        if (!empty($search)) {
-            $tableGrids = array_filter($tableGrids, function($item) use ($search) {
+        if (! empty($search)) {
+            $tableGrids = array_filter($tableGrids, function ($item) use ($search) {
                 return stripos($item['grid'], $search) !== false ||
                        stripos($item['dominant_species'], $search) !== false ||
                        stripos($item['zone_name'], $search) !== false;
             });
         }
         if ($zonaFilter !== 'all') {
-            $tableGrids = array_filter($tableGrids, function($item) use ($zonaFilter) {
+            $tableGrids = array_filter($tableGrids, function ($item) use ($zonaFilter) {
                 return $item['zone_type'] === $zonaFilter;
             });
         }
 
         // KPIs calculation
-        $hotspot1 = $top5Grids[0] ?? ['grid' => 'K-10', 'count' => 38, 'name' => 'Bahu RWY 25R'];
-        $hotspot2 = $top5Grids[1] ?? ['grid' => 'D-9', 'count' => 44, 'name' => 'Rawa Buffer Barat'];
-        $gridTerpadatTitle = $hotspot1['grid'] . ' & ' . $hotspot2['grid'];
+        $hotspot1 = $top5Grids[0] ?? ['grid' => '-', 'count' => 0, 'name' => 'Steril'];
+        $hotspot2 = $top5Grids[1] ?? ['grid' => '-', 'count' => 0, 'name' => 'Steril'];
+        $gridTerpadatTitle = $hotspot1['grid'] !== '-' ? ($hotspot1['grid'].($hotspot2['grid'] !== '-' ? ' & '.$hotspot2['grid'] : '')) : 'Area Steril';
         $gridTerpadatCount = $hotspot1['count'];
-        $gridTerpadatPct   = $totalIncidentsAll > 0 ? round(($gridTerpadatCount / $totalIncidentsAll) * 100, 1) : 25.6;
+        $gridTerpadatPct = $totalIncidentsAll > 0 ? round(($gridTerpadatCount / $totalIncidentsAll) * 100, 1) : 0;
 
-        $totalTitikTerpetakan = $totalIncidentsAll ?: 148;
+        $totalTitikTerpetakan = $totalIncidentsAll;
         $totalSelAktif = count($gridAgg);
-        $efektivitasDispersal = $totalIncidentsAll > 0 ? round(($totalHandledAll / $totalIncidentsAll) * 100, 1) : 94.8;
+        $efektivitasDispersal = $totalIncidentsAll > 0 ? round(($totalHandledAll / $totalIncidentsAll) * 100, 1) : 100.0;
 
         return view('admin.statistik', compact(
             'tahun',

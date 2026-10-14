@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserDashboardController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\StatistikController as AdminStatistikController;
 use App\Http\Controllers\Admin\ManajemenController as AdminManajemenController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\StatistikController as AdminStatistikController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\UserDashboardController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -15,6 +15,7 @@ Route::get('/', function () {
             ? redirect()->route('admin.dashboard')
             : redirect()->route('user.dashboard');
     }
+
     return redirect()->route('login');
 });
 
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/statistik', [AdminStatistikController::class, 'index'])->name('statistik');
 
     Route::get('/manajemen', [AdminManajemenController::class, 'index'])->name('manajemen');
+    Route::get('/manajemen-user', [AdminManajemenController::class, 'userIndex'])->name('users');
 
     // Manajemen Fields
     Route::post('/manajemen/fields', [AdminManajemenController::class, 'storeField'])->name('manajemen.fields.store');

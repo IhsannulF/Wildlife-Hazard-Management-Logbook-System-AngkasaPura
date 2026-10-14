@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Laporan;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -34,19 +35,19 @@ class ExampleTest extends TestCase
     public function test_admin_can_login_and_access_admin_dashboard(): void
     {
         $admin = User::where('role', 'admin')->first();
-        if (!$admin) {
+        if (! $admin) {
             $this->markTestSkipped('No admin user found in database');
         }
 
         $response = $this->actingAs($admin)->get('/admin');
         $response->assertStatus(200);
-        $response->assertSee('Data Master Laporan Satwa Liar');
+        $response->assertSee('Logbook Sisi Udara');
     }
 
     public function test_employee_cannot_access_admin_dashboard(): void
     {
         $pegawai = User::where('role', 'pegawai')->first();
-        if (!$pegawai) {
+        if (! $pegawai) {
             $this->markTestSkipped('No pegawai user found in database');
         }
 
@@ -57,7 +58,7 @@ class ExampleTest extends TestCase
     public function test_employee_can_access_form_pengaduan(): void
     {
         $pegawai = User::where('role', 'pegawai')->first();
-        if (!$pegawai) {
+        if (! $pegawai) {
             $this->markTestSkipped('No pegawai user found in database');
         }
 
@@ -71,7 +72,29 @@ class ExampleTest extends TestCase
         $admin = User::where('role', 'admin')->first();
         $response = $this->actingAs($admin)->get('/admin/statistik');
         $response->assertStatus(200);
-        $response->assertSee('Grafik Fluktuasi Satwa Bulanan');
+        $response->assertSee('Peta Sebaran Grid');
+        $response->assertSee('Denah Sektoral Grid Sisi Udara — Bandara Juanda');
+        // Ensure "Citra Satelit Murni" tab is removed
+        $response->assertDontSee('Citra Satelit Murni');
+        // Ensure emojis are replaced with Material Symbols
+        $response->assertDontSee('🐾');
+        $response->assertDontSee('✈️');
+        $response->assertDontSee('🔤');
+        $response->assertDontSee('🚨');
+        $response->assertSee('pets');
+        $response->assertSee('flight');
+        $response->assertSee('grid_4x4');
+        $response->assertSee('alt_route');
+    }
+
+    public function test_admin_can_filter_statistik_by_kategori_and_zona(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $response = $this->actingAs($admin)->get('/admin/statistik?kategori=burung&zona=runway');
+        $response->assertStatus(200);
+        $response->assertSee('Peta Sebaran Grid');
+        $response->assertSee('quickFilterCard');
+        $response->assertSee('filterRealtime');
     }
 
     public function test_admin_can_access_manajemen(): void
@@ -79,8 +102,15 @@ class ExampleTest extends TestCase
         $admin = User::where('role', 'admin')->first();
         $response = $this->actingAs($admin)->get('/admin/manajemen');
         $response->assertStatus(200);
-        $response->assertSee('Pengaturan Field Form Pelaporan');
-        $response->assertSee('Master Jenis Satwa');
+        $response->assertSee('Katalog Master Satwa Liar');
+
+        $responseUser = $this->actingAs($admin)->get('/admin/manajemen-user');
+        $responseUser->assertStatus(200);
+        $responseUser->assertSee('Manajemen User');
+
+        $responseFields = $this->actingAs($admin)->get('/admin/manajemen-user?tab=fields');
+        $responseFields->assertStatus(200);
+        $responseFields->assertSee('Pengaturan Field Form Pelaporan');
     }
 
     public function test_admin_can_download_excel(): void
@@ -94,11 +124,25 @@ class ExampleTest extends TestCase
     public function test_admin_can_view_report_print(): void
     {
         $admin = User::where('role', 'admin')->first();
-        $laporan = \App\Models\Laporan::first();
+        $laporan = Laporan::first();
         if ($laporan) {
             $response = $this->actingAs($admin)->get("/admin/laporan/{$laporan->id}/cetak");
             $response->assertStatus(200);
             $response->assertSee('Laporan Pengamatan Satwa Liar');
         }
+    }
+
+    public function test_admin_can_access_statistik_with_reordered_cards_and_pagination(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $response = $this->actingAs($admin)->get('/admin/statistik');
+        $response->assertStatus(200);
+        $response->assertSee('Filter Cepat Kategori Satwa &amp; Zona', false);
+        $response->assertSee('Peringkat 5 Grid Hotspot Teratas');
+        $response->assertSee('Daftar Log Koordinat Grid Aktif &amp; Pemantauan Intervensi', false);
+        $response->assertSee('tablePaginationBar');
+        $response->assertSee('btnAuditNext');
+        $response->assertSee('btnAuditPrev');
+        $response->assertSee('auditPageNumbers');
     }
 }

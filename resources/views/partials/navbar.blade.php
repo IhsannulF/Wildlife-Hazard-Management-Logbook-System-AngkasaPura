@@ -137,6 +137,12 @@
             <span class="flex-1">Katalog Satwa</span>
           </a>
 
+          <!-- Manajemen User -->
+          <a href="{{ route('admin.users') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'users' || request()->routeIs('admin.users')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+            <span class="material-symbols-outlined text-lg {{ ($currentPage === 'users' || request()->routeIs('admin.users')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">manage_accounts</span>
+            <span class="flex-1">Manajemen User</span>
+          </a>
+
           <!-- Export Excel DKPPU -->
           <a href="{{ route('admin.export.excel') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors group" title="Unduh Spreadsheet Format DKPPU">
             <span class="material-symbols-outlined text-lg text-slate-400 group-hover:text-slate-600">file_download</span>

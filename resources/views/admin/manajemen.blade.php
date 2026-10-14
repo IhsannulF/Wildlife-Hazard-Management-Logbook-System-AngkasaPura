@@ -150,52 +150,31 @@
   <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
     
     <!-- 1. BREADCRUMB & PAGE TITLE SECTION -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2 border-b border-border-subtle">
-      <div>
-        <div class="flex items-center gap-2 text-secondary text-xs mb-1.5 font-medium">
-          <span>Sistem WHMS</span>
-          <span class="material-symbols-outlined text-xs">chevron_right</span>
-          <span>Manajemen Master Data</span>
-          <span class="material-symbols-outlined text-xs">chevron_right</span>
-          <span class="text-injourney-teal font-semibold">Katalog Master Jenis Satwa</span>
-        </div>
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-border-subtle">
+      <!-- Page Title & Short Purpose -->
+      <div class="min-w-0">
         <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight">
-          Katalog Master Satwa Liar Sisi Udara <span class="text-secondary font-normal text-xs sm:text-sm block sm:inline sm:ml-2">(Airside Wildlife Database)</span>
+          Katalog Master Satwa Liar Sisi Udara
         </h1>
-        <p class="text-[11px] sm:text-xs text-secondary mt-0.5 max-w-4xl leading-relaxed">
-          Basis data taksonomi operasional satwa liar, tingkat risiko tabrakan pesawat (<span class="font-medium text-slate-navy">Wildlife Strike Risk</span>), pola habitat, dan rekomendasi metode pengusiran resmi ICAO Doc 9137 Part 3.
-        </p>
+        <h2 class="text-[11px] text-secondary font-normal mt-0.5">
+          Pusat pengelolaan master data spesies, tingkat risiko satwa, dan konfigurasi sistem.
+        </h2>
       </div>
 
-      <!-- Action Cluster Bar -->
-      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 self-start lg:self-center">
-        <!-- Sub-tabs for full PRD REQ-MGT-005 capability -->
-        <div class="flex items-center bg-surface-container rounded-lg p-1 border border-border-subtle text-xs font-semibold mr-2">
-          <a href="{{ route('admin.manajemen', ['tab' => 'satwa']) }}" class="px-3 py-1.5 rounded transition-all {{ $tab === 'satwa' ? 'bg-white text-injourney-teal font-bold shadow-2xs' : 'text-secondary hover:text-slate-navy' }}">
-            Katalog Satwa
-          </a>
-          <a href="{{ route('admin.manajemen', ['tab' => 'fields']) }}" class="px-3 py-1.5 rounded transition-all {{ $tab === 'fields' ? 'bg-white text-injourney-teal font-bold shadow-2xs' : 'text-secondary hover:text-slate-navy' }}">
-            Field Formulir
-          </a>
-          <a href="{{ route('admin.manajemen', ['tab' => 'users']) }}" class="px-3 py-1.5 rounded transition-all {{ $tab === 'users' ? 'bg-white text-injourney-teal font-bold shadow-2xs' : 'text-secondary hover:text-slate-navy' }}">
-            Manajemen User
-          </a>
-        </div>
-
-        @if($tab === 'satwa')
-          <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-slate-navy hover:bg-surface-container-low transition-colors shadow-2xs">
-            <span class="material-symbols-outlined text-sm">download</span>
-            <span>Export Excel</span>
-          </a>
-          <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-slate-navy hover:bg-surface-container-low transition-colors shadow-2xs">
-            <span class="material-symbols-outlined text-sm">print</span>
-            <span>Cetak PDF</span>
-          </button>
-          <button type="button" onclick="openModal('addSpeciesModal')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white shadow-xs transition-all active:scale-[0.98]">
-            <span class="material-symbols-outlined text-sm">add</span>
-            <span>+ Tambah Spesies</span>
-          </button>
-        @endif
+      <!-- Action Cluster Bar (Single Row) -->
+      <div class="flex items-center flex-nowrap gap-2 shrink-0 self-start lg:self-center overflow-x-auto max-w-full">
+        <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-slate-navy hover:bg-surface-container-low transition-colors shadow-2xs shrink-0 whitespace-nowrap">
+          <span class="material-symbols-outlined text-sm">download</span>
+          <span>Export Excel</span>
+        </a>
+        <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-slate-navy hover:bg-surface-container-low transition-colors shadow-2xs shrink-0 whitespace-nowrap">
+          <span class="material-symbols-outlined text-sm">print</span>
+          <span>Cetak PDF</span>
+        </button>
+        <button type="button" onclick="openModal('addSpeciesModal')" class="inline-flex items-center gap-1 px-3 py-1.5 sm:py-2 text-xs font-bold rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white shadow-xs transition-all active:scale-[0.98] shrink-0 whitespace-nowrap">
+          <span class="material-symbols-outlined text-sm">add</span>
+          <span>+ Tambah Spesies</span>
+        </button>
       </div>
     </div>
 
@@ -219,8 +198,7 @@
       </div>
     @endif
 
-    @if($tab === 'satwa')
-      <!-- ================= TAB: KATALOG MASTER SATWA ================= -->
+      <!-- ================= KATALOG MASTER SATWA ================= -->
 
       <!-- 2. SUMMARY METRIC CARDS (ICAO AVIATION STAT CARDS) -->
       <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
@@ -624,119 +602,6 @@
         </div>
       </section>
 
-    @elseif($tab === 'fields')
-      <!-- ================= TAB: FORM FIELD BUILDER ================= -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div>
-            <h3 class="text-lg font-bold text-slate-navy">Pengaturan Field Form Pelaporan Dinamis</h3>
-            <p class="text-xs text-secondary mt-0.5">Atur input formulir pelaporan petugas lapangan, tipe data, dan opsi dropdown.</p>
-          </div>
-          <button type="button" onclick="openModal('modalAddField')" class="px-4 py-2 bg-injourney-teal hover:bg-injourney-dark-teal text-white text-xs font-bold rounded-lg shadow-xs transition-all">
-            + Tambah Field Baru
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-surface-container text-slate-navy uppercase font-semibold border-b border-border-subtle">
-                <th class="py-3 px-4">Urutan</th>
-                <th class="py-3 px-4">Label Field</th>
-                <th class="py-3 px-4">Tipe Input</th>
-                <th class="py-3 px-4">Status Wajib</th>
-                <th class="py-3 px-4">Status Aktif</th>
-                <th class="py-3 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border-subtle">
-              @foreach($fields as $f)
-                <tr class="hover:bg-surface-container-low transition-colors">
-                  <td class="py-3 px-4 font-bold text-slate-navy">{{ $f->urutan }}</td>
-                  <td class="py-3 px-4 font-semibold text-slate-navy">{{ $f->label }}</td>
-                  <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-surface-container font-code-coordinate uppercase">{{ $f->tipe }}</span></td>
-                  <td class="py-3 px-4">{{ $f->wajib ? 'Ya (Required)' : 'Opsional' }}</td>
-                  <td class="py-3 px-4">
-                    <span class="px-2 py-0.5 rounded-full font-bold {{ $f->aktif ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}">
-                      {{ $f->aktif ? 'Aktif' : 'Nonaktif' }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4 text-right">
-                    <form action="{{ route('admin.manajemen.fields.toggle', $f->id) }}" method="POST" class="inline">
-                      @csrf
-                      <button type="submit" class="text-xs text-injourney-teal hover:underline font-bold mr-2">
-                        {{ $f->aktif ? 'Nonaktifkan' : 'Aktifkan' }}
-                      </button>
-                    </form>
-                    <form action="{{ route('admin.manajemen.fields.delete', $f->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus field ini?');">
-                      @csrf
-                      <button type="submit" class="text-xs text-rose-600 hover:underline font-bold">Hapus</button>
-                    </form>
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    @elseif($tab === 'users')
-      <!-- ================= TAB: MANAJEMEN USER ================= -->
-      <div class="bg-card-bg rounded-xl border border-border-subtle p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div>
-            <h3 class="text-lg font-bold text-slate-navy">Manajemen Akun Petugas &amp; Personil</h3>
-            <p class="text-xs text-secondary mt-0.5">Kelola kredensial akun dinas petugas lapangan AMC, ARFF, Avsec, dan Safety Section.</p>
-          </div>
-          <button type="button" onclick="openModal('modalAddUser')" class="px-4 py-2 bg-injourney-teal hover:bg-injourney-dark-teal text-white text-xs font-bold rounded-lg shadow-xs transition-all">
-            + Tambah User Baru
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-surface-container text-slate-navy uppercase font-semibold border-b border-border-subtle">
-                <th class="py-3 px-4">Nama Lengkap</th>
-                <th class="py-3 px-4">Username</th>
-                <th class="py-3 px-4">Jabatan / Posko</th>
-                <th class="py-3 px-4">Hak Akses Role</th>
-                <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border-subtle">
-              @foreach($users as $u)
-                <tr class="hover:bg-surface-container-low transition-colors">
-                  <td class="py-3 px-4 font-bold text-slate-navy">{{ $u->namalengkap }}</td>
-                  <td class="py-3 px-4 font-code-coordinate text-injourney-teal">{{ $u->username }}</td>
-                  <td class="py-3 px-4 text-secondary">{{ $u->jabatan }}</td>
-                  <td class="py-3 px-4">
-                    <span class="px-2.5 py-0.5 rounded-full font-bold uppercase {{ $u->role === 'admin' ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-700' }}">
-                      {{ $u->role }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4">
-                    <span class="px-2 py-0.5 rounded-full font-bold {{ $u->aktif ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}">
-                      {{ $u->aktif ? 'Aktif' : 'Nonaktif' }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4 text-right">
-                    @if($u->id !== auth()->id())
-                      <form action="{{ route('admin.manajemen.users.delete', $u->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus user {{ $u->username }}?');">
-                        @csrf
-                        <button type="submit" class="text-xs text-rose-600 hover:underline font-bold">Hapus</button>
-                      </form>
-                    @endif
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-    @endif
-
   </main>
 
   <!-- ================= MODAL DETAIL PROFIL SATWA ================= -->
@@ -995,108 +860,13 @@
     </div>
   </div>
 
-  <!-- ================= MODAL TAMBAH FIELD (PRD REQ-MGT-005) ================= -->
-  <div class="fixed inset-0 z-50 hidden bg-slate-navy/60 backdrop-blur-xs flex items-center justify-center p-4" id="modalAddField">
-    <div class="bg-card-bg border border-border-subtle rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6">
-      <div class="flex items-center justify-between pb-4 border-b border-border-subtle mb-4">
-        <h3 class="text-base font-bold text-slate-navy">Tambah Field Baru</h3>
-        <button class="p-1.5 text-secondary hover:text-slate-navy rounded-lg" onclick="closeModal('modalAddField')">
-          <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-      </div>
-
-      <form action="{{ route('admin.manajemen.fields.store') }}" method="POST" class="space-y-4 text-xs">
-        @csrf
-        <div>
-          <label class="block font-semibold text-slate-navy mb-1">Label Input <span class="text-rose-500">*</span></label>
-          <input name="label" required placeholder="Contoh: Titik Ketinggian Satwa" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"/>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-navy mb-1">Tipe Input <span class="text-rose-500">*</span></label>
-          <select name="tipe" id="addSelectTipe" onchange="toggleAddOpsi(this.value)" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none">
-            <option value="text">Teks Pendek</option>
-            <option value="textarea">Teks Panjang (Textarea)</option>
-            <option value="dropdown">Dropdown Pilihan</option>
-            <option value="date">Tanggal</option>
-            <option value="number">Angka</option>
-          </select>
-        </div>
-        <div id="addOpsiContainer" class="hidden">
-          <label class="block font-semibold text-slate-navy mb-1">Opsi Dropdown (Satu per baris)</label>
-          <textarea name="opsi" rows="3" placeholder="Pilihan 1&#10;Pilihan 2" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"></textarea>
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="checkbox" name="wajib" id="addWajib" value="1" class="rounded text-injourney-teal focus:ring-injourney-teal"/>
-          <label for="addWajib" class="font-semibold text-slate-navy">Wajib Diisi (Required)</label>
-        </div>
-        <div class="pt-4 border-t border-border-subtle flex items-center justify-end gap-2">
-          <button type="button" class="px-4 py-2 border border-border-subtle rounded-lg bg-white" onclick="closeModal('modalAddField')">Batal</button>
-          <button type="submit" class="px-5 py-2 bg-injourney-teal hover:bg-injourney-dark-teal text-white font-bold rounded-lg shadow-xs">Simpan Field</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= MODAL TAMBAH USER (PRD REQ-MGT-005) ================= -->
-  <div class="fixed inset-0 z-50 hidden bg-slate-navy/60 backdrop-blur-xs flex items-center justify-center p-4" id="modalAddUser">
-    <div class="bg-card-bg border border-border-subtle rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6">
-      <div class="flex items-center justify-between pb-4 border-b border-border-subtle mb-4">
-        <h3 class="text-base font-bold text-slate-navy">Tambah Akun Petugas Baru</h3>
-        <button class="p-1.5 text-secondary hover:text-slate-navy rounded-lg" onclick="closeModal('modalAddUser')">
-          <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-      </div>
-
-      <form action="{{ route('admin.manajemen.users.store') }}" method="POST" class="space-y-4 text-xs">
-        @csrf
-        <div>
-          <label class="block font-semibold text-slate-navy mb-1">Nama Lengkap Petugas <span class="text-rose-500">*</span></label>
-          <input name="namalengkap" required placeholder="Contoh: Budi Santoso, S.T." class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"/>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-navy mb-1">Username Login <span class="text-rose-500">*</span></label>
-          <input name="username" required placeholder="Contoh: amc.budisantoso" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"/>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-navy mb-1">Password Baru <span class="text-rose-500">*</span></label>
-          <input name="password" type="password" required minlength="6" placeholder="Minimal 6 karakter" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"/>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-navy mb-1">Role Akses <span class="text-rose-500">*</span></label>
-            <select name="role" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none">
-              <option value="pegawai">Pegawai / Petugas Lapangan</option>
-              <option value="admin">Administrator / Safety Manager</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-navy mb-1">Jabatan / Posko</label>
-            <input name="jabatan" placeholder="Contoh: AMC Airside Supervisor" class="w-full px-3 py-2 border border-border-subtle rounded-lg focus:border-injourney-teal outline-none"/>
-          </div>
-        </div>
-        <div class="pt-4 border-t border-border-subtle flex items-center justify-end gap-2">
-          <button type="button" class="px-4 py-2 border border-border-subtle rounded-lg bg-white" onclick="closeModal('modalAddUser')">Batal</button>
-          <button type="submit" class="px-5 py-2 bg-injourney-teal hover:bg-injourney-dark-teal text-white font-bold rounded-lg shadow-xs">Simpan User</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- ================= FOOTER STANDAR INJOURNEY ================= -->
   <footer class="bg-card-bg border-t border-border-subtle mt-auto py-4 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-[1680px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-secondary">
-      <div class="flex items-center gap-3">
+    <div class="max-w-[1680px] mx-auto flex justify-end items-center text-xs text-secondary">
+      <div class="flex items-center gap-2.5 text-right">
         <span class="font-bold text-slate-navy">PT Angkasa Pura Indonesia</span>
         <span>•</span>
-        <span>InJourney Airports WHMS Portal v2.0</span>
-      </div>
-      <div class="flex items-center gap-3 text-[11px]">
-        <span class="inline-flex items-center gap-1 text-injourney-teal">
-          <span class="material-symbols-outlined text-sm">verified</span>
-          ICAO Annex 14 Aerodrome Safety Certified
-        </span>
-        <span>•</span>
-        <span>Ditjen Perhubungan Udara Compliance</span>
+        <span>InJourney Airports WHMS Portal</span>
       </div>
     </div>
   </footer>
