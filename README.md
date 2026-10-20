@@ -106,20 +106,6 @@ php artisan serve
 ```
 Buka browser di: `http://127.0.0.1:8000`
 
----
-
-## 👥 Akun Default Operasional
-
-| Username | Role | Unit Kerja | Password Default |
-| :--- | :--- | :--- | :--- |
-| `admin.utama` | Admin | Kantor Cabang / Safety Unit | `juanda123` |
-| `amc.divisi` | Pegawai | Apron Movement Control (AMC) | `juanda123` |
-| `arff.divisi` | Pegawai | Rescue & Fire Fighting (ARFF) | `juanda123` |
-| `security.divisi` | Pegawai | Aviation Security (Avsec) | `juanda123` |
-| `smsohs.divisi` | Pegawai | SMS & OHS Safety Division | `juanda123` |
-
----
-
 ## 📖 Dokumentasi Lengkap (PRD)
 
 Dokumentasi spesifikasi teknis dan fungsional lengkap dapat dilihat di berkas **[prd.md](prd.md)**.

@@ -37,6 +37,7 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
 // Rute Admin
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/verifikasi', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi');
     Route::get('/laporan/{id}/detail', [AdminDashboardController::class, 'getDetail'])->name('laporan.detail');
     Route::post('/laporan/{id}/update', [AdminDashboardController::class, 'update'])->name('laporan.update');
     Route::post('/laporan/{id}/delete', [AdminDashboardController::class, 'destroy'])->name('laporan.delete');

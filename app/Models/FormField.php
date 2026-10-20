@@ -12,6 +12,8 @@ class FormField extends Model
 
     protected $table = 'form_fields';
 
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'nama_field',
         'tipe',

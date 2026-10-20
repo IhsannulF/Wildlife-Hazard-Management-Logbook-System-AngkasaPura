@@ -90,7 +90,7 @@
       <div class="px-2 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Menu Operasional</div>
       <div class="space-y-1">
         @php
-          $isVerifNav = ($currentPage === 'verifikasi' || request()->get('tab') === 'verifikasi');
+          $isVerifNav = ($currentPage === 'verifikasi' || request()->routeIs('admin.verifikasi') || request()->get('tab') === 'verifikasi');
         @endphp
         <!-- Dashboard -->
         <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && !$isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
@@ -120,7 +120,7 @@
           </a>
 
           <!-- Verifikasi Berita Acara -->
-          <a href="{{ route('admin.dashboard', ['tab' => 'verifikasi']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ $isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+          <a href="{{ route('admin.verifikasi') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ $isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
             <span class="material-symbols-outlined text-lg {{ $isVerifNav ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
             <span class="flex-1">Verifikasi BA</span>
           </a>

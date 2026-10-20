@@ -3,26 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Laporan;
 use App\Models\DetailSatwa;
 use App\Models\FormField;
+use App\Models\Laporan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        if ($request->query('tab') === 'verifikasi') {
+            return $this->verifikasiIndex($request);
+        }
+
         $search = $request->query('search', '');
         $statusFilter = $request->query('status', '');
         $tab = $request->query('tab', '');
 
         $totalLaporan = Laporan::count();
-        $belum        = Laporan::where('status', 'belum')->orWhereNull('status')->count();
-        $ditangani    = Laporan::where('status', 'sudah')->count();
+        $belum = Laporan::where('status', 'belum')->orWhereNull('status')->count();
+        $ditangani = Laporan::where('status', 'sudah')->count();
 
         // Metrik Telemetry & Bento Cards
-        $belumRunway = Laporan::where(function($q) {
+        $belumRunway = Laporan::where(function ($q) {
             $q->where('status', 'belum')->orWhereNull('status');
         })->where('area_inspeksi', 'like', '%Runway%')->count();
         $belumPerimeter = max(0, $belum - $belumRunway);
@@ -35,19 +38,19 @@ class DashboardController extends Controller
             ->limit(2)
             ->pluck('grid_lokasi')
             ->toArray();
-        $hotspotGrid = !empty($topGrids) ? implode(' & ', $topGrids) : 'K-10 & D-9';
+        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : 'K-10 & D-9';
 
         $totalSatwa = DetailSatwa::count();
-        $burungCount = DetailSatwa::where(function($q) {
+        $burungCount = DetailSatwa::where(function ($q) {
             $q->where('nama_satwa', 'like', '%Burung%')
-              ->orWhere('nama_satwa', 'like', '%Blekok%')
-              ->orWhere('nama_satwa', 'like', '%Kuntul%')
-              ->orWhere('nama_satwa', 'like', '%Cangak%')
-              ->orWhere('nama_satwa', 'like', '%Pecuk%');
+                ->orWhere('nama_satwa', 'like', '%Blekok%')
+                ->orWhere('nama_satwa', 'like', '%Kuntul%')
+                ->orWhere('nama_satwa', 'like', '%Cangak%')
+                ->orWhere('nama_satwa', 'like', '%Pecuk%');
         })->count();
-        $reptilCount = DetailSatwa::where(function($q) {
+        $reptilCount = DetailSatwa::where(function ($q) {
             $q->where('nama_satwa', 'like', '%Biawak%')
-              ->orWhere('nama_satwa', 'like', '%Ular%');
+                ->orWhere('nama_satwa', 'like', '%Ular%');
         })->count();
         $pctBurung = $totalSatwa > 0 ? round(($burungCount / $totalSatwa) * 100) : 62;
         $pctReptil = $totalSatwa > 0 ? round(($reptilCount / $totalSatwa) * 100) : 24;
@@ -55,17 +58,17 @@ class DashboardController extends Controller
 
         // 1. DATASET: TREN FREKUENSI TEMUAN BULANAN (12 Bulan)
         $monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-        
+
         $baselineMonthly = [
-            1  => ['total' => 14, 'handled' => 13, 'critical' => 1],
-            2  => ['total' => 16, 'handled' => 15, 'critical' => 1],
-            3  => ['total' => 20, 'handled' => 19, 'critical' => 1],
-            4  => ['total' => 18, 'handled' => 17, 'critical' => 1],
-            5  => ['total' => 15, 'handled' => 14, 'critical' => 1],
-            6  => ['total' => 12, 'handled' => 12, 'critical' => 0],
-            7  => ['total' => 11, 'handled' => 11, 'critical' => 0],
-            8  => ['total' => 13, 'handled' => 12, 'critical' => 1],
-            9  => ['total' => 18, 'handled' => 17, 'critical' => 1],
+            1 => ['total' => 14, 'handled' => 13, 'critical' => 1],
+            2 => ['total' => 16, 'handled' => 15, 'critical' => 1],
+            3 => ['total' => 20, 'handled' => 19, 'critical' => 1],
+            4 => ['total' => 18, 'handled' => 17, 'critical' => 1],
+            5 => ['total' => 15, 'handled' => 14, 'critical' => 1],
+            6 => ['total' => 12, 'handled' => 12, 'critical' => 0],
+            7 => ['total' => 11, 'handled' => 11, 'critical' => 0],
+            8 => ['total' => 13, 'handled' => 12, 'critical' => 1],
+            9 => ['total' => 18, 'handled' => 17, 'critical' => 1],
             10 => ['total' => max($totalLaporan, 24), 'handled' => max($ditangani, 22), 'critical' => max($belum, 2)],
             11 => ['total' => 28, 'handled' => 26, 'critical' => 2],
             12 => ['total' => 32, 'handled' => 30, 'critical' => 2],
@@ -98,7 +101,7 @@ class DashboardController extends Controller
                 $reptilCount > 0 ? $reptilCount : 48,
                 max(1, $totalSatwa - ($burungCount + $reptilCount)) > 1 ? ($totalSatwa - ($burungCount + $reptilCount)) : 27,
             ],
-            'percentages' => [$pctBurung, $pctReptil, $pctMamalia]
+            'percentages' => [$pctBurung, $pctReptil, $pctMamalia],
         ];
 
         // 3. DATASET: TOP 5 SPESIES SATWA
@@ -130,20 +133,20 @@ class DashboardController extends Controller
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_petugas', 'like', "%{$search}%")
-                  ->orWhere('unit_kerja', 'like', "%{$search}%")
-                  ->orWhere('area_inspeksi', 'like', "%{$search}%")
-                  ->orWhere('grid_lokasi', 'like', "%{$search}%")
-                  ->orWhereHas('detailSatwa', function ($sq) use ($search) {
-                      $sq->where('nama_satwa', 'like', "%{$search}%")
-                         ->orWhere('grid', 'like', "%{$search}%");
-                  });
+                    ->orWhere('unit_kerja', 'like', "%{$search}%")
+                    ->orWhere('area_inspeksi', 'like', "%{$search}%")
+                    ->orWhere('grid_lokasi', 'like', "%{$search}%")
+                    ->orWhereHas('detailSatwa', function ($sq) use ($search) {
+                        $sq->where('nama_satwa', 'like', "%{$search}%")
+                            ->orWhere('grid', 'like', "%{$search}%");
+                    });
             });
         }
 
-        if (!empty($statusFilter)) {
+        if (! empty($statusFilter)) {
             $query->where('status', $statusFilter);
         }
 
@@ -178,36 +181,117 @@ class DashboardController extends Controller
         ));
     }
 
+    public function verifikasiIndex(Request $request)
+    {
+        $search = $request->query('search', '');
+        $statusFilter = $request->query('status', '');
+
+        $totalLaporan = Laporan::count();
+        $belum = Laporan::where('status', 'belum')->orWhereNull('status')->count();
+        $ditangani = Laporan::where('status', 'sudah')->count();
+
+        // Metrik Telemetry & Bento Cards
+        $belumRunway = Laporan::where(function ($q) {
+            $q->where('status', 'belum')->orWhereNull('status');
+        })->where('area_inspeksi', 'like', '%Runway%')->count();
+        $belumPerimeter = max(0, $belum - $belumRunway);
+
+        $topGrids = Laporan::whereNotNull('grid_lokasi')
+            ->where('grid_lokasi', '!=', '')
+            ->selectRaw('grid_lokasi, count(*) as count')
+            ->groupBy('grid_lokasi')
+            ->orderByDesc('count')
+            ->limit(2)
+            ->pluck('grid_lokasi')
+            ->toArray();
+        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : 'K-10 & D-9';
+
+        $totalSatwa = DetailSatwa::count();
+        $burungCount = DetailSatwa::where(function ($q) {
+            $q->where('nama_satwa', 'like', '%Burung%')
+                ->orWhere('nama_satwa', 'like', '%Blekok%')
+                ->orWhere('nama_satwa', 'like', '%Kuntul%')
+                ->orWhere('nama_satwa', 'like', '%Cangak%')
+                ->orWhere('nama_satwa', 'like', '%Pecuk%');
+        })->count();
+        $reptilCount = DetailSatwa::where(function ($q) {
+            $q->where('nama_satwa', 'like', '%Biawak%')
+                ->orWhere('nama_satwa', 'like', '%Ular%');
+        })->count();
+        $pctBurung = $totalSatwa > 0 ? round(($burungCount / $totalSatwa) * 100) : 62;
+        $pctReptil = $totalSatwa > 0 ? round(($reptilCount / $totalSatwa) * 100) : 24;
+        $pctMamalia = $totalSatwa > 0 ? max(0, 100 - ($pctBurung + $pctReptil)) : 14;
+
+        $query = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('id', 'desc');
+
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_petugas', 'like', "%{$search}%")
+                    ->orWhere('unit_kerja', 'like', "%{$search}%")
+                    ->orWhere('area_inspeksi', 'like', "%{$search}%")
+                    ->orWhere('grid_lokasi', 'like', "%{$search}%")
+                    ->orWhereHas('detailSatwa', function ($sq) use ($search) {
+                        $sq->where('nama_satwa', 'like', "%{$search}%")
+                            ->orWhere('grid', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (! empty($statusFilter)) {
+            $query->where('status', $statusFilter);
+        }
+
+        $laporans = $query->paginate(10)->withQueryString();
+
+        return view('admin.verifikasi', compact(
+            'totalLaporan',
+            'belum',
+            'ditangani',
+            'laporans',
+            'search',
+            'statusFilter',
+            'hotspotGrid',
+            'belumRunway',
+            'belumPerimeter',
+            'totalSatwa',
+            'pctBurung',
+            'pctReptil',
+            'pctMamalia'
+        ));
+    }
+
     public function getDetail(int $id)
     {
         $laporan = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])->find($id);
 
-        if (!$laporan) {
+        if (! $laporan) {
             return response()->json(['error' => 'Laporan tidak ditemukan'], 404);
         }
 
         $satwaData = [];
         foreach ($laporan->detailSatwa as $ds) {
             $foto = $ds->fotoLaporan->first();
-            $fotoUrl = $foto ? asset('storage/uploads/satwa/' . $foto->nama_file) : asset('images/' . ($ds->foto_path ?: ''));
+            $fotoUrl = $foto ? asset('storage/uploads/satwa/'.$foto->nama_file) : asset('images/'.($ds->foto_path ?: ''));
             $satwaData[] = [
                 'detail_satwa_id' => $ds->id,
-                'nama'            => $ds->nama_satwa,
-                'jumlah'          => $ds->jumlah,
-                'grid'            => $ds->grid,
-                'foto_path'       => $fotoUrl,
+                'nama' => $ds->nama_satwa,
+                'jumlah' => $ds->jumlah,
+                'grid' => $ds->grid,
+                'foto_path' => $fotoUrl,
             ];
         }
 
         $fotoExtra = $laporan->fotoLaporan
             ->where('tipe', 'extra')
-            ->map(fn($f) => asset('storage/uploads/extra/' . $f->nama_file))
+            ->map(fn ($f) => asset('storage/uploads/extra/'.$f->nama_file))
             ->values();
 
         $standardFields = [
-            'nama_petugas','tanggal','kondisi_cuaca','unit_kerja','area_inspeksi',
-            'tanda_tangan','grid','grid_lokasi','satwa','foto_laporan','ciri_ukuran',
-            'kondisi_apron','aktivitas_satwa','tindak_lanjut','detail_pengusiran'
+            'nama_petugas', 'tanggal', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
+            'tanda_tangan', 'grid', 'grid_lokasi', 'satwa', 'foto_laporan', 'ciri_ukuran',
+            'kondisi_apron', 'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran',
         ];
         $extraFieldsDef = FormField::where('aktif', true)->whereNotIn('nama_field', $standardFields)->get();
 
@@ -227,23 +311,37 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'status_validasi' => 'nullable|in:belum,sudah',
-            'nama_petugas'    => 'nullable|string',
-            'tanggal'         => 'nullable|date',
-            'kondisi_cuaca'   => 'nullable|string',
-            'unit_kerja'      => 'nullable|string',
-            'area_inspeksi'   => 'nullable|string',
-            'grid_lokasi'     => 'nullable|string',
-            'tindak_lanjut'   => 'nullable|string',
+            'nama_petugas' => 'nullable|string',
+            'tanggal' => 'nullable|date',
+            'kondisi_cuaca' => 'nullable|string',
+            'unit_kerja' => 'nullable|string',
+            'area_inspeksi' => 'nullable|string',
+            'grid_lokasi' => 'nullable|string',
+            'tindak_lanjut' => 'nullable|string',
         ]);
 
         $laporan->status = $request->input('status_validasi', $laporan->status);
-        if ($request->filled('nama_petugas')) $laporan->nama_petugas = $request->nama_petugas;
-        if ($request->filled('tanggal')) $laporan->tanggal = $request->tanggal;
-        if ($request->filled('kondisi_cuaca')) $laporan->kondisi_cuaca = $request->kondisi_cuaca;
-        if ($request->filled('unit_kerja')) $laporan->unit_kerja = $request->unit_kerja;
-        if ($request->filled('area_inspeksi')) $laporan->area_inspeksi = $request->area_inspeksi;
-        if ($request->filled('grid_lokasi')) $laporan->grid_lokasi = $request->grid_lokasi;
-        if ($request->filled('tindak_lanjut')) $laporan->tindak_lanjut = $request->tindak_lanjut;
+        if ($request->filled('nama_petugas')) {
+            $laporan->nama_petugas = $request->nama_petugas;
+        }
+        if ($request->filled('tanggal')) {
+            $laporan->tanggal = $request->tanggal;
+        }
+        if ($request->filled('kondisi_cuaca')) {
+            $laporan->kondisi_cuaca = $request->kondisi_cuaca;
+        }
+        if ($request->filled('unit_kerja')) {
+            $laporan->unit_kerja = $request->unit_kerja;
+        }
+        if ($request->filled('area_inspeksi')) {
+            $laporan->area_inspeksi = $request->area_inspeksi;
+        }
+        if ($request->filled('grid_lokasi')) {
+            $laporan->grid_lokasi = $request->grid_lokasi;
+        }
+        if ($request->filled('tindak_lanjut')) {
+            $laporan->tindak_lanjut = $request->tindak_lanjut;
+        }
 
         $laporan->save();
 
@@ -252,7 +350,7 @@ class DashboardController extends Controller
                 'success' => true,
                 'message' => 'Data laporan berhasil diperbarui.',
                 'status' => $laporan->status,
-                'status_label' => $laporan->status === 'sudah' ? 'Sudah Ditangani' : 'Belum Ditangani'
+                'status_label' => $laporan->status === 'sudah' ? 'Sudah Ditangani' : 'Belum Ditangani',
             ]);
         }
 

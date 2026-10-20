@@ -12,6 +12,8 @@ class FormFieldOption extends Model
 
     protected $table = 'form_field_options';
 
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'field_id',
         'nilai',
