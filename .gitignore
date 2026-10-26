@@ -25,3 +25,10 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Video Demo & Agent Skills
+/demo/
+/.agents/
+skills-lock.json
+*.mp4
+

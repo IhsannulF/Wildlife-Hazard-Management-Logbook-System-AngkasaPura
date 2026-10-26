@@ -90,7 +90,7 @@
       <div class="px-2 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Menu Operasional</div>
       <div class="space-y-1">
         @php
-          $isVerifNav = ($currentPage === 'verifikasi' || request()->routeIs('admin.verifikasi') || request()->get('tab') === 'verifikasi');
+          $isVerifNav = ($currentPage === 'verifikasi' || request()->routeIs('admin.verifikasi*') || request()->get('tab') === 'verifikasi');
         @endphp
         <!-- Dashboard -->
         <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ ($currentPage === 'dashboard' || request()->routeIs('admin.dashboard') || request()->routeIs('user.dashboard')) && !$isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
@@ -119,11 +119,73 @@
             <span class="flex-1">Peta Sebaran Grid</span>
           </a>
 
-          <!-- Verifikasi Berita Acara -->
-          <a href="{{ route('admin.verifikasi') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all {{ $isVerifNav ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-            <span class="material-symbols-outlined text-lg {{ $isVerifNav ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
-            <span class="flex-1">Verifikasi BA</span>
-          </a>
+          @php
+            $activeSub = $currentSub ?? (
+              request()->routeIs('admin.verifikasi.patroli') ? 'patroli' : (
+              request()->routeIs('admin.verifikasi.detail-temuan') ? 'detail-temuan' : (
+              request()->routeIs('admin.verifikasi.backup-temuan') ? 'backup-temuan' : (
+              request()->routeIs('admin.verifikasi.master-titik') ? 'master-titik' : (
+              request()->routeIs('admin.verifikasi.master-jenis') ? 'master-jenis' : (
+              request()->routeIs('admin.verifikasi.master-preview') ? 'master-preview' : 'autocrat')))))
+            );
+          @endphp
+          <!-- Verifikasi Berita Acara (Collapsible Dropdown) -->
+          <div class="space-y-1">
+            <div class="flex items-center rounded-xl text-xs transition-all {{ $isVerifNav ? 'bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+              <a href="{{ route('admin.verifikasi') }}" class="flex-1 flex items-center gap-3 px-3 py-2.5 {{ $isVerifNav ? 'font-bold' : 'font-medium' }}" title="Verifikasi Berita Acara (BA)">
+                <span class="material-symbols-outlined text-lg {{ $isVerifNav ? 'text-[#00A9C1]' : 'text-slate-400' }}">fact_check</span>
+                <span class="flex-1">Verifikasi BA</span>
+              </a>
+              <button type="button" onclick="toggleVerifikasiDropdown(event)" class="px-2 py-2.5 text-slate-400 hover:text-[#007fa3] transition-transform cursor-pointer" title="Buka/Tutup Submenu">
+                <span class="material-symbols-outlined text-base transition-transform duration-200 {{ $isVerifNav ? 'rotate-180 text-[#00A9C1]' : '' }}" id="verifChevron">expand_more</span>
+              </button>
+            </div>
+
+            <!-- Submenu: 7 Data Spesifik Safety Autocrat -->
+            <div id="verifikasiSubmenu" class="pl-3 py-1 space-y-0.5 border-l-2 border-cyan-200/80 ml-3.5 {{ $isVerifNav ? '' : 'hidden' }}">
+              <!-- 1. Laporan Autocrat -->
+              <a href="{{ route('admin.verifikasi.autocrat') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'autocrat') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'autocrat') ? 'text-[#00A9C1]' : 'text-slate-400' }}">description</span>
+                <span class="truncate">Laporan Autocrat</span>
+              </a>
+
+              <!-- 2. Patroli -->
+              <a href="{{ route('admin.verifikasi.patroli') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'patroli') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'patroli') ? 'text-[#00A9C1]' : 'text-slate-400' }}">commute</span>
+                <span class="truncate">Patroli</span>
+              </a>
+
+              <!-- 3. Detail Temuan -->
+              <a href="{{ route('admin.verifikasi.detail-temuan') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'detail-temuan') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'detail-temuan') ? 'text-[#00A9C1]' : 'text-slate-400' }}">checklist</span>
+                <span class="truncate">Detail Temuan</span>
+              </a>
+
+              <!-- 4. Back Up Detail Temuan -->
+              <a href="{{ route('admin.verifikasi.backup-temuan') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'backup-temuan') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'backup-temuan') ? 'text-[#00A9C1]' : 'text-slate-400' }}">backup</span>
+                <span class="truncate">Back Up Detail Temuan</span>
+              </a>
+
+              <!-- 5. Master Titik -->
+              <a href="{{ route('admin.verifikasi.master-titik') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'master-titik') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'master-titik') ? 'text-[#00A9C1]' : 'text-slate-400' }}">location_on</span>
+                <span class="truncate">Master Titik</span>
+              </a>
+
+              <!-- 6. Master Jenis -->
+              <a href="{{ route('admin.verifikasi.master-jenis') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'master-jenis') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'master-jenis') ? 'text-[#00A9C1]' : 'text-slate-400' }}">flutter_dash</span>
+                <span class="truncate">Master Jenis</span>
+              </a>
+
+              <!-- 7. Master Preview -->
+              <a href="{{ route('admin.verifikasi.master-preview') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all {{ ($isVerifNav && $activeSub === 'master-preview') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+                <span class="material-symbols-outlined text-[15px] {{ ($isVerifNav && $activeSub === 'master-preview') ? 'text-[#00A9C1]' : 'text-slate-400' }}">photo_library</span>
+                <span class="truncate">Master Preview</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -182,6 +244,25 @@
       sidebar.classList.add('-translate-x-full');
       backdrop.classList.add('hidden');
       document.body.classList.remove('overflow-hidden', 'lg:overflow-auto');
+    }
+  }
+
+  function toggleVerifikasiDropdown(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const submenu = document.getElementById('verifikasiSubmenu');
+    const chevron = document.getElementById('verifChevron');
+    if (!submenu) return;
+    
+    const isHidden = submenu.classList.contains('hidden');
+    if (isHidden) {
+      submenu.classList.remove('hidden');
+      if (chevron) chevron.classList.add('rotate-180', 'text-[#00A9C1]');
+    } else {
+      submenu.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-180', 'text-[#00A9C1]');
     }
   }
 

@@ -50,6 +50,10 @@
               <p class="font-semibold text-on-surface text-sm" id="modalOfficer">-</p>
             </div>
             <div>
+              <p class="text-xs text-secondary">Unit Kerja:</p>
+              <p class="font-semibold text-on-surface text-sm" id="modalUnitKerja">AMC Airside Operations</p>
+            </div>
+            <div>
               <p class="text-xs text-secondary">Tanggal &amp; Jam Temuan:</p>
               <p class="font-semibold text-on-surface text-sm" id="modalTimestamp">-</p>
             </div>
@@ -95,6 +99,44 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- Full Detailed Observation & Field Findings Note -->
+        <div class="space-y-3">
+          <!-- Deskripsi & Catatan Pengamatan Lengkap -->
+          <div class="p-4 rounded-xl bg-surface-container-lowest border border-border-subtle shadow-xs space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-injourney-teal">notes</span> Deskripsi &amp; Catatan Pengamatan Lengkap
+              </span>
+              <span class="text-[11px] text-secondary font-medium">Catatan Logbook Sisi Udara</span>
+            </div>
+            <p class="text-xs text-on-surface leading-relaxed font-medium bg-canvas-light p-3 rounded-lg border border-border-subtle" id="modalCiriUkuran">
+              -
+            </p>
+          </div>
+
+          <!-- 3-Column Mini Cards: Aktivitas, Kondisi Apron, Tindak Lanjut -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-border-subtle space-y-1">
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-alert-amber">directions_run</span> Aktivitas &amp; Perilaku Satwa
+              </span>
+              <p class="text-xs text-on-surface font-medium" id="modalAktivitas">-</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-border-subtle space-y-1">
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-injourney-teal">terrain</span> Kondisi Apron / Area
+              </span>
+              <p class="text-xs text-on-surface font-medium" id="modalKondisiApron">-</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-border-subtle space-y-1">
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-resolved-emerald">shield</span> Tindak Lanjut &amp; Mitigasi
+              </span>
+              <p class="text-xs text-on-surface font-medium" id="modalTindakLanjut">-</p>
+            </div>
+          </div>
         </div>
 
         <!-- Runway Spatial Mini Schematic -->
@@ -153,29 +195,35 @@
             </div>
           </div>
 
-          <!-- Digital Wet Signature Canvas Box -->
+          <!-- Digital Signature Display Box (Read-Only Preview) -->
           <div class="space-y-4 flex flex-col">
             <div class="flex items-center justify-between">
-              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">Validasi Tanda Tangan Basah Digital</span>
-              <button class="text-xs text-injourney-teal hover:underline font-label-md cursor-pointer" onclick="clearSignature()" type="button">
-                Bersihkan Canvas
-              </button>
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">Tanda Tangan Petugas Pelapor</span>
+              <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-200">
+                <span class="material-symbols-outlined text-xs text-resolved-emerald">verified</span> Terekam di Sistem
+              </span>
             </div>
 
-            <!-- Dedicated HTML5 Digital Signature Pad -->
-            <div class="flex-1 min-h-[190px] border-2 border-dashed border-border-subtle rounded-xl bg-white p-3 relative flex flex-col justify-between">
-              <canvas class="w-full h-32 touch-none cursor-crosshair" id="signaturePad"></canvas>
-              <div class="border-t border-slate-200 pt-2 flex items-center justify-between text-[11px] text-secondary">
-                <span>Goreskan tanda tangan petugas verifikator di atas garis</span>
+            <!-- Signature Display Box -->
+            <div class="flex-1 min-h-[190px] border border-border-subtle rounded-xl bg-white p-4 relative flex flex-col justify-between shadow-xs" id="signaturePad">
+              <div class="flex-1 flex items-center justify-center p-2 bg-slate-50/70 rounded-lg border border-dashed border-slate-200 min-h-[120px]">
+                <img id="modalSignatureImg" src="" alt="Tanda Tangan Petugas" class="max-h-24 max-w-full object-contain hidden">
+                <div id="modalNoSignature" class="text-xs text-secondary italic flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-base text-slate-400">draw</span>
+                  <span>Tanda tangan digital tersimpan dalam Berita Acara</span>
+                </div>
+              </div>
+              <div class="border-t border-slate-200 pt-2.5 mt-2 flex items-center justify-between text-[11px] text-secondary">
+                <span>Dokumen Berita Acara Resmi ICAO Doc 9137</span>
                 <span class="text-injourney-teal font-semibold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">lock</span> SHA-256 Verified
+                  <span class="material-symbols-outlined text-xs">lock</span> SHA-256 Secured
                 </span>
               </div>
             </div>
 
             <div class="p-3 bg-surface-container-low rounded-lg border border-border-subtle text-xs text-secondary space-y-1">
-              <p><strong class="text-on-surface">Verifikator:</strong> <span id="modalVerifierName">{{ $userName ?? 'Petugas Sisi Udara' }}</span></p>
-              <p><strong class="text-on-surface">Unit:</strong> {{ $userRole ?? 'Airside Operations' }}</p>
+              <p><strong class="text-on-surface">Petugas Pelapor:</strong> <span id="modalSigOfficerName">-</span></p>
+              <p><strong class="text-on-surface">Unit Kerja:</strong> <span id="modalSigUnitName">-</span></p>
             </div>
           </div>
 

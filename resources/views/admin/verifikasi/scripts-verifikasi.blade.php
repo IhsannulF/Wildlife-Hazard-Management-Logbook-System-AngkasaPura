@@ -38,9 +38,14 @@
       .then(data => {
         const regId = data.no_laporan || ('WHM-' + (data.tanggal ? data.tanggal.substring(0, 4) : '2026') + '-' + String(data.id).padStart(4, '0'));
         document.getElementById('modalReportId').innerText = regId;
-        document.getElementById('modalOfficer').innerText = (data.nama_petugas || data.nama_user) + ' (' + (data.unit_kerja || 'AMC') + ')';
+        const officerName = data.nama_petugas || data.nama_user || 'Petugas Sisi Udara';
+        const unitName = data.unit_kerja || 'AMC Airside Operations';
+        document.getElementById('modalOfficer').innerText = officerName;
+        if (document.getElementById('modalUnitKerja')) {
+          document.getElementById('modalUnitKerja').innerText = unitName;
+        }
         document.getElementById('modalTimestamp').innerText = (data.tanggal || '-') + ', ' + (data.created_at ? data.created_at.substring(11, 16) + ' WIB' : '08:00 WIB');
-        document.getElementById('modalWeather').innerText = data.kondisi_cuaca ? (data.kondisi_cuaca + ' / Angin 8 kts WSW') : 'Berawan 29°C';
+        document.getElementById('modalWeather').innerText = data.kondisi_cuaca ? (data.kondisi_cuaca + ' / Angin 8 kts WSW') : 'Berawan 29°C / Angin 8 kts WSW';
         
         let speciesStr = 'Satwa Liar';
         let qtyStr = '1 Ekor';
@@ -56,7 +61,28 @@
         }
 
         document.getElementById('modalSpecies').innerText = speciesStr;
-        document.getElementById('modalQuantity').innerText = qtyStr + (data.ciri_ukuran ? ` (${data.ciri_ukuran})` : '');
+        document.getElementById('modalQuantity').innerText = qtyStr;
+
+        // Pop up rincian lengkap catatan lapangan
+        if (document.getElementById('modalCiriUkuran')) {
+          document.getElementById('modalCiriUkuran').innerText = data.ciri_ukuran || 'Pengamatan kawanan satwa liar aktif di sekitar runway strip dan perimeter Juanda.';
+        }
+
+        // Aktivitas satwa
+        if (document.getElementById('modalAktivitas')) {
+          document.getElementById('modalAktivitas').innerText = data.aktivitas_satwa || data.detail_pengusiran || 'Aktivitas terpantau di kawasan pergerakan sisi udara.';
+        }
+
+        // Kondisi Apron / Area
+        if (document.getElementById('modalKondisiApron')) {
+          document.getElementById('modalKondisiApron').innerText = data.kondisi_apron || 'Kondisi permukaan normal & kering.';
+        }
+
+        // Tindak Lanjut
+        if (document.getElementById('modalTindakLanjut')) {
+          document.getElementById('modalTindakLanjut').innerText = data.tindak_lanjut || data.detail_pengusiran || 'Pengusiran aktif oleh tim gabungan AMC & Bird Hazard Control.';
+        }
+
         document.getElementById('modalLocation').innerText = (data.area_inspeksi || 'Runway 07L Bahu') + ' [' + gridStr + ']';
         document.getElementById('modalGridText').innerText = 'GRID ' + gridStr;
         document.getElementById('schematicGridTarget').innerText = gridStr + ' (' + (data.area_inspeksi || 'Bahu Landasan') + ')';
@@ -79,6 +105,27 @@
 
         if (data.detail_pengusiran) {
           document.getElementById('modalDispersalDesc').innerText = data.detail_pengusiran;
+        }
+
+        // Tampilkan tanda tangan asli petugas pelapor
+        const sigImg = document.getElementById('modalSignatureImg');
+        const noSigText = document.getElementById('modalNoSignature');
+        if (data.tanda_tangan && typeof data.tanda_tangan === 'string' && data.tanda_tangan.trim() !== '') {
+          if (sigImg) {
+            sigImg.src = data.tanda_tangan;
+            sigImg.classList.remove('hidden');
+          }
+          if (noSigText) noSigText.classList.add('hidden');
+        } else {
+          if (sigImg) sigImg.classList.add('hidden');
+          if (noSigText) noSigText.classList.remove('hidden');
+        }
+
+        if (document.getElementById('modalSigOfficerName')) {
+          document.getElementById('modalSigOfficerName').innerText = officerName;
+        }
+        if (document.getElementById('modalSigUnitName')) {
+          document.getElementById('modalSigUnitName').innerText = unitName;
         }
 
         switchModalPage(1);
@@ -110,70 +157,15 @@
     if (modal) modal.classList.add('hidden');
   }
 
-  // Interactive HTML5 Signature Canvas
-  let canvasInitialized = false;
-  let isDrawing = false;
-  let sigCanvas, sigCtx;
-
+  // Signature Pad Read-Only Handler
   function initSignaturePad() {
-    sigCanvas = document.getElementById('signaturePad');
-    if (!sigCanvas) return;
-    
-    sigCtx = sigCanvas.getContext('2d');
-    sigCanvas.width = sigCanvas.offsetWidth;
-    sigCanvas.height = sigCanvas.offsetHeight;
-    sigCtx.lineWidth = 2.5;
-    sigCtx.lineCap = 'round';
-    sigCtx.strokeStyle = '#006874';
-
-    function getPos(e) {
-      const rect = sigCanvas.getBoundingClientRect();
-      return {
-        x: (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left,
-        y: (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top
-      };
-    }
-
-    sigCanvas.onmousedown = (e) => {
-      isDrawing = true;
-      const p = getPos(e);
-      sigCtx.beginPath();
-      sigCtx.moveTo(p.x, p.y);
-    };
-
-    sigCanvas.onmousemove = (e) => {
-      if (!isDrawing) return;
-      const p = getPos(e);
-      sigCtx.lineTo(p.x, p.y);
-      sigCtx.stroke();
-    };
-
-    window.onmouseup = () => { isDrawing = false; };
-
-    sigCanvas.ontouchstart = (e) => {
-      e.preventDefault();
-      isDrawing = true;
-      const p = getPos(e);
-      sigCtx.beginPath();
-      sigCtx.moveTo(p.x, p.y);
-    };
-
-    sigCanvas.ontouchmove = (e) => {
-      if (!isDrawing) return;
-      e.preventDefault();
-      const p = getPos(e);
-      sigCtx.lineTo(p.x, p.y);
-      sigCtx.stroke();
-    };
-
-    sigCanvas.ontouchend = () => { isDrawing = false; };
-    canvasInitialized = true;
+    // Read-only signature preview for admin verification
+    return;
   }
 
   function clearSignature() {
-    if (!sigCanvas || !sigCtx) return;
-    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    showToast('Canvas tanda tangan telah dibersihkan.', 'info');
+    // No-op for admin review mode
+    return;
   }
 
   // Validate & Resolve Action via AJAX
@@ -208,8 +200,18 @@
         `;
       }
 
-      const resolveBtn = document.getElementById(`btn-resolve-${activeModalLaporanId}`);
-      if (resolveBtn) resolveBtn.remove();
+      const dispersalCell = document.getElementById(`dispersal-cell-${activeModalLaporanId}`);
+      if (dispersalCell) {
+        dispersalCell.innerHTML = `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
+            <span class="material-symbols-outlined text-xs text-resolved-emerald">check_circle</span>
+            Terkendali
+          </span>
+        `;
+      } else {
+        const resolveBtn = document.getElementById(`btn-resolve-${activeModalLaporanId}`);
+        if (resolveBtn) resolveBtn.remove();
+      }
 
       const row = document.getElementById(`row-${activeModalLaporanId}`);
       if (row) row.setAttribute('data-status', 'sudah');
@@ -247,8 +249,18 @@
         `;
       }
 
-      const btn = document.getElementById(`btn-resolve-${id}`);
-      if (btn) btn.remove();
+      const dispersalCell = document.getElementById(`dispersal-cell-${id}`);
+      if (dispersalCell) {
+        dispersalCell.innerHTML = `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
+            <span class="material-symbols-outlined text-xs text-resolved-emerald">check_circle</span>
+            Terkendali
+          </span>
+        `;
+      } else {
+        const btn = document.getElementById(`btn-resolve-${id}`);
+        if (btn) btn.remove();
+      }
 
       const row = document.getElementById(`row-${id}`);
       if (row) row.setAttribute('data-status', 'sudah');
@@ -290,32 +302,125 @@
     showToast(`Filter grid runway: ${gridCode}`, 'info');
   }
 
+  function applyDateFilterServer() {
+    const sInput = document.getElementById('filterStartDate');
+    const eInput = document.getElementById('filterEndDate');
+    const searchInput = document.getElementById('searchInput');
+
+    const startVal = sInput ? sInput.value.trim() : '';
+    const endVal = eInput ? eInput.value.trim() : '';
+    const searchVal = searchInput ? searchInput.value.trim() : '';
+
+    const url = new URL(window.location.href);
+
+    if (startVal) {
+      url.searchParams.set('start_date', startVal);
+    } else {
+      url.searchParams.delete('start_date');
+    }
+
+    if (endVal) {
+      url.searchParams.set('end_date', endVal);
+    } else {
+      url.searchParams.delete('end_date');
+    }
+
+    if (searchVal) {
+      url.searchParams.set('search', searchVal);
+    } else {
+      url.searchParams.delete('search');
+    }
+
+    url.searchParams.delete('page');
+    url.searchParams.delete('detail_page');
+    url.searchParams.delete('backup_page');
+
+    window.location.href = url.toString();
+  }
+
+  function clearDateFilter() {
+    if (typeof CalendarPicker !== 'undefined') {
+      CalendarPicker.clear();
+      return;
+    }
+    const sInput = document.getElementById('filterStartDate');
+    const eInput = document.getElementById('filterEndDate');
+    if (sInput) sInput.value = '';
+    if (eInput) eInput.value = '';
+
+    const btnClearDate = document.getElementById('datePickerClear') || document.getElementById('btnClearDate');
+    if (btnClearDate) btnClearDate.classList.add('hidden');
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('start_date') || url.searchParams.has('end_date') || url.searchParams.has('tanggal')) {
+      url.searchParams.delete('start_date');
+      url.searchParams.delete('end_date');
+      url.searchParams.delete('tanggal');
+      url.searchParams.delete('page');
+      window.location.href = url.toString();
+    } else {
+      searchTable();
+    }
+  }
+
   function resetFilters() {
-    @if(!empty($statusFilter) || !empty($search))
-      window.location.href = "{{ route('admin.verifikasi') }}";
-    @else
+    const url = new URL(window.location.href);
+    const hasServerFilters = url.searchParams.has('status') || url.searchParams.has('search') || url.searchParams.has('start_date') || url.searchParams.has('end_date');
+
+    if (hasServerFilters) {
+      const sub = url.searchParams.get('sub');
+      const tab = url.searchParams.get('tab');
+      const cleanUrl = new URL(window.location.pathname, window.location.origin);
+      if (sub) cleanUrl.searchParams.set('sub', sub);
+      if (tab) cleanUrl.searchParams.set('tab', tab);
+      window.location.href = cleanUrl.toString();
+    } else {
       const sInput = document.getElementById('searchInput');
       if (sInput) sInput.value = '';
       const fUnit = document.getElementById('filterUnit');
       if (fUnit) fUnit.value = '';
       const fArea = document.getElementById('filterArea');
       if (fArea) fArea.value = '';
+      if (typeof CalendarPicker !== 'undefined') {
+        CalendarPicker.clear();
+      } else {
+        const sDate = document.getElementById('filterStartDate');
+        if (sDate) sDate.value = '';
+        const eDate = document.getElementById('filterEndDate');
+        if (eDate) eDate.value = '';
+      }
       filterStatus('all');
-    @endif
+    }
   }
 
   function searchTable() {
     const searchVal = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : '';
     const unitVal = (document.getElementById('filterUnit') ? document.getElementById('filterUnit').value.toLowerCase().trim() : '');
     const areaVal = (document.getElementById('filterArea') ? document.getElementById('filterArea').value.toLowerCase().trim() : '');
+    const startDateVal = (document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '');
+    const endDateVal = (document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '');
+
+    const btnClearDate = document.getElementById('datePickerClear') || document.getElementById('btnClearDate');
+    if (btnClearDate) {
+      if (startDateVal || endDateVal) {
+        btnClearDate.classList.remove('hidden');
+      } else {
+        btnClearDate.classList.add('hidden');
+      }
+    }
 
     const table = document.getElementById('logbookTable');
     if (!table) return;
     const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
 
+    let visibleCount = 0;
+
     for (let r of rows) {
+      if (r.id === 'noResultsRow') continue;
+
       const text = r.innerText.toLowerCase();
       const rStatus = r.getAttribute('data-status');
+      const rDate = r.getAttribute('data-date') || '';
 
       let matchStatus = true;
       if (currentStatusFilter === 'pending') {
@@ -328,11 +433,32 @@
       let matchUnit = unitVal === '' || text.includes(unitVal);
       let matchArea = areaVal === '' || text.includes(areaVal);
 
-      if (matchStatus && matchSearch && matchUnit && matchArea) {
+      let matchDate = true;
+      if (startDateVal && endDateVal) {
+        const from = startDateVal <= endDateVal ? startDateVal : endDateVal;
+        const to = startDateVal <= endDateVal ? endDateVal : startDateVal;
+        if (from === to) {
+          matchDate = (rDate === from);
+        } else {
+          matchDate = Boolean(rDate && rDate >= from && rDate <= to);
+        }
+      } else if (startDateVal) {
+        matchDate = Boolean(rDate && rDate === startDateVal);
+      } else if (endDateVal) {
+        matchDate = Boolean(rDate && rDate <= endDateVal);
+      }
+
+      if (matchStatus && matchSearch && matchUnit && matchArea && matchDate) {
         r.style.display = '';
+        visibleCount++;
       } else {
         r.style.display = 'none';
       }
+    }
+
+    const noRes = document.getElementById('noResultsRow');
+    if (noRes) {
+      noRes.className = (visibleCount === 0 && rows.length > 1) ? '' : 'hidden';
     }
   }
 </script>

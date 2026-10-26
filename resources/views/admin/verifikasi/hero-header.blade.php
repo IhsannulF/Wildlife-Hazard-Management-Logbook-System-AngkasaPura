@@ -27,10 +27,11 @@
       <div class="flex items-start justify-between">
         <div>
           <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Total Temuan Bulan Ini</p>
-          <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $totalLaporan }}</span>
-            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
-              <span class="material-symbols-outlined text-xs">arrow_upward</span> Aktif
+          <div class="flex items-baseline gap-1.5 mt-1">
+            <span class="text-lg sm:text-xl font-bold text-on-surface">{{ number_format($totalSatwaQty ?? 0) }}</span>
+            <span class="text-xs font-semibold text-secondary">Ekor</span>
+            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-xs">arrow_upward</span> {{ $totalLaporan ?? 0 }} Sesi
             </span>
           </div>
         </div>
@@ -39,9 +40,9 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span>Burung: <strong>{{ $pctBurung ?? 62 }}%</strong></span>
-        <span>Reptil: <strong>{{ $pctReptil ?? 24 }}%</strong></span>
-        <span>Mamalia: <strong>{{ $pctMamalia ?? 14 }}%</strong></span>
+        <span>Burung: <strong class="text-on-surface font-semibold">{{ $pctBurung ?? 90 }}%</strong></span>
+        <span>Reptil: <strong class="text-on-surface font-semibold">{{ $pctReptil ?? 8 }}%</strong></span>
+        <span>Mamalia: <strong class="text-on-surface font-semibold">{{ $pctMamalia ?? 2 }}%</strong></span>
       </div>
     </div>
 
@@ -52,19 +53,25 @@
         <div>
           <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Belum Ditangani (Kritis)</p>
           <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-lg sm:text-xl font-bold text-warning-rose">{{ $belum }}</span>
-            <span class="text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
-              <span class="material-symbols-outlined text-xs">priority_high</span> Prioritas
-            </span>
+            <span class="text-lg sm:text-xl font-bold {{ ($belum ?? 0) > 0 ? 'text-warning-rose' : 'text-on-surface' }}">{{ $belum ?? 0 }}</span>
+            @if(($belum ?? 0) > 0)
+              <span class="text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-xs">priority_high</span> Prioritas
+              </span>
+            @else
+              <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-xs">check_circle</span> Terkendali
+              </span>
+            @endif
           </div>
         </div>
-        <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-warning-rose">
+        <div class="w-8 h-8 rounded-lg {{ ($belum ?? 0) > 0 ? 'bg-rose-50 text-warning-rose' : 'bg-surface-container-low text-secondary' }} flex items-center justify-center">
           <span class="material-symbols-outlined text-lg">warning</span>
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span>Runway 07L: <strong class="text-warning-rose font-bold">{{ $belumRunway ?? 0 }} Log</strong></span>
-        <span>Perimeter Luar: <strong>{{ $belumPerimeter ?? 0 }} Log</strong></span>
+        <span>Runway: <strong class="{{ ($belumRunway ?? 0) > 0 ? 'text-warning-rose font-bold' : '' }}">{{ $belumRunway ?? 0 }} Log</strong></span>
+        <span>Taxiway & Perimeter: <strong class="{{ ($belumPerimeter ?? 0) > 0 ? 'text-warning-rose font-bold' : '' }}">{{ $belumPerimeter ?? 0 }} Log</strong></span>
       </div>
     </div>
 
@@ -75,9 +82,9 @@
         <div>
           <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Sudah Ditangani (Mitigasi)</p>
           <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $ditangani }}</span>
-            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
-              <span class="material-symbols-outlined text-xs">verified</span> Terkendali
+            <span class="text-lg sm:text-xl font-bold text-on-surface">{{ $ditangani ?? 0 }}</span>
+            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-xs">verified</span> {{ $rateSelesai ?? 100 }}% Mitigasi
             </span>
           </div>
         </div>
@@ -86,11 +93,8 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        @php
-          $rateSelesai = $totalLaporan > 0 ? round(($ditangani / $totalLaporan) * 100) : 100;
-        @endphp
-        <span>Tingkat Selesai: <strong class="text-emerald-700 font-bold">{{ $rateSelesai }}%</strong></span>
-        <span>ICAO Compliance: <strong>100%</strong></span>
+        <span>Tingkat Selesai: <strong class="text-emerald-700 font-bold">{{ $rateSelesai ?? 100 }}%</strong></span>
+        <span>Realisasi: <strong>{{ $ditangani ?? 0 }} dari {{ $totalLaporan ?? 0 }} Sesi</strong></span>
       </div>
     </div>
 
@@ -101,9 +105,9 @@
         <div>
           <p class="text-[10px] sm:text-[11px] uppercase text-secondary tracking-wider font-bold">Hotspot Area Kritis</p>
           <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-lg sm:text-xl font-bold text-on-surface font-code-coordinate">{{ $hotspotGrid ?? 'K-10 & D-9' }}</span>
-            <span class="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-semibold flex items-center">
-              <span class="material-symbols-outlined text-xs">crisis_alert</span> High Alert
+            <span class="text-lg sm:text-xl font-bold text-on-surface font-code-coordinate">{{ $hotspotGrid ?? 'K-10 & K-09' }}</span>
+            <span class="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-xs">crisis_alert</span> {{ number_format($hotspotCount ?? 0) }} Ekor
             </span>
           </div>
         </div>
@@ -112,8 +116,8 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span>Zona Inti: <strong>Runway 07L</strong></span>
-        <span>Patroli AMC: <strong class="text-injourney-teal font-semibold">Intensif</strong></span>
+        <span class="truncate max-w-[150px]" title="{{ $topArea ?? 'Runway 07L' }}">Zona Dominan: <strong>{{ Str::limit($topArea ?? 'Runway 07L', 16) }}</strong></span>
+        <span>Kepadatan: <strong class="text-injourney-teal font-semibold">{{ number_format($hotspotCount ?? 0) }} Ekor</strong></span>
       </div>
     </div>
 

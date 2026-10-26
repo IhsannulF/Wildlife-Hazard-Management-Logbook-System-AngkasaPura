@@ -109,4 +109,54 @@ class VerifikasiBATest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('sudah', $laporan->fresh()->status);
     }
+
+    public function test_admin_can_access_all_verifikasi_sub_routes(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $subRoutes = [
+            '/admin/verifikasi/autocrat' => 'Laporan Autocrat',
+            '/admin/verifikasi/patroli' => 'Log Sesi Patroli Sisi Udara',
+            '/admin/verifikasi/detail-temuan' => 'Detail Temuan Individu Satwa Liar',
+            '/admin/verifikasi/backup-temuan' => 'Back Up Detail Temuan Satwa Liar',
+            '/admin/verifikasi/master-titik' => 'Master Titik &amp; Zona Pengamatan Sisi Udara (Juanda)',
+            '/admin/verifikasi/master-jenis' => 'Master Jenis Satwa Liar (Airside Wildlife Species)',
+            '/admin/verifikasi/master-preview' => 'Master Preview Galeri Visual Dokumentasi Satwa',
+        ];
+
+        foreach ($subRoutes as $uri => $expectedTitle) {
+            $response = $this->actingAs($admin)->get($uri);
+            $response->assertStatus(200);
+            $response->assertSee($expectedTitle, false);
+            $response->assertSee('Verifikasi Berita Acara (BA)');
+        }
+    }
+
+    public function test_admin_can_filter_verifikasi_by_date_range(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $response = $this->actingAs($admin)->get('/admin/verifikasi?start_date=2026-06-01&end_date=2026-06-30');
+        $response->assertStatus(200);
+        $response->assertSee('datePickerTrigger');
+        $response->assertSee('filterStartDate');
+        $response->assertSee('filterEndDate');
+        $response->assertSee('value="2026-06-01"', false);
+        $response->assertSee('value="2026-06-30"', false);
+        $response->assertSee('01 Jun 2026 - 30 Jun 2026');
+    }
+
+    public function test_admin_can_filter_verifikasi_by_single_date(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $response = $this->actingAs($admin)->get('/admin/verifikasi?start_date=2026-06-24&end_date=2026-06-24');
+        $response->assertStatus(200);
+        $response->assertSee('datePickerTrigger');
+        $response->assertSee('value="2026-06-24"', false);
+        $response->assertSee('24 Jun 2026');
+    }
 }

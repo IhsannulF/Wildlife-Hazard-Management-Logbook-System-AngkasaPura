@@ -38,6 +38,13 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/verifikasi', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi');
+    Route::get('/verifikasi/autocrat', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.autocrat');
+    Route::get('/verifikasi/patroli', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.patroli');
+    Route::get('/verifikasi/detail-temuan', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.detail-temuan');
+    Route::get('/verifikasi/backup-temuan', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.backup-temuan');
+    Route::get('/verifikasi/master-titik', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.master-titik');
+    Route::get('/verifikasi/master-jenis', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.master-jenis');
+    Route::get('/verifikasi/master-preview', [AdminDashboardController::class, 'verifikasiIndex'])->name('verifikasi.master-preview');
     Route::get('/laporan/{id}/detail', [AdminDashboardController::class, 'getDetail'])->name('laporan.detail');
     Route::post('/laporan/{id}/update', [AdminDashboardController::class, 'update'])->name('laporan.update');
     Route::post('/laporan/{id}/delete', [AdminDashboardController::class, 'destroy'])->name('laporan.delete');

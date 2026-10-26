@@ -4,13 +4,13 @@
     
     <!-- Status Tabs -->
     <div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-border-subtle self-start">
-      <a href="{{ route('admin.verifikasi') }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ empty($statusFilter) ? 'bg-white text-injourney-teal font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-all">
+      <a href="{{ route('admin.verifikasi', array_filter(['sub' => request('sub'), 'start_date' => $startDate ?? null, 'end_date' => $endDate ?? null, 'search' => $search ?? null])) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ empty($statusFilter) ? 'bg-white text-injourney-teal font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-all">
         Semua Status <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface">{{ $totalLaporan }}</span>
       </a>
-      <a href="{{ route('admin.verifikasi', ['status' => 'belum']) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'belum' ? 'bg-white text-warning-rose font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-pending">
+      <a href="{{ route('admin.verifikasi', array_filter(['status' => 'belum', 'sub' => request('sub'), 'start_date' => $startDate ?? null, 'end_date' => $endDate ?? null, 'search' => $search ?? null])) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'belum' ? 'bg-white text-warning-rose font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-pending">
         Belum Ditangani <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-rose-100 text-warning-rose font-bold">{{ $belum }}</span>
       </a>
-      <a href="{{ route('admin.verifikasi', ['status' => 'sudah']) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'sudah' ? 'bg-white text-emerald-800 font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-resolved">
+      <a href="{{ route('admin.verifikasi', array_filter(['status' => 'sudah', 'sub' => request('sub'), 'start_date' => $startDate ?? null, 'end_date' => $endDate ?? null, 'search' => $search ?? null])) }}" class="px-3.5 py-1.5 rounded-md font-label-lg text-label-lg transition-all {{ $statusFilter === 'sudah' ? 'bg-white text-emerald-800 font-bold shadow-sm' : 'text-secondary hover:text-on-surface' }}" id="tab-resolved">
         Sudah Ditangani <span class="ml-1 text-xs px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold">{{ $ditangani }}</span>
       </a>
     </div>
@@ -18,7 +18,7 @@
     <!-- Search Input Bar -->
     <div class="relative flex-1 max-w-xl">
       <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">search</span>
-      <input class="w-full h-[42px] pl-10 pr-4 rounded-lg border border-border-subtle bg-white text-on-surface placeholder:text-outline font-body-md focus:border-injourney-teal focus:ring-2 focus:ring-injourney-teal/20 transition-all outline-none" id="searchInput" onkeyup="searchTable()" value="{{ $search ?? '' }}" placeholder="Cari no. laporan, petugas, spesies satwa, atau koordinat grid..." type="text"/>
+      <input class="w-full h-[42px] pl-10 pr-4 rounded-lg border border-border-subtle bg-white text-on-surface placeholder:text-outline font-body-md focus:border-injourney-teal focus:ring-2 focus:ring-injourney-teal/20 transition-all outline-none" id="searchInput" onkeyup="searchTable()" onkeydown="if(event.key === 'Enter') applyDateFilterServer()" value="{{ $search ?? '' }}" placeholder="Cari no. laporan, petugas, spesies satwa, atau koordinat grid..." type="text"/>
     </div>
   </div>
 
@@ -51,13 +51,8 @@
         </select>
       </div>
 
-      <!-- Tanggal Patroli -->
-      <div class="flex items-center gap-1.5">
-        <label class="font-label-md text-label-md text-secondary">Tanggal:</label>
-        <div class="relative">
-          <input id="filterDate" onchange="searchTable()" class="h-9 px-2.5 py-1 text-xs font-label-md rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-0" type="date" value="{{ date('Y-m-d') }}"/>
-        </div>
-      </div>
+      <!-- Unified Single Date & Range Calendar -->
+      @include('partials.date-range-picker')
     </div>
 
     <!-- Quick Grid Runway Tag Buttons -->

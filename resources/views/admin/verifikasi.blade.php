@@ -182,11 +182,29 @@
     <!-- 1. Page Hero Title & Bento Stat Cards -->
     @include('admin.verifikasi.hero-header')
 
-    <!-- 2. Quick Filters, Search & Airside Grid Tag Controls -->
-    @include('admin.verifikasi.table-filters')
-
-    <!-- 3. Master Data Logbook Table Panel -->
-    @include('admin.verifikasi.table-logbook')
+    @if(($currentSub ?? 'autocrat') === 'autocrat')
+      <!-- Sub-Modul 1: Laporan Autocrat (Filters & Master Table Logbook) -->
+      @include('admin.verifikasi.table-filters')
+      @include('admin.verifikasi.table-logbook')
+    @elseif($currentSub === 'patroli')
+      <!-- Sub-Modul 2: Patroli -->
+      @include('admin.verifikasi.sub-patroli')
+    @elseif($currentSub === 'detail-temuan')
+      <!-- Sub-Modul 3: Detail Temuan -->
+      @include('admin.verifikasi.sub-detail-temuan')
+    @elseif($currentSub === 'backup-temuan')
+      <!-- Sub-Modul 4: Back Up Detail Temuan -->
+      @include('admin.verifikasi.sub-backup-temuan')
+    @elseif($currentSub === 'master-titik')
+      <!-- Sub-Modul 5: Master Titik -->
+      @include('admin.verifikasi.sub-master-titik')
+    @elseif($currentSub === 'master-jenis')
+      <!-- Sub-Modul 6: Master Jenis -->
+      @include('admin.verifikasi.sub-master-jenis')
+    @elseif($currentSub === 'master-preview')
+      <!-- Sub-Modul 7: Master Preview (Gambar) -->
+      @include('admin.verifikasi.sub-master-preview')
+    @endif
 
   </main>
 
