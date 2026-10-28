@@ -9,21 +9,18 @@
 //           5) Tampilkan HTML
 // ============================================================
 
-
 // ============================================================
 // BAGIAN 1 — MULAI SESSION
 // ============================================================
 session_start();
 
-
 // ============================================================
 // BAGIAN 2 — CEK LOGIN & ROLE
 // ============================================================
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'pegawai') {
-    header("Location: login.php");
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'pegawai') {
+    header('Location: login.php');
     exit;
 }
-
 
 // ============================================================
 // BAGIAN 3 — SAMBUNGKAN DB & SIAPKAN DATA USER
@@ -33,15 +30,14 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'pegawai') {
 require_once 'koneksi.php';
 
 $username = htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8');
-$nama     = htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'], ENT_QUOTES, 'UTF-8');
+$nama = htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'], ENT_QUOTES, 'UTF-8');
 $initials = strtoupper(substr($username, 0, 2));
-
 
 // ============================================================
 // BAGIAN 4 — AMBIL PESAN NOTIFIKASI DARI URL
 // ============================================================
-$pesan_sukses = !empty($_GET['sukses']) ? htmlspecialchars($_GET['sukses'], ENT_QUOTES, 'UTF-8') : '';
-$pesan_error  = !empty($_GET['error'])  ? htmlspecialchars($_GET['error'],  ENT_QUOTES, 'UTF-8') : '';
+$pesan_sukses = ! empty($_GET['sukses']) ? htmlspecialchars($_GET['sukses'], ENT_QUOTES, 'UTF-8') : '';
+$pesan_error = ! empty($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -348,10 +344,10 @@ Urutan:
 
 
 <!-- 7b) Notifikasi sukses/error -->
-<?php if ($pesan_sukses || $pesan_error): ?>
+<?php if ($pesan_sukses || $pesan_error) { ?>
 <div style="padding: 16px 24px 0; display:flex; justify-content:center;">
     <div class="notif-wrap">
-        <?php if ($pesan_sukses): ?>
+        <?php if ($pesan_sukses) { ?>
         <div class="notif notif-ok">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -359,7 +355,7 @@ Urutan:
             </svg>
             <?= $pesan_sukses ?>
         </div>
-        <?php elseif ($pesan_error): ?>
+        <?php } elseif ($pesan_error) { ?>
         <div class="notif notif-err">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -368,10 +364,10 @@ Urutan:
             </svg>
             <?= $pesan_error ?>
         </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
 </div>
-<?php endif; ?>
+<?php } ?>
 
 
 <!-- 7c) Hero card — konten utama -->

@@ -24,12 +24,17 @@ class ExampleTest extends TestCase
 
     public function test_user_can_authenticate_with_juanda123(): void
     {
-        $response = $this->post('/login', [
-            'username' => 'admin.utama',
-            'password' => 'juanda123',
-        ]);
-        $response->assertRedirect('/admin');
-        $this->assertAuthenticated();
+        // Test primary department accounts
+        foreach (['admin', 'amc', 'pk', 'safety', 'security', 'admin.utama'] as $username) {
+            $response = $this->post('/login', [
+                'username' => $username,
+                'password' => 'juanda123',
+            ]);
+            $expectedRedirect = ($username === 'admin' || $username === 'admin.utama') ? '/admin' : '/dashboard';
+            $response->assertRedirect($expectedRedirect);
+            $this->assertAuthenticated();
+            $this->post('/logout');
+        }
     }
 
     public function test_admin_can_login_and_access_admin_dashboard(): void
@@ -118,7 +123,10 @@ class ExampleTest extends TestCase
         $admin = User::where('role', 'admin')->first();
         $response = $this->actingAs($admin)->get('/admin/export-excel');
         $response->assertStatus(200);
-        $response->assertHeader('content-type', 'application/vnd.ms-excel');
+
+        $downloadResponse = $this->actingAs($admin)->get(route('admin.export.excel.download'));
+        $downloadResponse->assertStatus(200);
+        $downloadResponse->assertHeader('content-type', 'application/vnd.ms-excel; charset=utf-8');
     }
 
     public function test_admin_can_view_report_print(): void

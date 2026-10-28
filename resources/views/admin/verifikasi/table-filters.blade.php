@@ -22,25 +22,24 @@
     </div>
   </div>
 
-  <!-- Secondary Filters & Runway Grid Coordinate Tag Pills -->
-  <div class="pt-space-sm border-t border-border-subtle flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-md">
-    <!-- Filter Dropdowns Cluster -->
-    <div class="flex flex-wrap items-center gap-space-sm text-sm">
+  <!-- Secondary Filters: Unit Kerja, Area Sisi Udara, Tanggal (Satu Baris) -->
+  <div class="pt-space-sm border-t border-border-subtle flex flex-wrap items-center justify-between gap-space-sm">
+    <div class="flex flex-wrap items-center gap-space-sm sm:gap-space-md text-sm">
       <!-- Unit Kerja -->
       <div class="flex items-center gap-1.5">
-        <label class="font-label-md text-label-md text-secondary">Unit Kerja:</label>
+        <label class="font-label-md text-label-md text-secondary whitespace-nowrap">Unit Kerja:</label>
         <select id="filterUnit" onchange="searchTable()" class="h-9 px-2.5 py-1 text-xs font-label-md rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-0">
           <option value="">Semua Unit</option>
-          <option value="AMC">AMC (Airside Mobile)</option>
-          <option value="ARFF">ARFF (Airport Rescue)</option>
-          <option value="AVSEC">Avsec Perimeter</option>
-          <option value="SMS">Safety Management (SMS)</option>
+          <option value="AMC">AMC (Apron Movement Control)</option>
+          <option value="PK">PK / ARFF (Airport Rescue)</option>
+          <option value="SMS">Safety (SMS)</option>
+          <option value="Security">Security (Avsec)</option>
         </select>
       </div>
 
       <!-- Area Inspeksi -->
       <div class="flex items-center gap-1.5">
-        <label class="font-label-md text-label-md text-secondary">Area Sisi Udara:</label>
+        <label class="font-label-md text-label-md text-secondary whitespace-nowrap">Area Sisi Udara:</label>
         <select id="filterArea" onchange="searchTable()" class="h-9 px-2.5 py-1 text-xs font-label-md rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-0">
           <option value="">Semua Area Sisi Udara</option>
           <option value="Runway">Runway 07L / 25R</option>
@@ -55,30 +54,10 @@
       @include('partials.date-range-picker')
     </div>
 
-    <!-- Quick Grid Runway Tag Buttons -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <span class="font-label-sm text-label-sm text-secondary uppercase font-semibold">Filter Grid Cepat:</span>
-      <button class="font-code-coordinate text-code-coordinate px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-injourney-teal hover:text-white border border-border-subtle transition-all flex items-center gap-1 text-on-surface cursor-pointer" onclick="filterByGrid('K-10')" type="button">
-        <span>K-10</span>
-        <span class="w-2 h-2 rounded-full bg-warning-rose"></span>
-      </button>
-      <button class="font-code-coordinate text-code-coordinate px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-injourney-teal hover:text-white border border-border-subtle transition-all flex items-center gap-1 text-on-surface cursor-pointer" onclick="filterByGrid('D-9')" type="button">
-        <span>D-9</span>
-        <span class="w-2 h-2 rounded-full bg-warning-rose"></span>
-      </button>
-      <button class="font-code-coordinate text-code-coordinate px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-injourney-teal hover:text-white border border-border-subtle transition-all flex items-center gap-1 text-on-surface cursor-pointer" onclick="filterByGrid('F-5')" type="button">
-        <span>F-5</span>
-        <span class="w-1.5 h-1.5 rounded-full bg-alert-amber"></span>
-      </button>
-      <button class="font-code-coordinate text-code-coordinate px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-injourney-teal hover:text-white border border-border-subtle transition-all text-on-surface cursor-pointer" onclick="filterByGrid('C-12')" type="button">
-        C-12
-      </button>
-      <button class="font-code-coordinate text-code-coordinate px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-injourney-teal hover:text-white border border-border-subtle transition-all text-on-surface cursor-pointer" onclick="filterByGrid('H-3')" type="button">
-        H-3
-      </button>
-      <button class="text-xs text-injourney-teal hover:underline font-label-md ml-1 cursor-pointer" onclick="resetFilters()" type="button">
-        Reset
-      </button>
-    </div>
+    <!-- Reset Filter Button -->
+    <button class="text-xs text-injourney-teal hover:underline font-label-md flex items-center gap-1 cursor-pointer" onclick="resetFilters()" type="button" title="Reset semua filter">
+      <span class="material-symbols-outlined text-[15px]">refresh</span>
+      <span>Reset Filter</span>
+    </button>
   </div>
 </section>

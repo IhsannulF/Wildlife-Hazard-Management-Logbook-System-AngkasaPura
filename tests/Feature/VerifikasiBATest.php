@@ -74,6 +74,23 @@ class VerifikasiBATest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/verifikasi?search=K-10');
         $response->assertStatus(200);
         $response->assertSee('K-10');
+        $response->assertSee('id="searchInput"', false);
+    }
+
+    public function test_admin_sees_filter_elements_in_single_row(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $response = $this->actingAs($admin)->get('/admin/verifikasi');
+        $response->assertStatus(200);
+        $response->assertDontSee('Filter Grid Cepat:');
+        $response->assertSee('Unit Kerja:');
+        $response->assertSee('filterUnit');
+        $response->assertSee('Area Sisi Udara:');
+        $response->assertSee('filterArea');
+        $response->assertSee('datePickerTrigger');
+        $response->assertSee('Reset Filter');
     }
 
     public function test_admin_can_get_laporan_detail_json(): void

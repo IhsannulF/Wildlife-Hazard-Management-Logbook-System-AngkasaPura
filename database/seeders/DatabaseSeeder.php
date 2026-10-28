@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\FormField;
 use App\Models\FormFieldOption;
 use App\Models\JenisSatwa;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,51 +16,51 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Seed Users
+        // 1. Seed Users (5 Akun Dinas Resmi: admin, amc, pk, safety, security)
         $defaultPassword = Hash::make('juanda123'); // Password default: juanda123
         $users = [
             [
                 'id' => 1,
-                'username' => 'admin.utama',
+                'username' => 'admin',
                 'password' => $defaultPassword,
                 'namalengkap' => 'Admin Utama',
-                'jabatan' => 'General Manager',
+                'jabatan' => 'Administrator',
                 'role' => 'admin',
                 'aktif' => 1,
             ],
             [
                 'id' => 2,
-                'username' => 'amc.divisi',
+                'username' => 'amc',
                 'password' => $defaultPassword,
-                'namalengkap' => 'AMC Divisi',
-                'jabatan' => 'Pegawai',
+                'namalengkap' => 'Apron Movement Control (AMC)',
+                'jabatan' => 'Unit AMC',
                 'role' => 'pegawai',
                 'aktif' => 1,
             ],
             [
                 'id' => 3,
-                'username' => 'arff.divisi',
+                'username' => 'pk',
                 'password' => $defaultPassword,
-                'namalengkap' => 'ARFF Divisi',
-                'jabatan' => 'Pegawai',
+                'namalengkap' => 'Airport Rescue & Fire Fighting (PK / ARFF)',
+                'jabatan' => 'Unit PK / ARFF',
                 'role' => 'pegawai',
                 'aktif' => 1,
             ],
             [
                 'id' => 4,
-                'username' => 'security.divisi',
+                'username' => 'safety',
                 'password' => $defaultPassword,
-                'namalengkap' => 'Security Divisi',
-                'jabatan' => 'Pegawai',
+                'namalengkap' => 'Safety Management System (SMS)',
+                'jabatan' => 'Unit Safety / SMS',
                 'role' => 'pegawai',
                 'aktif' => 1,
             ],
             [
                 'id' => 5,
-                'username' => 'smsohs.divisi',
+                'username' => 'security',
                 'password' => $defaultPassword,
-                'namalengkap' => 'SMSOHS Divisi',
-                'jabatan' => 'Pegawai',
+                'namalengkap' => 'Airport Security (Avsec)',
+                'jabatan' => 'Unit Security / Avsec',
                 'role' => 'pegawai',
                 'aktif' => 1,
             ],
@@ -70,6 +69,9 @@ class DatabaseSeeder extends Seeder
         foreach ($users as $u) {
             User::updateOrCreate(['id' => $u['id']], $u);
         }
+
+        // Clean up any extra users
+        User::whereNotIn('id', [1, 2, 3, 4, 5])->delete();
 
         // 2. Seed Jenis Satwa
         $satwaList = [
@@ -238,10 +240,10 @@ class DatabaseSeeder extends Seeder
             ['field_id' => 3, 'nilai' => 'Berkabut', 'urutan' => 5],
 
             // unit_kerja (field_id = 4)
-            ['field_id' => 4, 'nilai' => 'Airport Rescue & Fire Fighting', 'urutan' => 1],
-            ['field_id' => 4, 'nilai' => 'Apron Movement Control', 'urutan' => 2],
-            ['field_id' => 4, 'nilai' => 'Airport Security', 'urutan' => 3],
-            ['field_id' => 4, 'nilai' => 'SMS & OHS', 'urutan' => 4],
+            ['field_id' => 4, 'nilai' => 'Apron Movement Control (AMC)', 'urutan' => 1],
+            ['field_id' => 4, 'nilai' => 'Airport Rescue & Fire Fighting (PK / ARFF)', 'urutan' => 2],
+            ['field_id' => 4, 'nilai' => 'Airport Security (Avsec)', 'urutan' => 3],
+            ['field_id' => 4, 'nilai' => 'Safety Management System (SMS)', 'urutan' => 4],
 
             // area_inspeksi (field_id = 5)
             ['field_id' => 5, 'nilai' => 'Apron', 'urutan' => 1],
@@ -265,7 +267,7 @@ class DatabaseSeeder extends Seeder
         foreach ($options as $opt) {
             FormFieldOption::firstOrCreate([
                 'field_id' => $opt['field_id'],
-                'nilai' => $opt['nilai']
+                'nilai' => $opt['nilai'],
             ], $opt);
         }
     }

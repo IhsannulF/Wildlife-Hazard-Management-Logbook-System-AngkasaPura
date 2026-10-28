@@ -64,7 +64,7 @@ class Laporan extends Model
         return $this->fotoLaporan()
             ->where('tipe', 'extra')
             ->pluck('nama_file')
-            ->map(fn($file) => 'storage/uploads/extra/' . $file)
+            ->map(fn ($file) => 'storage/uploads/extra/'.$file)
             ->toArray();
     }
 }

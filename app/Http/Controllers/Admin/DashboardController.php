@@ -169,6 +169,29 @@ class DashboardController extends Controller
 
         $laporans = $query->paginate(10)->withQueryString();
 
+        $availableGrids = Laporan::whereNotNull('grid_lokasi')
+            ->where('grid_lokasi', '!=', '')
+            ->distinct()
+            ->pluck('grid_lokasi')
+            ->merge(
+                DetailSatwa::whereNotNull('grid')
+                    ->where('grid', '!=', '')
+                    ->distinct()
+                    ->pluck('grid')
+            )
+            ->filter()
+            ->unique()
+            ->sort(fn ($a, $b) => strcmp($a, $b))
+            ->values()
+            ->map(fn ($code) => [
+                'grid' => strtoupper($code),
+                'zona' => 'Koordinat Airside Juanda',
+                'deskripsi' => 'Area Grid Sisi Udara '.strtoupper($code),
+                'tipe' => 'Airside Grid',
+                'hotspot' => in_array(strtoupper($code), array_map('strtoupper', $topGrids)),
+            ])
+            ->toArray();
+
         return view('admin.dashboard', compact(
             'totalLaporan',
             'belum',
@@ -196,7 +219,8 @@ class DashboardController extends Controller
             'hourlyLabels',
             'hourlyCounts',
             'zoneLabels',
-            'zoneCounts'
+            'zoneCounts',
+            'availableGrids'
         ));
     }
 
@@ -418,6 +442,51 @@ class DashboardController extends Controller
             ->paginate(12, ['*'], 'preview_page')
             ->withQueryString();
 
+        // Daftar Grid Koordinat Airside untuk Filter Grid Cepat & Pencarian Grid
+        $dbGrids = Laporan::whereNotNull('grid_lokasi')
+            ->where('grid_lokasi', '!=', '')
+            ->distinct()
+            ->pluck('grid_lokasi')
+            ->merge(
+                DetailSatwa::whereNotNull('grid')
+                    ->where('grid', '!=', '')
+                    ->distinct()
+                    ->pluck('grid')
+            )
+            ->filter()
+            ->unique();
+
+        $titikGridLookup = [];
+        foreach ($masterTitikList as $m) {
+            $titikGridLookup[strtoupper($m['grid'])] = [
+                'grid' => strtoupper($m['grid']),
+                'zona' => $m['zona'] ?? 'Airside',
+                'deskripsi' => $m['deskripsi'] ?? '',
+                'tipe' => $m['tipe'] ?? 'Airside Critical',
+                'hotspot' => in_array(strtoupper($m['grid']), array_map('strtoupper', $topGrids)),
+            ];
+        }
+
+        $allGridCodes = collect(array_keys($titikGridLookup))
+            ->merge($dbGrids->map(fn ($g) => strtoupper($g)))
+            ->unique()
+            ->sort(fn ($a, $b) => strcmp($a, $b))
+            ->values();
+
+        $availableGrids = $allGridCodes->map(function ($code) use ($titikGridLookup, $topGrids) {
+            if (isset($titikGridLookup[$code])) {
+                return $titikGridLookup[$code];
+            }
+
+            return [
+                'grid' => $code,
+                'zona' => 'Koordinat Airside Juanda',
+                'deskripsi' => 'Area Grid Sisi Udara '.$code,
+                'tipe' => 'Airside Grid',
+                'hotspot' => in_array($code, array_map('strtoupper', $topGrids)),
+            ];
+        })->toArray();
+
         return view('admin.verifikasi', compact(
             'currentSub',
             'totalLaporan',
@@ -444,7 +513,8 @@ class DashboardController extends Controller
             'backupTemuanList',
             'masterTitikList',
             'masterJenisList',
-            'previewList'
+            'previewList',
+            'availableGrids'
         ));
     }
 

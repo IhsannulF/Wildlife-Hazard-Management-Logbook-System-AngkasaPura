@@ -10,7 +10,7 @@
 // ============================================================
 session_start();
 // Cek login — kalau belum login, arahkan ke halaman login
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit;
 }
@@ -19,49 +19,51 @@ require_once 'koneksi.php';
 $username = htmlspecialchars($_SESSION['username'] ?? 'Admin', ENT_QUOTES, 'UTF-8');
 
 // ── Statistik ─────────────────────────────────────────────
-$total_laporan = (int)$pdo->query("SELECT COUNT(*) FROM laporan")->fetchColumn();
-$belum         = (int)$pdo->query("SELECT COUNT(*) FROM laporan WHERE status='belum' OR status IS NULL OR status=''")->fetchColumn();
-$ditangani     = (int)$pdo->query("SELECT COUNT(*) FROM laporan WHERE status='sudah'")->fetchColumn();
+$total_laporan = (int) $pdo->query('SELECT COUNT(*) FROM laporan')->fetchColumn();
+$belum = (int) $pdo->query("SELECT COUNT(*) FROM laporan WHERE status='belum' OR status IS NULL OR status=''")->fetchColumn();
+$ditangani = (int) $pdo->query("SELECT COUNT(*) FROM laporan WHERE status='sudah'")->fetchColumn();
 
 $diproses = 0; // tidak dipakai, enum hanya belum_ditangani/ditangani
 
 // ── Handle POST: hapus / update status / edit form ────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $aksi = $_POST['aksi'] ?? '';
-    $lid  = (int)($_POST['laporan_id'] ?? 0);
+    $lid = (int) ($_POST['laporan_id'] ?? 0);
 
     if ($aksi === 'hapus' && $lid > 0) {
-        $pdo->prepare("DELETE FROM laporan WHERE id=?")->execute([$lid]);
-        header("Location: admin_dashboard.php?msg=hapus"); exit;
+        $pdo->prepare('DELETE FROM laporan WHERE id=?')->execute([$lid]);
+        header('Location: admin_dashboard.php?msg=hapus');
+        exit;
     }
 
     if ($aksi === 'edit_full' && $lid > 0) {
-        $nama       = $_POST['nama_petugas']      ?? '';
-        $tgl        = $_POST['tanggal']            ?? '';
-        $cuaca      = $_POST['kondisi_cuaca']      ?? '';
-        $unit       = $_POST['unit_kerja']         ?? '';
-        $area       = $_POST['area_inspeksi']      ?? '';
-        $ttd        = $_POST['tanda_tangan']       ?? '';
-        $grid       = $_POST['grid_lokasi']        ?? '';
-        $ciri       = $_POST['ciri_ukuran']        ?? '';
-        $kondisi    = $_POST['kondisi_apron']      ?? '';
-        $aktivitas  = $_POST['aktivitas_satwa']    ?? '';
-        $tindak     = $_POST['tindak_lanjut']      ?? '';
-        $detail     = $_POST['detail_pengusiran']  ?? '';
-        $status_baru= $_POST['status_validasi']    ?? 'belum';
+        $nama = $_POST['nama_petugas'] ?? '';
+        $tgl = $_POST['tanggal'] ?? '';
+        $cuaca = $_POST['kondisi_cuaca'] ?? '';
+        $unit = $_POST['unit_kerja'] ?? '';
+        $area = $_POST['area_inspeksi'] ?? '';
+        $ttd = $_POST['tanda_tangan'] ?? '';
+        $grid = $_POST['grid_lokasi'] ?? '';
+        $ciri = $_POST['ciri_ukuran'] ?? '';
+        $kondisi = $_POST['kondisi_apron'] ?? '';
+        $aktivitas = $_POST['aktivitas_satwa'] ?? '';
+        $tindak = $_POST['tindak_lanjut'] ?? '';
+        $detail = $_POST['detail_pengusiran'] ?? '';
+        $status_baru = $_POST['status_validasi'] ?? 'belum';
 
         // DEBUG SEMENTARA
         if (isset($_GET['debug'])) {
             echo '<pre>';
-            echo 'POST size: ' . strlen(file_get_contents('php://input')) . ' bytes\n';
-            echo 'post_max_size: ' . ini_get('post_max_size') . '\n';
-            echo 'status_validasi: ' . ($status_baru ?? 'NULL') . '\n';
-            echo 'laporan_id: ' . $lid . '\n';
-            echo 'POST count: ' . count($_POST) . '\n';
-            echo '</pre>'; exit;
+            echo 'POST size: '.strlen(file_get_contents('php://input')).' bytes\n';
+            echo 'post_max_size: '.ini_get('post_max_size').'\n';
+            echo 'status_validasi: '.($status_baru ?? 'NULL').'\n';
+            echo 'laporan_id: '.$lid.'\n';
+            echo 'POST count: '.count($_POST).'\n';
+            echo '</pre>';
+            exit;
         }
 
-        $stmt = $pdo->prepare("
+        $stmt = $pdo->prepare('
             UPDATE laporan SET
                 nama_petugas=?, tanggal=?, kondisi_cuaca=?,
                 unit_kerja=?, area_inspeksi=?, tanda_tangan=?,
@@ -69,15 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 aktivitas_satwa=?, tindak_lanjut=?,
                 detail_pengusiran=?, status=?
             WHERE id=?
-        ");
-        $stmt->execute([$nama,$tgl,$cuaca,$unit,$area,$ttd,$grid,$ciri,$kondisi,$aktivitas,$tindak,$detail,$status_baru,$lid]);
-        header("Location: admin_dashboard.php?msg=edit"); exit;
+        ');
+        $stmt->execute([$nama, $tgl, $cuaca, $unit, $area, $ttd, $grid, $ciri, $kondisi, $aktivitas, $tindak, $detail, $status_baru, $lid]);
+        header('Location: admin_dashboard.php?msg=edit');
+        exit;
     }
 }
 
 // ── Ambil semua laporan ───────────────────────────────────
 $search = trim($_GET['search'] ?? '');
-$where  = $search ? "WHERE (l.nama_petugas LIKE ? OR l.area_inspeksi LIKE ? OR l.kondisi_cuaca LIKE ? OR l.grid_lokasi LIKE ?)" : '';
+$where = $search ? 'WHERE (l.nama_petugas LIKE ? OR l.area_inspeksi LIKE ? OR l.kondisi_cuaca LIKE ? OR l.grid_lokasi LIKE ?)' : '';
 
 $stmt = $pdo->prepare("
     SELECT l.id, 
@@ -102,14 +105,16 @@ if ($search) {
 $rows = $stmt->fetchAll();
 
 // Ambil opsi dropdown dari database (konsisten dengan form user)
-function getOpsi($pdo, $nama_field) {
-    $stmt = $pdo->prepare("SELECT ffo.nilai FROM form_field_options ffo JOIN form_fields ff ON ff.id = ffo.field_id WHERE ff.nama_field = ? ORDER BY ffo.id");
+function getOpsi($pdo, $nama_field)
+{
+    $stmt = $pdo->prepare('SELECT ffo.nilai FROM form_field_options ffo JOIN form_fields ff ON ff.id = ffo.field_id WHERE ff.nama_field = ? ORDER BY ffo.id');
     $stmt->execute([$nama_field]);
+
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 $kondisi_cuaca_opt = getOpsi($pdo, 'kondisi_cuaca');
-$unit_kerja_opt    = getOpsi($pdo, 'unit_kerja');
-$area_opt          = getOpsi($pdo, 'area_inspeksi');
+$unit_kerja_opt = getOpsi($pdo, 'unit_kerja');
+$area_opt = getOpsi($pdo, 'area_inspeksi');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -468,7 +473,8 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
 </header>
 
 <!-- SIDEBAR -->
-<?php $activePage = 'dashboard'; include 'sidebar.php'; ?>
+<?php $activePage = 'dashboard';
+include 'sidebar.php'; ?>
 
 <!-- MAIN -->
 <main class="main">
@@ -477,11 +483,11 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
         <span> / My Dashboard / Super Dashboard</span>
     </div>
 
-    <?php if (isset($_GET['msg'])): ?>
+    <?php if (isset($_GET['msg'])) { ?>
     <div class="flash flash-success">
-        <?= $_GET['msg']==='hapus' ? '✓ Laporan berhasil dihapus.' : '✓ Laporan berhasil diperbarui.' ?>
+        <?= $_GET['msg'] === 'hapus' ? '✓ Laporan berhasil dihapus.' : '✓ Laporan berhasil diperbarui.' ?>
     </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <!-- Stat Cards -->
     <div class="stats-row">
@@ -502,12 +508,12 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
         </div>
     </div>
 
-    <?php if ($diproses > 0): ?>
+    <?php if ($diproses > 0) { ?>
     <div style="margin-bottom:16px;font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 16px;display:inline-flex;align-items:center;gap:8px">
         <span style="width:10px;height:10px;background:#5baee0;border-radius:50%;display:inline-block;flex-shrink:0"></span>
         <span><strong style="color:var(--text)"><?= $diproses ?> laporan</strong> sedang dalam proses penanganan</span>
     </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <!-- Table -->
     <div class="table-section">
@@ -522,11 +528,11 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
                     <input type="text" name="search" placeholder="Text" id="searchInput"
                            value="<?= htmlspecialchars($_GET['search'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                            style="padding-right:28px">
-                    <?php if (!empty($_GET['search'])): ?>
+                    <?php if (! empty($_GET['search'])) { ?>
                     <a href="admin_dashboard.php" 
                        style="position:absolute;right:8px;color:#94a3b8;font-size:16px;text-decoration:none;line-height:1"
                        title="Hapus pencarian">✕</a>
-                    <?php endif; ?>
+                    <?php } ?>
                 </div>
             </form>
         </div>
@@ -544,33 +550,36 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($rows)): ?>
+                    <?php if (empty($rows)) { ?>
                     <tr><td colspan="7"><div class="empty-state">Belum ada laporan masuk.</div></td></tr>
-                    <?php else: ?>
-                    <?php foreach ($rows as $row): ?>
+                    <?php } else { ?>
+                    <?php foreach ($rows as $row) { ?>
                     <tr>
                         <td><strong><?= htmlspecialchars($row['nama_petugas'] ?: ($row['nama'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong></td>
-                        <td><?= htmlspecialchars($row['area_inspeksi'],ENT_QUOTES,'UTF-8') ?></td>
-                        <td><?= htmlspecialchars($row['kondisi_cuaca'],ENT_QUOTES,'UTF-8') ?></td>
-                        <td style="font-family:monospace;font-size:12px"><?= htmlspecialchars($row['grid_lokasi']??'-',ENT_QUOTES,'UTF-8') ?></td>
+                        <td><?= htmlspecialchars($row['area_inspeksi'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars($row['kondisi_cuaca'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td style="font-family:monospace;font-size:12px"><?= htmlspecialchars($row['grid_lokasi'] ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
                         <td style="white-space:nowrap"><?= date('d/m/Y', strtotime($row['tanggal'])) ?></td>
                         <td>
                             <?php
                             $st = $row['status'];
-                            if ($st==='sudah') echo '<span class="badge badge-green">Ditangani</span>';
-                            else echo '<span class="badge badge-red">Belum<br>Ditangani</span>';
-                            ?>
+                        if ($st === 'sudah') {
+                            echo '<span class="badge badge-green">Ditangani</span>';
+                        } else {
+                            echo '<span class="badge badge-red">Belum<br>Ditangani</span>';
+                        }
+                        ?>
                         </td>
                         <td>
                             <div class="btn-group">
                                 <button class="btn btn-detail" onclick="openDetail(<?= $row['id'] ?>)">Detail</button>
                                 <button class="btn btn-edit"   onclick="openEdit(<?= $row['id'] ?>)">Edit</button>
-                                <button class="btn btn-hapus"  onclick="openHapus(<?= $row['id'] ?>,'<?= htmlspecialchars($row['nama_petugas'],ENT_QUOTES,'UTF-8') ?>')">Hapus</button>
+                                <button class="btn btn-hapus"  onclick="openHapus(<?= $row['id'] ?>,'<?= htmlspecialchars($row['nama_petugas'], ENT_QUOTES, 'UTF-8') ?>')">Hapus</button>
                             </div>
                         </td>
                     </tr>
-                    <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php } ?>
+                    <?php } ?>
                 </tbody>
             </table>
         </div>
@@ -699,9 +708,9 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
                         <label class="ef-label">Kondisi Cuaca <span class="req">*</span></label>
                         <select class="ef-select" name="kondisi_cuaca" id="e_cuaca" required>
                             <option value="">-- Pilih kondisi cuaca --</option>
-                            <?php foreach($kondisi_cuaca_opt as $k): ?>
+                            <?php foreach ($kondisi_cuaca_opt as $k) { ?>
                             <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                            <?php endforeach; ?>
+                            <?php } ?>
                         </select>
                     </div>
                     <div class="ef-group">
@@ -713,9 +722,9 @@ $area_opt          = getOpsi($pdo, 'area_inspeksi');
                         <label class="ef-label">Area Inspeksi <span class="req">*</span></label>
                         <select class="ef-select" name="area_inspeksi" id="e_area" required>
                             <option value="">-- Pilih area inspeksi --</option>
-                            <?php foreach($area_opt as $a): ?>
+                            <?php foreach ($area_opt as $a) { ?>
                             <option value="<?= htmlspecialchars($a) ?>"><?= htmlspecialchars($a) ?></option>
-                            <?php endforeach; ?>
+                            <?php } ?>
                         </select>
                     </div>
                 </div>

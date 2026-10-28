@@ -295,13 +295,6 @@
     searchTable();
   }
 
-  function filterByGrid(gridCode) {
-    const sInput = document.getElementById('searchInput');
-    if (sInput) sInput.value = gridCode;
-    searchTable();
-    showToast(`Filter grid runway: ${gridCode}`, 'info');
-  }
-
   function applyDateFilterServer() {
     const sInput = document.getElementById('filterStartDate');
     const eInput = document.getElementById('filterEndDate');

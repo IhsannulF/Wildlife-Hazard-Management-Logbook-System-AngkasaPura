@@ -1,28 +1,28 @@
 <?php
 session_start();
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit;
 }
 require_once 'koneksi.php';
 
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    die('ID laporan tidak valid.');
+if (! isset($_GET['id']) || ! is_numeric($_GET['id'])) {
+    exit('ID laporan tidak valid.');
 }
 
 $id = (int) $_GET['id'];
 
 $stmt = $pdo->prepare(
-    "SELECT l.*, u.nama AS nama_user
+    'SELECT l.*, u.nama AS nama_user
      FROM laporan l
      LEFT JOIN users u ON l.user_id = u.id
-     WHERE l.id = ?"
+     WHERE l.id = ?'
 );
 $stmt->execute([$id]);
 $lap = $stmt->fetch();
 
-if (!$lap) {
-    die('Laporan tidak ditemukan.');
+if (! $lap) {
+    exit('Laporan tidak ditemukan.');
 }
 
 $stmt2 = $pdo->prepare("
@@ -40,8 +40,10 @@ $stmt3 = $pdo->prepare("SELECT nama_file FROM foto_laporan WHERE laporan_id = ? 
 $stmt3->execute([$id]);
 $foto_extra = $stmt3->fetchAll(PDO::FETCH_COLUMN);
 
-function valField($v) {
+function valField($v)
+{
     $v = html_entity_decode($v ?? '', ENT_QUOTES, 'UTF-8');
+
     return $v !== '' ? htmlspecialchars($v) : '<span style="color:#aaa">—</span>';
 }
 $tgl_fmt = $lap['tanggal'] ? date('d F Y', strtotime($lap['tanggal'])) : '—';
@@ -186,47 +188,47 @@ $ttd_is_image = strpos($ttd, 'data:image') === 0;
     <div class="section-title">Detail Pengusiran yang Dilakukan</div>
     <div class="text-box"><?= valField($lap['detail_pengusiran']) ?></div><br>
 
-    <?php if (!empty($satwa_list)): ?>
+    <?php if (! empty($satwa_list)) { ?>
     <div class="section-title">Jenis Satwa yang Ditemukan</div>
       <table class="satwa-table">
         <thead><tr><th>#</th><th>Nama Satwa</th><th>Jumlah</th><th>Lokasi Grid</th></tr></thead>
         <tbody>
-          <?php foreach ($satwa_list as $i => $s): ?>
+          <?php foreach ($satwa_list as $i => $s) { ?>
           <tr>
             <td><?= $i + 1 ?></td>
             <td><?= htmlspecialchars($s['nama']) ?></td>
             <td><?= htmlspecialchars($s['jumlah']) ?></td>
             <td><?= htmlspecialchars($s['grid'] ?: '-') ?></td>
           </tr>
-          <?php endforeach; ?>
+          <?php } ?>
         </tbody>
       </table>
-    <?php endif; ?>
+    <?php } ?>
 
-    <?php if (!empty($foto_extra)): ?>
+    <?php if (! empty($foto_extra)) { ?>
     <br>
     <div class="section-title">Foto Satwa Tidak Terdaftar</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">
-        <?php foreach ($foto_extra as $fname): ?>
+        <?php foreach ($foto_extra as $fname) { ?>
         <div style="width:160px;height:130px;border-radius:8px;overflow:hidden;border:1.5px solid #d0e8ef;">
             <img src="uploads/extra/<?= htmlspecialchars($fname) ?>"
                  style="width:100%;height:100%;object-fit:cover;"
                  alt="Foto Satwa Tidak Terdaftar">
         </div>
-        <?php endforeach; ?>
+        <?php } ?>
     </div>
     <br>
-    <?php endif; ?>
+    <?php } ?>
 
     <div class="ttd-box">
       <div class="ttd-item">
         <p>Petugas Pelaksana</p>
         <div class="ttd-img-wrap">
-          <?php if ($ttd_is_image): ?>
+          <?php if ($ttd_is_image) { ?>
             <img src="<?= htmlspecialchars($ttd) ?>" alt="Tanda Tangan">
-          <?php else: ?>
+          <?php } else { ?>
             <span style="color:#aaa;font-size:12px">Belum ada tanda tangan</span>
-          <?php endif; ?>
+          <?php } ?>
         </div>
         <strong><?= valField($lap['nama_petugas']) ?></strong>
       </div>

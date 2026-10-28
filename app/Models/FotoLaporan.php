@@ -33,8 +33,9 @@ class FotoLaporan extends Model
     public function getUrlAttribute(): string
     {
         if ($this->tipe === 'extra') {
-            return asset('storage/uploads/extra/' . $this->nama_file);
+            return asset('storage/uploads/extra/'.$this->nama_file);
         }
-        return asset('storage/uploads/satwa/' . $this->nama_file);
+
+        return asset('storage/uploads/satwa/'.$this->nama_file);
     }
 }

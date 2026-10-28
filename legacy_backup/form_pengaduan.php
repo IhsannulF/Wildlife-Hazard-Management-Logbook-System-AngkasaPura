@@ -6,92 +6,98 @@
 session_start();
 
 // Cek login — role pegawai
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'pegawai') {
-    header("Location: login.php"); exit;
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'pegawai') {
+    header('Location: login.php');
+    exit;
 }
 
 require_once 'koneksi.php';
 
 // Ambil opsi dropdown dari database (dikelola admin di Report > Field Form)
 // Fallback ke array default jika field/opsi belum diatur di database
-function getDropdownOpsi($pdo, $namaField, $fallback) {
+function getDropdownOpsi($pdo, $namaField, $fallback)
+{
     try {
         $stmt = $pdo->prepare(
-            "SELECT o.nilai
+            'SELECT o.nilai
              FROM form_field_options o
              JOIN form_fields f ON f.id = o.field_id
              WHERE f.nama_field = ?
-             ORDER BY o.id ASC"
+             ORDER BY o.id ASC'
         );
         $stmt->execute([$namaField]);
         $opsi = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        return !empty($opsi) ? $opsi : $fallback;
+
+        return ! empty($opsi) ? $opsi : $fallback;
     } catch (Exception $e) {
         return $fallback;
     }
 }
 
-$kondisi_cuaca_opt = getDropdownOpsi($pdo, 'kondisi_cuaca', ['Cerah','Berawan','Hujan Ringan','Hujan Lebat','Berkabut']);
-$unit_kerja_opt    = getDropdownOpsi($pdo, 'unit_kerja',    ['Apron Movement Control','Airport Rescue & Fire Fighting','Airport Security','SMS & OHS']);
-$area_opt          = getDropdownOpsi($pdo, 'area_inspeksi', ['Apron','Taxiway','Runway','Perimeter','Terminal','Gedung Operasional','Area Parkir']);
-$kondisi_apron_opt = getDropdownOpsi($pdo, 'kondisi_apron', ['Hidup','Mati','Tidak ditemukan']);
-$tindak_lanjut_opt = getDropdownOpsi($pdo, 'tindak_lanjut', ['Telah ditangani','Belum ditangani']);
+$kondisi_cuaca_opt = getDropdownOpsi($pdo, 'kondisi_cuaca', ['Cerah', 'Berawan', 'Hujan Ringan', 'Hujan Lebat', 'Berkabut']);
+$unit_kerja_opt = getDropdownOpsi($pdo, 'unit_kerja', ['Apron Movement Control', 'Airport Rescue & Fire Fighting', 'Airport Security', 'SMS & OHS']);
+$area_opt = getDropdownOpsi($pdo, 'area_inspeksi', ['Apron', 'Taxiway', 'Runway', 'Perimeter', 'Terminal', 'Gedung Operasional', 'Area Parkir']);
+$kondisi_apron_opt = getDropdownOpsi($pdo, 'kondisi_apron', ['Hidup', 'Mati', 'Tidak ditemukan']);
+$tindak_lanjut_opt = getDropdownOpsi($pdo, 'tindak_lanjut', ['Telah ditangani', 'Belum ditangani']);
 
 // ── Auto-fill Unit Kerja sesuai divisi (jabatan) user yang login ──
 $mapJabatanUnitKerja = [
-    'AMC Divisi'      => 'Apron Movement Control',
-    'ARFF Divisi'     => 'Airport Rescue & Fire Fighting',
+    'AMC Divisi' => 'Apron Movement Control',
+    'ARFF Divisi' => 'Airport Rescue & Fire Fighting',
     'Security Divisi' => 'Airport Security',
-    'SMSOHS Divisi'   => 'SMS & OHS',
+    'SMSOHS Divisi' => 'SMS & OHS',
 ];
-$stmtUser = $pdo->prepare("SELECT namalengkap FROM users WHERE username = ?");
+$stmtUser = $pdo->prepare('SELECT namalengkap FROM users WHERE username = ?');
 $stmtUser->execute([$_SESSION['username']]);
-$jabatanUser  = $stmtUser->fetchColumn() ?: '';
+$jabatanUser = $stmtUser->fetchColumn() ?: '';
 $unitKerjaUser = $mapJabatanUnitKerja[$jabatanUser] ?? '';
 
 // Ambil label field dari database supaya sinkron dengan pengaturan admin
-$fieldLabels  = [];
-$aktifFields  = [];
+$fieldLabels = [];
+$aktifFields = [];
 try {
-    $stmtFields = $pdo->query("SELECT nama_field, label FROM form_fields WHERE aktif=1");
+    $stmtFields = $pdo->query('SELECT nama_field, label FROM form_fields WHERE aktif=1');
     foreach ($stmtFields->fetchAll(PDO::FETCH_ASSOC) as $f) {
         $fieldLabels[$f['nama_field']] = $f['label'];
         $aktifFields[$f['nama_field']] = true;
     }
-} catch (Exception $e) {}
+} catch (Exception $e) {
+}
 // Fallback label default
-$labelNama      = $fieldLabels['nama_petugas']   ?? 'Nama Petugas';
-$labelTanggal   = $fieldLabels['tanggal']        ?? 'Tanggal Pemantauan';
-$labelCuaca     = $fieldLabels['kondisi_cuaca']  ?? 'Kondisi Cuaca';
-$labelUnitKerja = $fieldLabels['unit_kerja']     ?? 'Unit Kerja';
-$labelArea      = $fieldLabels['area_inspeksi']  ?? 'Area Inspeksi';
+$labelNama = $fieldLabels['nama_petugas'] ?? 'Nama Petugas';
+$labelTanggal = $fieldLabels['tanggal'] ?? 'Tanggal Pemantauan';
+$labelCuaca = $fieldLabels['kondisi_cuaca'] ?? 'Kondisi Cuaca';
+$labelUnitKerja = $fieldLabels['unit_kerja'] ?? 'Unit Kerja';
+$labelArea = $fieldLabels['area_inspeksi'] ?? 'Area Inspeksi';
 
 // Ambil daftar satwa dari database (dikelola admin di laporan.php)
-$satwa_list = $pdo->query("SELECT id, nama, foto_path FROM jenis_satwa ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+$satwa_list = $pdo->query('SELECT id, nama, foto_path FROM jenis_satwa ORDER BY id ASC')->fetchAll(PDO::FETCH_ASSOC);
 
 // Ambil path gambar gridmap dari DB (dikelola admin di laporan.php tab Field Form)
 // Cek dulu apakah kolom gridmap_path sudah ada, jika belum fallback ke file default
 try {
-    $gridField    = $pdo->query("SELECT gridmap_path FROM form_fields WHERE tipe='grid' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-    $gridmapImage = !empty($gridField['gridmap_path']) ? $gridField['gridmap_path'] : 'gridmap_injourney.jpeg';
+    $gridField = $pdo->query("SELECT gridmap_path FROM form_fields WHERE tipe='grid' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $gridmapImage = ! empty($gridField['gridmap_path']) ? $gridField['gridmap_path'] : 'gridmap_injourney.jpeg';
 } catch (Exception $e) {
     $gridmapImage = 'gridmap_injourney.jpeg';
 }
 
 // Ambil path gambar gridmap dari DB (dikelola admin di laporan.php tab Field Form)
-$gridField    = $pdo->query("SELECT gridmap_path FROM form_fields WHERE tipe='grid' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$gridField = $pdo->query("SELECT gridmap_path FROM form_fields WHERE tipe='grid' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 $gridmapImage = $gridField['gridmap_path'] ?? 'gridmap_injourney.jpeg';
 
-$pesan_sukses = !empty($_GET['sukses']) ? htmlspecialchars($_GET['sukses'], ENT_QUOTES, 'UTF-8') : '';
-$pesan_error  = !empty($_GET['error'])  ? htmlspecialchars($_GET['error'],  ENT_QUOTES, 'UTF-8') : '';
+$pesan_sukses = ! empty($_GET['sukses']) ? htmlspecialchars($_GET['sukses'], ENT_QUOTES, 'UTF-8') : '';
+$pesan_error = ! empty($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 
 // Restore isian form jika ada error (data disimpan sementara di session)
 $fd = $_SESSION['form_data'] ?? [];
 unset($_SESSION['form_data']);
 
 // Helper untuk ambil nilai lama saat error
-function old($key, $default='') {
+function old($key, $default = '')
+{
     global $fd;
+
     return htmlspecialchars($fd[$key] ?? $default, ENT_QUOTES, 'UTF-8');
 }
 
@@ -555,8 +561,8 @@ function old($key, $default='') {
     </div>
     <div class="topbar-right">
         <div class="user-chip">
-            <div class="avatar"><?= strtoupper(substr($_SESSION['username'],0,2)) ?></div>
-            <div class="user-label"><?= htmlspecialchars($_SESSION['username'],ENT_QUOTES,'UTF-8') ?></div>
+            <div class="avatar"><?= strtoupper(substr($_SESSION['username'], 0, 2)) ?></div>
+            <div class="user-label"><?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?></div>
         </div>
         <a href="logout.php" class="logout-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -591,100 +597,100 @@ function old($key, $default='') {
             <div class="section-title">ISI LAPORAN</div>
             <div class="section-hint">Field dengan tanda "<span class="req">*</span>" wajib untuk diisi</div>
 
-            <?php if(isset($aktifFields['nama_petugas'])): ?>
+            <?php if (isset($aktifFields['nama_petugas'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($labelNama) ?> <span class="req">*</span></label>
                 <input type="text" name="nama_petugas"
                        placeholder="Masukkan nama lengkap petugas" value="<?= old('nama_petugas') ?>" required>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['tanggal'])): ?>
+            <?php if (isset($aktifFields['tanggal'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($labelTanggal) ?> <span class="req">*</span></label>
                 <input type="date" name="tanggal"
                        value="<?= date('Y-m-d') ?>" required>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['kondisi_cuaca'])): ?>
+            <?php if (isset($aktifFields['kondisi_cuaca'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($labelCuaca) ?> <span class="req">*</span></label>
                 <select name="kondisi_cuaca" required>
                     <option value="" disabled selected>-- Pilih kondisi cuaca --</option>
-                    <?php foreach($kondisi_cuaca_opt as $k): ?>
+                    <?php foreach ($kondisi_cuaca_opt as $k) { ?>
                     <option><?= $k ?></option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['unit_kerja'])): ?>
+            <?php if (isset($aktifFields['unit_kerja'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($labelUnitKerja) ?><span class="req">*</span></label>
-                <?php if ($unitKerjaUser): ?>
+                <?php if ($unitKerjaUser) { ?>
                 <select name="unit_kerja" disabled style="background:#f0f4f7;color:#555;cursor:not-allowed;">
                     <option selected><?= htmlspecialchars($unitKerjaUser) ?></option>
                 </select>
                 <input type="hidden" name="unit_kerja" value="<?= htmlspecialchars($unitKerjaUser) ?>">
-                <?php else: ?>
+                <?php } else { ?>
                 <select name="unit_kerja" value="<?= old('unit_kerja') ?>" required>
                     <option value="" disabled selected>-- Pilih unit kerja --</option>
-                    <?php foreach($unit_kerja_opt as $u): ?>
+                    <?php foreach ($unit_kerja_opt as $u) { ?>
                     <option><?= $u ?></option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
-                <?php endif; ?>
+                <?php } ?>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['area_inspeksi'])): ?>
+            <?php if (isset($aktifFields['area_inspeksi'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($labelArea) ?> <span class="req">*</span></label>
                 <select name="area_inspeksi" required>
                     <option value="" disabled selected>-- Pilih area inspeksi --</option>
-                    <?php foreach($area_opt as $a): ?>
+                    <?php foreach ($area_opt as $a) { ?>
                     <option><?= $a ?></option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <?php
             // Render field tambahan dari DB yang bukan field bawaan
-            $fieldBawaan = ['nama_petugas','tanggal','kondisi_cuaca','unit_kerja','area_inspeksi','tanda_tangan','ciri_ukuran','kondisi_apron','aktivitas_satwa','tindak_lanjut','detail_pengusiran'];
-            $stmtExtra = $pdo->query("SELECT * FROM form_fields WHERE aktif=1 AND tipe NOT IN ('grid','gridmap') AND nama_field NOT IN ('".implode("','", $fieldBawaan)."') ORDER BY urutan ASC");
-            $extraFields = $stmtExtra->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($extraFields as $ef):
-                $efName  = htmlspecialchars($ef['nama_field'], ENT_QUOTES, 'UTF-8');
-                $efLabel = htmlspecialchars($ef['label'], ENT_QUOTES, 'UTF-8');
-                $efPlaceholder = htmlspecialchars($ef['placeholder'] ?? '', ENT_QUOTES, 'UTF-8');
-                $efWajib = $ef['wajib'] ? 'required' : '';
-                $efOldVal = htmlspecialchars(old($ef['nama_field']), ENT_QUOTES, 'UTF-8');
-            ?>
+            $fieldBawaan = ['nama_petugas', 'tanggal', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi', 'tanda_tangan', 'ciri_ukuran', 'kondisi_apron', 'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran'];
+$stmtExtra = $pdo->query("SELECT * FROM form_fields WHERE aktif=1 AND tipe NOT IN ('grid','gridmap') AND nama_field NOT IN ('".implode("','", $fieldBawaan)."') ORDER BY urutan ASC");
+$extraFields = $stmtExtra->fetchAll(PDO::FETCH_ASSOC);
+foreach ($extraFields as $ef) {
+    $efName = htmlspecialchars($ef['nama_field'], ENT_QUOTES, 'UTF-8');
+    $efLabel = htmlspecialchars($ef['label'], ENT_QUOTES, 'UTF-8');
+    $efPlaceholder = htmlspecialchars($ef['placeholder'] ?? '', ENT_QUOTES, 'UTF-8');
+    $efWajib = $ef['wajib'] ? 'required' : '';
+    $efOldVal = htmlspecialchars(old($ef['nama_field']), ENT_QUOTES, 'UTF-8');
+    ?>
             <div class="field">
                 <label><?= $efLabel ?><?= $ef['wajib'] ? ' <span class="req">*</span>' : '' ?></label>
-                <?php if ($ef['tipe'] === 'dropdown'): ?>
+                <?php if ($ef['tipe'] === 'dropdown') { ?>
                     <?php $efOpsi = getDropdownOpsi($pdo, $ef['nama_field'], []); ?>
                     <select name="<?= $efName ?>" <?= $efWajib ?>>
                         <option value="" disabled selected>-- Pilih <?= strtolower($efLabel) ?> --</option>
-                        <?php foreach ($efOpsi as $opsi): ?>
+                        <?php foreach ($efOpsi as $opsi) { ?>
                         <option><?= htmlspecialchars($opsi) ?></option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
-                <?php elseif ($ef['tipe'] === 'textarea' || $ef['tipe'] === 'teks_panjang'): ?>
+                <?php } elseif ($ef['tipe'] === 'textarea' || $ef['tipe'] === 'teks_panjang') { ?>
                     <textarea name="<?= $efName ?>" placeholder="<?= $efPlaceholder ?>" <?= $efWajib ?>><?= $efOldVal ?></textarea>
-                <?php elseif ($ef['tipe'] === 'date'): ?>
+                <?php } elseif ($ef['tipe'] === 'date') { ?>
                     <input type="date" name="<?= $efName ?>" value="<?= $efOldVal ?>" <?= $efWajib ?>>
-                <?php elseif ($ef['tipe'] === 'number'): ?>
+                <?php } elseif ($ef['tipe'] === 'number') { ?>
                     <input type="number" name="<?= $efName ?>" placeholder="<?= $efPlaceholder ?>" value="<?= $efOldVal ?>" <?= $efWajib ?>>
-                <?php else: ?>
+                <?php } else { ?>
                     <input type="text" name="<?= $efName ?>" placeholder="<?= $efPlaceholder ?>" value="<?= $efOldVal ?>" <?= $efWajib ?>>
-                <?php endif; ?>
+                <?php } ?>
             </div>
-            <?php endforeach; ?>
+            <?php } ?>
 
-          <?php if(isset($aktifFields['tanda_tangan'])): ?>
+          <?php if (isset($aktifFields['tanda_tangan'])) { ?>
           <div class="field">
     <label>Tanda Tangan <span class="req">*</span></label>
 
@@ -709,7 +715,7 @@ function old($key, $default='') {
         </button>
     </div>
 </div>
-          <?php endif; ?>
+          <?php } ?>
         <!-- ═══ SECTION 2: GRIDMAP ═══ -->
         <div class="section-card">
             <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px">GRIDMAP</div>
@@ -721,14 +727,24 @@ function old($key, $default='') {
                 <svg id="gridSvg" viewBox="0 0 780 320" xmlns="http://www.w3.org/2000/svg"
                      style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">
                     <?php
-                    $cols = array_merge(range('A','Z'),(array)['AA','AB','AC','AD']);
-                    $tc = count($cols); $cw = 780/$tc;
-                    $rows = 10; $rh = 280/$rows;
-                    for($i=0;$i<=$tc;$i++) echo "<line x1='".($i*$cw)."' y1='20' x2='".($i*$cw)."' y2='300' stroke='rgba(42,179,192,0.55)' stroke-width='0.8'/>";
-                    for($i=0;$i<=$rows;$i++) echo "<line x1='0' y1='".(20+$i*$rh)."' x2='780' y2='".(20+$i*$rh)."' stroke='rgba(42,179,192,0.55)' stroke-width='0.8'/>";
-                    foreach($cols as $idx=>$col) echo "<text x='".($idx+0.5)*$cw."' y='14' text-anchor='middle' fill='#2ab3c0' font-size='6' font-family='DM Sans,sans-serif' font-weight='700'>$col</text>";
-                    for($i=1;$i<=$rows;$i++) echo "<text x='4' y='".(20+($i-0.5)*$rh+2)."' fill='#2ab3c0' font-size='7' font-family='DM Sans,sans-serif' font-weight='700'>$i</text>";
-                    ?>
+            $cols = array_merge(range('A', 'Z'), (array) ['AA', 'AB', 'AC', 'AD']);
+$tc = count($cols);
+$cw = 780 / $tc;
+$rows = 10;
+$rh = 280 / $rows;
+for ($i = 0; $i <= $tc; $i++) {
+    echo "<line x1='".($i * $cw)."' y1='20' x2='".($i * $cw)."' y2='300' stroke='rgba(42,179,192,0.55)' stroke-width='0.8'/>";
+}
+for ($i = 0; $i <= $rows; $i++) {
+    echo "<line x1='0' y1='".(20 + $i * $rh)."' x2='780' y2='".(20 + $i * $rh)."' stroke='rgba(42,179,192,0.55)' stroke-width='0.8'/>";
+}
+foreach ($cols as $idx => $col) {
+    echo "<text x='".($idx + 0.5) * $cw."' y='14' text-anchor='middle' fill='#2ab3c0' font-size='6' font-family='DM Sans,sans-serif' font-weight='700'>$col</text>";
+}
+for ($i = 1; $i <= $rows; $i++) {
+    echo "<text x='4' y='".(20 + ($i - 0.5) * $rh + 2)."' fill='#2ab3c0' font-size='7' font-family='DM Sans,sans-serif' font-weight='700'>$i</text>";
+}
+?>
                     <rect id="cellHL" x="0" y="0" width="0" height="0" fill="rgba(42,179,192,0.35)" stroke="#2ab3c0" stroke-width="1.5"/>
                     <circle id="pinDot" cx="-99" cy="-99" r="6" fill="#e05252" stroke="white" stroke-width="1.5"/>
                 </svg>
@@ -746,25 +762,25 @@ function old($key, $default='') {
             </div>
 
             <div class="satwa-grid">
-                <?php foreach($satwa_list as $idx => $satwa): ?>
+                <?php foreach ($satwa_list as $idx => $satwa) { ?>
                 <div class="satwa-card" id="satwaCard<?= $idx ?>" onclick="toggleSatwa(<?= $idx ?>)">
                     <!-- Badge centang -->
                     <div class="satwa-check">✓</div>
 
                     <!-- Gambar satwa -->
                     <div class="satwa-icon-wrap">
-                        <?php if(!empty($satwa['foto_path'])): ?>
-                        <img src="<?= htmlspecialchars($satwa['foto_path'],ENT_QUOTES,'UTF-8') ?>"
-                             alt="<?= htmlspecialchars($satwa['nama'],ENT_QUOTES,'UTF-8') ?>"
+                        <?php if (! empty($satwa['foto_path'])) { ?>
+                        <img src="<?= htmlspecialchars($satwa['foto_path'], ENT_QUOTES, 'UTF-8') ?>"
+                             alt="<?= htmlspecialchars($satwa['nama'], ENT_QUOTES, 'UTF-8') ?>"
                              onerror="this.style.display='none'">
-                        <?php else: ?>
+                        <?php } else { ?>
                         <div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🐦</div>
-                        <?php endif; ?>
+                        <?php } ?>
                     </div>
 
                     <!-- Nama -->
                     <div class="satwa-info">
-                        <div class="satwa-name"><?= htmlspecialchars($satwa['nama'],ENT_QUOTES,'UTF-8') ?></div>
+                        <div class="satwa-name"><?= htmlspecialchars($satwa['nama'], ENT_QUOTES, 'UTF-8') ?></div>
                     </div>
 
                     <!-- Daftar lokasi (muncul saat selected) -->
@@ -799,11 +815,11 @@ function old($key, $default='') {
                     <input type="hidden" name="satwa[<?= $idx ?>][id]"
                            value="<?= $satwa['id'] ?>">
                     <input type="hidden" name="satwa[<?= $idx ?>][nama]"
-                           value="<?= htmlspecialchars($satwa['nama'],ENT_QUOTES,'UTF-8') ?>">
+                           value="<?= htmlspecialchars($satwa['nama'], ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="satwa[<?= $idx ?>][aktif]"
                            id="hiddenAktif<?= $idx ?>" value="0">
                 </div>
-                <?php endforeach; ?>
+                <?php } ?>
             </div>
 
             <!-- Upload foto satwa tidak terdaftar -->
@@ -840,54 +856,54 @@ function old($key, $default='') {
                 Semua field wajib diisi <span class="req">*</span>
             </div>
 
-            <?php if(isset($aktifFields['ciri_ukuran'])): ?>
+            <?php if (isset($aktifFields['ciri_ukuran'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($fieldLabels['ciri_ukuran'] ?? 'Ciri-ciri Ukuran Satwa Liar') ?> <span class="req">*</span></label>
                 <textarea name="ciri_ukuran" placeholder="Deskripsikan ukuran, warna, ciri fisik satwa..." required><?= old('ciri_ukuran') ?></textarea>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['kondisi_apron'])): ?>
-            <?php $kondisi_apron_opt_db = getDropdownOpsi($pdo, 'kondisi_apron', ['Hidup','Mati','Tidak ditemukan']); ?>
+            <?php if (isset($aktifFields['kondisi_apron'])) { ?>
+            <?php $kondisi_apron_opt_db = getDropdownOpsi($pdo, 'kondisi_apron', ['Hidup', 'Mati', 'Tidak ditemukan']); ?>
             <div class="field">
                 <label><?= htmlspecialchars($fieldLabels['kondisi_apron'] ?? 'Kondisi Ditemukan di Lokasi') ?> <span class="req">*</span></label>
                 <select name="kondisi_apron" required>
                     <option value="">-- Pilih kondisi --</option>
-                    <?php foreach($kondisi_apron_opt_db as $o): ?>
+                    <?php foreach ($kondisi_apron_opt_db as $o) { ?>
                     <option value="<?= htmlspecialchars($o) ?>"><?= htmlspecialchars($o) ?></option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['aktivitas_satwa'])): ?>
+            <?php if (isset($aktifFields['aktivitas_satwa'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($fieldLabels['aktivitas_satwa'] ?? 'Aktivitas Satwa Liar di Lokasi') ?> <span class="req">*</span></label>
                 <textarea name="aktivitas_satwa"
                     placeholder="Terbang, berjalan, berkelompok, dll..." required><?= old('aktivitas_satwa') ?></textarea>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['tindak_lanjut'])): ?>
-            <?php $tindak_lanjut_opt_db = getDropdownOpsi($pdo, 'tindak_lanjut', ['Telah ditangani','Belum ditangani']); ?>
+            <?php if (isset($aktifFields['tindak_lanjut'])) { ?>
+            <?php $tindak_lanjut_opt_db = getDropdownOpsi($pdo, 'tindak_lanjut', ['Telah ditangani', 'Belum ditangani']); ?>
             <div class="field">
                 <label><?= htmlspecialchars($fieldLabels['tindak_lanjut'] ?? 'Tindak Lanjut yang Dilakukan') ?> <span class="req">*</span></label>
                 <select name="tindak_lanjut" required>
                     <option value="">-- Pilih tindak lanjut --</option>
-                    <?php foreach($tindak_lanjut_opt_db as $o): ?>
+                    <?php foreach ($tindak_lanjut_opt_db as $o) { ?>
                     <option value="<?= htmlspecialchars($o) ?>"><?= htmlspecialchars($o) ?></option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
-            <?php if(isset($aktifFields['detail_pengusiran'])): ?>
+            <?php if (isset($aktifFields['detail_pengusiran'])) { ?>
             <div class="field">
                 <label><?= htmlspecialchars($fieldLabels['detail_pengusiran'] ?? 'Detail Pengusiran yang Dilakukan') ?> <span class="req">*</span></label>
                 <textarea name="detail_pengusiran"
                     placeholder='Jelaskan secara detail pengusiran yang dilakukan. Isi "-" jika belum dilakukan.' required><?= old('detail_pengusiran') ?></textarea>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <div class="btn-row">
                 <a href="user_dashboard.php" class="btn-back">
@@ -1142,7 +1158,7 @@ document.getElementById('mainForm')
 <!-- ═══ POPUP TERIMA KASIH ═══ -->
 
 <!-- Error toast -->
-<?php if($pesan_error): ?>
+<?php if ($pesan_error) { ?>
 <div id="errorToast" style="
     position:fixed;top:20px;left:50%;transform:translateX(-50%);
     background:#fff;border:1px solid #fca5a5;border-left:4px solid #ef4444;
@@ -1155,10 +1171,10 @@ document.getElementById('mainForm')
     <?= $pesan_error ?>
     <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#991b1b;font-size:16px;margin-left:8px;padding:0">×</button>
 </div>
-<?php endif; ?>
+<?php } ?>
 
 <!-- ═══ POPUP TERIMA KASIH ═══ -->
-<?php if($pesan_sukses): ?>
+<?php if ($pesan_sukses) { ?>
 <div id="popupTerimakasih" style="
     position:fixed;inset:0;z-index:9999;
     background:rgba(0,0,0,0.45);
@@ -1249,34 +1265,34 @@ window.addEventListener('load', function(){
     }, 1000);
 });
 </script>
-<?php endif; ?>
+<?php } ?>
 
 
 <script>
 // Restore textarea values from session (after error redirect)
-<?php if(!empty($fd)): ?>
-<?php $textareas = ['ciri_ukuran','kondisi_apron','aktivitas_satwa','tindak_lanjut','detail_pengusiran']; ?>
-<?php foreach($textareas as $tf): ?>
-<?php if(!empty($fd[$tf])): ?>
+<?php if (! empty($fd)) { ?>
+<?php $textareas = ['ciri_ukuran', 'kondisi_apron', 'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran']; ?>
+<?php foreach ($textareas as $tf) { ?>
+<?php if (! empty($fd[$tf])) { ?>
 (function(){
   var el = document.querySelector('[name="<?= $tf ?>"]');
   if(el) el.value = <?= json_encode($fd[$tf]) ?>;
 })();
-<?php endif; ?>
-<?php endforeach; ?>
-<?php if(!empty($fd['kondisi_cuaca'])): ?>
+<?php } ?>
+<?php } ?>
+<?php if (! empty($fd['kondisi_cuaca'])) { ?>
 (function(){
   var el = document.querySelector('[name="kondisi_cuaca"]');
   if(el) el.value = <?= json_encode($fd['kondisi_cuaca']) ?>;
 })();
-<?php endif; ?>
-<?php if(!empty($fd['area_inspeksi'])): ?>
+<?php } ?>
+<?php if (! empty($fd['area_inspeksi'])) { ?>
 (function(){
   var el = document.querySelector('[name="area_inspeksi"]');
   if(el) el.value = <?= json_encode($fd['area_inspeksi']) ?>;
 })();
-<?php endif; ?>
-<?php endif; ?>
+<?php } ?>
+<?php } ?>
 </script>
 </body>
 </html>

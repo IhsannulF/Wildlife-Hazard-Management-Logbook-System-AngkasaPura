@@ -11,14 +11,12 @@
 //           7) Tampilkan HTML (head, CSS, form, JavaScript)
 // ============================================================
 
-
 // ============================================================
 // BAGIAN 1 — MULAI SESSION
 // Wajib dipanggil paling pertama sebelum apapun,
 // agar bisa menyimpan & membaca data session user.
 // ============================================================
 session_start();
-
 
 // ============================================================
 // BAGIAN 2 — CEK JIKA USER SUDAH LOGIN
@@ -28,13 +26,12 @@ session_start();
 // ============================================================
 if (isset($_SESSION['username'])) {
     if ($_SESSION['role'] === 'admin') {
-        header("Location: admin_dashboard.php");
+        header('Location: admin_dashboard.php');
     } else {
-        header("Location: user_dashboard.php");
+        header('Location: user_dashboard.php');
     }
     exit;
 }
-
 
 // ============================================================
 // BAGIAN 3 — SAMBUNGKAN KE DATABASE
@@ -42,7 +39,6 @@ if (isset($_SESSION['username'])) {
 // dan nama database. Wajib ada sebelum query dijalankan.
 // ============================================================
 require_once 'koneksi.php';
-
 
 // ============================================================
 // BAGIAN 4 — SIAPKAN CSRF TOKEN & COUNTER PERCOBAAN LOGIN
@@ -60,11 +56,10 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Set awal counter jika belum pernah ada
-if (!isset($_SESSION['login_attempts'])) {
-    $_SESSION['login_attempts']    = 0;
+if (! isset($_SESSION['login_attempts'])) {
+    $_SESSION['login_attempts'] = 0;
     $_SESSION['last_attempt_time'] = time();
 }
-
 
 // ============================================================
 // BAGIAN 5 — CEK STATUS LOCKOUT
@@ -72,8 +67,8 @@ if (!isset($_SESSION['login_attempts'])) {
 // user dikunci sementara selama 60 detik.
 // Setelah 60 detik berlalu, counter direset otomatis.
 // ============================================================
-$error        = '';       // Pesan error yang ditampilkan ke user
-$lockout      = false;    // Status apakah user sedang dikunci
+$error = '';       // Pesan error yang ditampilkan ke user
+$lockout = false;    // Status apakah user sedang dikunci
 $max_attempts = 5;        // Batas maksimal percobaan login
 $lockout_secs = 60;       // Durasi kunci dalam detik
 
@@ -84,13 +79,12 @@ if ($_SESSION['login_attempts'] >= $max_attempts) {
     if ($waktu_berlalu < $lockout_secs) {
         // Masih dalam masa kunci
         $lockout = true;
-        $sisa    = $lockout_secs - $waktu_berlalu; // Sisa detik kunci
+        $sisa = $lockout_secs - $waktu_berlalu; // Sisa detik kunci
     } else {
         // Masa kunci sudah habis → reset counter
         $_SESSION['login_attempts'] = 0;
     }
 }
-
 
 // ============================================================
 // BAGIAN 6 — PROSES FORM LOGIN (hanya jika metode POST)
@@ -103,13 +97,13 @@ if ($_SESSION['login_attempts'] >= $max_attempts) {
 //   6f) Jika cocok → simpan session & redirect
 //   6g) Jika tidak cocok → tambah counter percobaan
 // ============================================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$lockout) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ! $lockout) {
 
     // -- 6a) Validasi CSRF token --
     // Token dari form harus cocok dengan token di session.
     // Jika tidak cocok, tolak request (kemungkinan serangan).
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $error = "Request tidak valid. Silakan muat ulang halaman.";
+    if (! isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $error = 'Request tidak valid. Silakan muat ulang halaman.';
 
     } else {
 
@@ -121,14 +115,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$lockout) {
 
         // -- 6c) Cek input tidak boleh kosong --
         if (empty($username) || empty($password)) {
-            $error = "Username dan password wajib diisi.";
+            $error = 'Username dan password wajib diisi.';
 
         } else {
 
             // -- 6d) Cari user di database --
             // Gunakan prepared statement untuk mencegah SQL injection.
             // Tanda '?' adalah placeholder untuk prepared statement PDO.
-            $stmt = $pdo->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
+            $stmt = $pdo->prepare('SELECT id, username, password, role FROM users WHERE username = ?');
             $stmt->execute([$username]);
             $user = $stmt->fetch();
 
@@ -148,18 +142,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$lockout) {
                     session_regenerate_id(true);
 
                     // Simpan data user ke session
-                    $_SESSION['user_id']  = $user['id'];
+                    $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
-                    $_SESSION['role']     = $user['role'];
+                    $_SESSION['role'] = $user['role'];
 
                     // Buat ulang CSRF token setelah login berhasil
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
                     // Arahkan ke dashboard sesuai role
                     if ($user['role'] === 'admin') {
-                        header("Location: admin_dashboard.php");
+                        header('Location: admin_dashboard.php');
                     } else {
-                        header("Location: user_dashboard.php");
+                        header('Location: user_dashboard.php');
                     }
                     exit;
 
@@ -167,13 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$lockout) {
                     // -- 6g) PASSWORD SALAH --
                     // Pesan dibuat sama agar tidak bocorkan info
                     // (tidak kasih tahu "username benar tapi password salah")
-                    $error = "Username atau password salah.";
+                    $error = 'Username atau password salah.';
                 }
 
             } else {
                 // -- 6g) USERNAME TIDAK DITEMUKAN --
                 // Pesan error sama dengan password salah
-                $error = "Username atau password salah.";
+                $error = 'Username atau password salah.';
             }
 
             // Tambah counter percobaan gagal & catat waktunya
@@ -510,17 +504,17 @@ Urutan tampilan dari atas ke bawah:
         - Jika ada error biasa → tampilkan pesan error
         - Jika tidak ada masalah → tidak tampil apapun
     -->
-    <?php if ($lockout): ?>
+    <?php if ($lockout) { ?>
         <div class="alert alert-lockout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            Terlalu banyak percobaan. Tunggu <?= (int)$sisa ?> detik sebelum mencoba lagi.
+            Terlalu banyak percobaan. Tunggu <?= (int) $sisa ?> detik sebelum mencoba lagi.
         </div>
 
-    <?php elseif (!empty($error)): ?>
+    <?php } elseif (! empty($error)) { ?>
         <div class="alert">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px">
                 <circle cx="12" cy="12" r="10"/>
@@ -529,7 +523,7 @@ Urutan tampilan dari atas ke bawah:
             </svg>
             <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
         </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <!-- Form login -->
     <form method="POST" id="loginForm">
@@ -580,11 +574,11 @@ Urutan tampilan dari atas ke bawah:
         </div>
 
         <!-- Info percobaan gagal (hanya tampil jika ada) -->
-        <?php if ($_SESSION['login_attempts'] > 0 && !$lockout): ?>
+        <?php if ($_SESSION['login_attempts'] > 0 && ! $lockout) { ?>
             <p class="attempts-info">
-                Percobaan gagal: <span><?= (int)$_SESSION['login_attempts'] ?>/<?= $max_attempts ?></span>
+                Percobaan gagal: <span><?= (int) $_SESSION['login_attempts'] ?>/<?= $max_attempts ?></span>
             </p>
-        <?php endif; ?>
+        <?php } ?>
 
         <!-- Tombol Login -->
         <button type="submit" class="btn" id="submitBtn" <?= $lockout ? 'disabled' : '' ?>>

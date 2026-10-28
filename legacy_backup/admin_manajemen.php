@@ -1,15 +1,15 @@
 <?php
 session_start();
 // Cek login — kalau belum login, arahkan ke halaman login
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit;
 }
 require_once 'koneksi.php';
 $activePage = 'laporan';
-$tab        = $_GET['tab'] ?? 'fields';
+$tab = $_GET['tab'] ?? 'fields';
 
-$msg     = $_SESSION['msg']      ?? '';
+$msg = $_SESSION['msg'] ?? '';
 $msgType = $_SESSION['msg_type'] ?? '';
 unset($_SESSION['msg'], $_SESSION['msg_type']);
 
@@ -27,35 +27,41 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `form_fields` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB");
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS `form_field_options` (
+$pdo->exec('CREATE TABLE IF NOT EXISTS `form_field_options` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `field_id` INT NOT NULL,
   `nilai` VARCHAR(200) NOT NULL,
   `urutan` INT DEFAULT 0,
   FOREIGN KEY (`field_id`) REFERENCES `form_fields`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB");
+) ENGINE=InnoDB');
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS `jenis_satwa` (
+$pdo->exec('CREATE TABLE IF NOT EXISTS `jenis_satwa` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `nama` VARCHAR(150) NOT NULL
-) ENGINE=InnoDB");
+) ENGINE=InnoDB');
 
 $colsNama = $pdo->query("SHOW COLUMNS FROM jenis_satwa LIKE 'nama'")->fetchAll();
-if (empty($colsNama)) $pdo->exec("ALTER TABLE jenis_satwa ADD COLUMN `nama` VARCHAR(150) NOT NULL DEFAULT ''");
+if (empty($colsNama)) {
+    $pdo->exec("ALTER TABLE jenis_satwa ADD COLUMN `nama` VARCHAR(150) NOT NULL DEFAULT ''");
+}
 
 $cols = $pdo->query("SHOW COLUMNS FROM jenis_satwa LIKE 'foto_path'")->fetchAll();
-if (empty($cols)) $pdo->exec("ALTER TABLE jenis_satwa ADD COLUMN `foto_path` VARCHAR(255) DEFAULT NULL");
+if (empty($cols)) {
+    $pdo->exec('ALTER TABLE jenis_satwa ADD COLUMN `foto_path` VARCHAR(255) DEFAULT NULL');
+}
 
 $colsGrid = $pdo->query("SHOW COLUMNS FROM form_fields LIKE 'gridmap_path'")->fetchAll();
-if (empty($colsGrid)) $pdo->exec("ALTER TABLE form_fields ADD COLUMN `gridmap_path` VARCHAR(255) DEFAULT NULL");
+if (empty($colsGrid)) {
+    $pdo->exec('ALTER TABLE form_fields ADD COLUMN `gridmap_path` VARCHAR(255) DEFAULT NULL');
+}
 
 // Pastikan semua kolom form_fields lengkap (jaga-jaga jika tabel sudah ada sebelumnya tanpa kolom ini)
 $requiredCols = [
     'placeholder' => "VARCHAR(200) DEFAULT ''",
-    'wajib'       => "TINYINT(1) DEFAULT 1",
-    'aktif'       => "TINYINT(1) DEFAULT 1",
-    'urutan'      => "INT DEFAULT 0",
-    'keterangan'  => "VARCHAR(300) DEFAULT ''",
+    'wajib' => 'TINYINT(1) DEFAULT 1',
+    'aktif' => 'TINYINT(1) DEFAULT 1',
+    'urutan' => 'INT DEFAULT 0',
+    'keterangan' => "VARCHAR(300) DEFAULT ''",
 ];
 foreach ($requiredCols as $colName => $colDef) {
     $exists = $pdo->query("SHOW COLUMNS FROM form_fields LIKE '$colName'")->fetchAll();
@@ -65,32 +71,40 @@ foreach ($requiredCols as $colName => $colDef) {
 }
 
 // Seed default fields jika kosong
-if ((int)$pdo->query("SELECT COUNT(*) FROM form_fields")->fetchColumn() === 0) {
+if ((int) $pdo->query('SELECT COUNT(*) FROM form_fields')->fetchColumn() === 0) {
     $seeds = [
-        ['nama_petugas','Nama Petugas','text','Nama lengkap petugas',1,1,1,''],
-        ['tanggal','Tanggal Pemantauan','date','DD/MM/YY',1,1,2,''],
-        ['kondisi_cuaca','Kondisi Cuaca','dropdown','Pilih kondisi cuaca',1,1,3,''],
-        ['unit_kerja','Unit Kerja','text','Unit atau divisi',1,1,4,''],
-        ['area_inspeksi','Area Inspeksi','dropdown','Pilih area inspeksi',1,1,5,''],
-        ['grid_lokasi','Gambar Lokasi Pengamatan (Gridmap)','grid','Isi format X-Y (ex: 10-B)',1,1,6,'Klik pada peta atau isi manual'],
-        ['tanda_tangan','Tanda Tangan','textarea','Tanda tangan / inisial',1,1,7,''],
-        ['ciri_ukuran','Ciri-ciri Ukuran Satwa Liar','textarea','Deskripsikan ukuran satwa',1,1,8,''],
-        ['kondisi_apron','Kondisi Ditemukan di Area Apron','text','Hidup, mati, tidak ditemukan',1,1,9,''],
-        ['aktivitas_satwa','Aktivitas Satwa Liar di Area Apron','textarea','Jelaskan aktivitas satwa',1,1,10,''],
-        ['tindak_lanjut','Tindak Lanjut','dropdown','Pilih tindak lanjut',1,1,11,''],
-        ['detail_pengusiran','Detail Pengusiran','textarea','Isi "-" jika tidak ada pengusiran',0,1,12,''],
+        ['nama_petugas', 'Nama Petugas', 'text', 'Nama lengkap petugas', 1, 1, 1, ''],
+        ['tanggal', 'Tanggal Pemantauan', 'date', 'DD/MM/YY', 1, 1, 2, ''],
+        ['kondisi_cuaca', 'Kondisi Cuaca', 'dropdown', 'Pilih kondisi cuaca', 1, 1, 3, ''],
+        ['unit_kerja', 'Unit Kerja', 'text', 'Unit atau divisi', 1, 1, 4, ''],
+        ['area_inspeksi', 'Area Inspeksi', 'dropdown', 'Pilih area inspeksi', 1, 1, 5, ''],
+        ['grid_lokasi', 'Gambar Lokasi Pengamatan (Gridmap)', 'grid', 'Isi format X-Y (ex: 10-B)', 1, 1, 6, 'Klik pada peta atau isi manual'],
+        ['tanda_tangan', 'Tanda Tangan', 'textarea', 'Tanda tangan / inisial', 1, 1, 7, ''],
+        ['ciri_ukuran', 'Ciri-ciri Ukuran Satwa Liar', 'textarea', 'Deskripsikan ukuran satwa', 1, 1, 8, ''],
+        ['kondisi_apron', 'Kondisi Ditemukan di Area Apron', 'text', 'Hidup, mati, tidak ditemukan', 1, 1, 9, ''],
+        ['aktivitas_satwa', 'Aktivitas Satwa Liar di Area Apron', 'textarea', 'Jelaskan aktivitas satwa', 1, 1, 10, ''],
+        ['tindak_lanjut', 'Tindak Lanjut', 'dropdown', 'Pilih tindak lanjut', 1, 1, 11, ''],
+        ['detail_pengusiran', 'Detail Pengusiran', 'textarea', 'Isi "-" jika tidak ada pengusiran', 0, 1, 12, ''],
     ];
-    $st = $pdo->prepare("INSERT IGNORE INTO form_fields (nama_field,label,tipe,placeholder,wajib,aktif,urutan,keterangan) VALUES (?,?,?,?,?,?,?,?)");
-    foreach ($seeds as $s) $st->execute($s);
+    $st = $pdo->prepare('INSERT IGNORE INTO form_fields (nama_field,label,tipe,placeholder,wajib,aktif,urutan,keterangan) VALUES (?,?,?,?,?,?,?,?)');
+    foreach ($seeds as $s) {
+        $st->execute($s);
+    }
 
     // Seed options
-    $fidCuaca  = $pdo->query("SELECT id FROM form_fields WHERE nama_field='kondisi_cuaca'")->fetchColumn();
-    $fidArea   = $pdo->query("SELECT id FROM form_fields WHERE nama_field='area_inspeksi'")->fetchColumn();
+    $fidCuaca = $pdo->query("SELECT id FROM form_fields WHERE nama_field='kondisi_cuaca'")->fetchColumn();
+    $fidArea = $pdo->query("SELECT id FROM form_fields WHERE nama_field='area_inspeksi'")->fetchColumn();
     $fidTindak = $pdo->query("SELECT id FROM form_fields WHERE nama_field='tindak_lanjut'")->fetchColumn();
-    $stOpt = $pdo->prepare("INSERT IGNORE INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)");
-    foreach (['Cerah','Berawan','Hujan','Berkabut'] as $i=>$v) $stOpt->execute([$fidCuaca,$v,$i+1]);
-    foreach (['Runway','Apron A','Apron B','Apron C','Terminal 1','Terminal 2','Regulating Pond 1','Regulating Pond 2','Regulating Pond 3','West Scramble','East Scramble'] as $i=>$v) $stOpt->execute([$fidArea,$v,$i+1]);
-    foreach (['Telah ditangani','Belum ditangani'] as $i=>$v) $stOpt->execute([$fidTindak,$v,$i+1]);
+    $stOpt = $pdo->prepare('INSERT IGNORE INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)');
+    foreach (['Cerah', 'Berawan', 'Hujan', 'Berkabut'] as $i => $v) {
+        $stOpt->execute([$fidCuaca, $v, $i + 1]);
+    }
+    foreach (['Runway', 'Apron A', 'Apron B', 'Apron C', 'Terminal 1', 'Terminal 2', 'Regulating Pond 1', 'Regulating Pond 2', 'Regulating Pond 3', 'West Scramble', 'East Scramble'] as $i => $v) {
+        $stOpt->execute([$fidArea, $v, $i + 1]);
+    }
+    foreach (['Telah ditangani', 'Belum ditangani'] as $i => $v) {
+        $stOpt->execute([$fidTindak, $v, $i + 1]);
+    }
 }
 
 // ================================================================
@@ -101,218 +115,248 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ── USER: Tambah ─────────────────────────────────────────
     if ($action === 'tambah_user') {
-        $nama     = trim($_POST['nama'] ?? '');
+        $nama = trim($_POST['nama'] ?? '');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $role     = $_POST['role'] ?? 'pegawai';
+        $role = $_POST['role'] ?? 'pegawai';
         if ($nama && $username && $password) {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             try {
-                $pdo->prepare("INSERT INTO users (namalengkap,username,password,role) VALUES (?,?,?,?)")
-                    ->execute([$nama,$username,$hash,$role]);
-                $_SESSION['msg']      = "User \"$username\" berhasil ditambahkan.";
+                $pdo->prepare('INSERT INTO users (namalengkap,username,password,role) VALUES (?,?,?,?)')
+                    ->execute([$nama, $username, $hash, $role]);
+                $_SESSION['msg'] = "User \"$username\" berhasil ditambahkan.";
                 $_SESSION['msg_type'] = 'success';
             } catch (Exception $e) {
-                $_SESSION['msg']      = "Username \"$username\" sudah digunakan.";
+                $_SESSION['msg'] = "Username \"$username\" sudah digunakan.";
                 $_SESSION['msg_type'] = 'error';
             }
         }
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Edit ───────────────────────────────────────────
     if ($action === 'edit_user') {
-        $id       = (int)($_POST['id'] ?? 0);
-        $nama     = trim($_POST['nama'] ?? '');
+        $id = (int) ($_POST['id'] ?? 0);
+        $nama = trim($_POST['nama'] ?? '');
         $username = trim($_POST['username'] ?? '');
-        $role     = $_POST['role'] ?? 'pegawai';
+        $role = $_POST['role'] ?? 'pegawai';
         $password = trim($_POST['password'] ?? '');
         if ($id && $nama && $username) {
             if ($password) {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $pdo->prepare("UPDATE users SET namalengkap=?,username=?,password=?,role=? WHERE id=?")
-                    ->execute([$nama,$username,$hash,$role,$id]);
+                $pdo->prepare('UPDATE users SET namalengkap=?,username=?,password=?,role=? WHERE id=?')
+                    ->execute([$nama, $username, $hash, $role, $id]);
             } else {
-                $pdo->prepare("UPDATE users SET namalengkap=?,username=?,role=? WHERE id=?")
-                    ->execute([$nama,$username,$role,$id]);
+                $pdo->prepare('UPDATE users SET namalengkap=?,username=?,role=? WHERE id=?')
+                    ->execute([$nama, $username, $role, $id]);
             }
-            $_SESSION['msg']      = "User berhasil diperbarui.";
+            $_SESSION['msg'] = 'User berhasil diperbarui.';
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Toggle Aktif ───────────────────────────────────
     if ($action === 'toggle_user') {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) $pdo->prepare("UPDATE users SET aktif = 1 - aktif WHERE id=?")->execute([$id]);
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id) {
+            $pdo->prepare('UPDATE users SET aktif = 1 - aktif WHERE id=?')->execute([$id]);
+        }
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Hapus ──────────────────────────────────────────
     if ($action === 'hapus_user') {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) $pdo->prepare("DELETE FROM users WHERE id=?")->execute([$id]);
-        $_SESSION['msg']      = "User berhasil dihapus.";
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id) {
+            $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$id]);
+        }
+        $_SESSION['msg'] = 'User berhasil dihapus.';
         $_SESSION['msg_type'] = 'success';
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
-
 
     // ── USER: Tambah ─────────────────────────────────────────
     if ($action === 'tambah_user') {
-        $nama     = trim($_POST['nama'] ?? '');
+        $nama = trim($_POST['nama'] ?? '');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $role     = $_POST['role'] ?? 'pegawai';
+        $role = $_POST['role'] ?? 'pegawai';
         if ($nama && $username && $password) {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             try {
-                $pdo->prepare("INSERT INTO users (namalengkap,username,password,role) VALUES (?,?,?,?)")
-                    ->execute([$nama,$username,$hash,$role]);
-                $_SESSION['msg']      = "User \"$username\" berhasil ditambahkan.";
+                $pdo->prepare('INSERT INTO users (namalengkap,username,password,role) VALUES (?,?,?,?)')
+                    ->execute([$nama, $username, $hash, $role]);
+                $_SESSION['msg'] = "User \"$username\" berhasil ditambahkan.";
                 $_SESSION['msg_type'] = 'success';
             } catch (Exception $e) {
-                $_SESSION['msg']      = "Username \"$username\" sudah digunakan.";
+                $_SESSION['msg'] = "Username \"$username\" sudah digunakan.";
                 $_SESSION['msg_type'] = 'error';
             }
         }
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Edit ───────────────────────────────────────────
     if ($action === 'edit_user') {
-        $id       = (int)($_POST['id'] ?? 0);
-        $nama     = trim($_POST['nama'] ?? '');
+        $id = (int) ($_POST['id'] ?? 0);
+        $nama = trim($_POST['nama'] ?? '');
         $username = trim($_POST['username'] ?? '');
-        $role     = $_POST['role'] ?? 'pegawai';
+        $role = $_POST['role'] ?? 'pegawai';
         $password = trim($_POST['password'] ?? '');
         if ($id && $nama && $username) {
             if ($password) {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $pdo->prepare("UPDATE users SET namalengkap=?,username=?,password=?,role=? WHERE id=?")
-                    ->execute([$nama,$username,$hash,$role,$id]);
+                $pdo->prepare('UPDATE users SET namalengkap=?,username=?,password=?,role=? WHERE id=?')
+                    ->execute([$nama, $username, $hash, $role, $id]);
             } else {
-                $pdo->prepare("UPDATE users SET namalengkap=?,username=?,role=? WHERE id=?")
-                    ->execute([$nama,$username,$role,$id]);
+                $pdo->prepare('UPDATE users SET namalengkap=?,username=?,role=? WHERE id=?')
+                    ->execute([$nama, $username, $role, $id]);
             }
-            $_SESSION['msg']      = "User berhasil diperbarui.";
+            $_SESSION['msg'] = 'User berhasil diperbarui.';
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Toggle Aktif ───────────────────────────────────
     if ($action === 'toggle_user') {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) $pdo->prepare("UPDATE users SET aktif = 1 - aktif WHERE id=?")->execute([$id]);
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id) {
+            $pdo->prepare('UPDATE users SET aktif = 1 - aktif WHERE id=?')->execute([$id]);
+        }
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── USER: Hapus ──────────────────────────────────────────
     if ($action === 'hapus_user') {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) $pdo->prepare("DELETE FROM users WHERE id=?")->execute([$id]);
-        $_SESSION['msg']      = "User berhasil dihapus.";
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id) {
+            $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$id]);
+        }
+        $_SESSION['msg'] = 'User berhasil dihapus.';
         $_SESSION['msg_type'] = 'success';
-        header("Location: admin_manajemen.php?tab=users"); exit;
+        header('Location: admin_manajemen.php?tab=users');
+        exit;
     }
 
     // ── FIELD: Tambah ────────────────────────────────────────
     if ($action === 'tambah_field') {
-        $label       = trim($_POST['label'] ?? '');
-        $tipe        = $_POST['tipe'] ?? 'text';
+        $label = trim($_POST['label'] ?? '');
+        $tipe = $_POST['tipe'] ?? 'text';
         $placeholder = trim($_POST['placeholder'] ?? '');
-        $wajib       = isset($_POST['wajib']) ? 1 : 0;
-        $keterangan  = trim($_POST['keterangan'] ?? '');
+        $wajib = isset($_POST['wajib']) ? 1 : 0;
+        $keterangan = trim($_POST['keterangan'] ?? '');
         if ($label) {
-            $namaField = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $label)) . '_' . time();
-            $maxUrut   = (int)$pdo->query("SELECT MAX(urutan) FROM form_fields")->fetchColumn();
-            $pdo->prepare("INSERT INTO form_fields (nama_field,label,tipe,placeholder,wajib,aktif,urutan,keterangan) VALUES (?,?,?,?,?,1,?,?)")
-                ->execute([$namaField,$label,$tipe,$placeholder,$wajib,$maxUrut+1,$keterangan]);
+            $namaField = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $label)).'_'.time();
+            $maxUrut = (int) $pdo->query('SELECT MAX(urutan) FROM form_fields')->fetchColumn();
+            $pdo->prepare('INSERT INTO form_fields (nama_field,label,tipe,placeholder,wajib,aktif,urutan,keterangan) VALUES (?,?,?,?,?,1,?,?)')
+                ->execute([$namaField, $label, $tipe, $placeholder, $wajib, $maxUrut + 1, $keterangan]);
             $newId = $pdo->lastInsertId();
             // Simpan opsi dropdown
-            if ($tipe === 'dropdown' && !empty($_POST['opsi'])) {
+            if ($tipe === 'dropdown' && ! empty($_POST['opsi'])) {
                 $opsi = array_filter(array_map('trim', explode("\n", $_POST['opsi'])));
-                $stOpt = $pdo->prepare("INSERT INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)");
-                foreach ($opsi as $i => $o) if ($o) $stOpt->execute([$newId,$o,$i+1]);
+                $stOpt = $pdo->prepare('INSERT INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)');
+                foreach ($opsi as $i => $o) {
+                    if ($o) {
+                        $stOpt->execute([$newId, $o, $i + 1]);
+                    }
+                }
             }
-            $_SESSION['msg']      = "Field \"$label\" berhasil ditambahkan.";
+            $_SESSION['msg'] = "Field \"$label\" berhasil ditambahkan.";
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=fields"); exit;
+        header('Location: admin_manajemen.php?tab=fields');
+        exit;
     }
 
     // ── FIELD: Edit ──────────────────────────────────────────
     if ($action === 'edit_field') {
-        $id          = (int)$_POST['id'];
-        $label       = trim($_POST['label'] ?? '');
-        $tipe        = $_POST['tipe'] ?? 'text';
+        $id = (int) $_POST['id'];
+        $label = trim($_POST['label'] ?? '');
+        $tipe = $_POST['tipe'] ?? 'text';
         $placeholder = trim($_POST['placeholder'] ?? '');
-        $wajib       = isset($_POST['wajib']) ? 1 : 0;
-        $keterangan  = trim($_POST['keterangan'] ?? '');
+        $wajib = isset($_POST['wajib']) ? 1 : 0;
+        $keterangan = trim($_POST['keterangan'] ?? '');
         if ($id && $label) {
             // Handle upload gambar gridmap
             $gridmapPath = null;
-            if ($tipe === 'grid' && !empty($_FILES['gridmap_file']['name'])) {
-                $file     = $_FILES['gridmap_file'];
-                $ext      = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $allowed  = ['jpg','jpeg','png','gif','webp'];
+            if ($tipe === 'grid' && ! empty($_FILES['gridmap_file']['name'])) {
+                $file = $_FILES['gridmap_file'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                 if (in_array($ext, $allowed) && $file['error'] === 0) {
-                    $filename    = 'gridmap_injourney.' . $ext;
-                    $uploadPath  = $filename;
+                    $filename = 'gridmap_injourney.'.$ext;
+                    $uploadPath = $filename;
                     move_uploaded_file($file['tmp_name'], $uploadPath);
                     $gridmapPath = $uploadPath;
                 }
             }
 
             if ($gridmapPath) {
-                $pdo->prepare("UPDATE form_fields SET label=?,tipe=?,placeholder=?,wajib=?,keterangan=?,gridmap_path=? WHERE id=?")
-                    ->execute([$label,$tipe,$placeholder,$wajib,$keterangan,$gridmapPath,$id]);
+                $pdo->prepare('UPDATE form_fields SET label=?,tipe=?,placeholder=?,wajib=?,keterangan=?,gridmap_path=? WHERE id=?')
+                    ->execute([$label, $tipe, $placeholder, $wajib, $keterangan, $gridmapPath, $id]);
             } else {
-                $pdo->prepare("UPDATE form_fields SET label=?,tipe=?,placeholder=?,wajib=?,keterangan=? WHERE id=?")
-                    ->execute([$label,$tipe,$placeholder,$wajib,$keterangan,$id]);
+                $pdo->prepare('UPDATE form_fields SET label=?,tipe=?,placeholder=?,wajib=?,keterangan=? WHERE id=?')
+                    ->execute([$label, $tipe, $placeholder, $wajib, $keterangan, $id]);
             }
 
             // Update opsi dropdown
             if ($tipe === 'dropdown') {
-                $pdo->prepare("DELETE FROM form_field_options WHERE field_id=?")->execute([$id]);
-                if (!empty($_POST['opsi'])) {
-                    $opsi  = array_filter(array_map('trim', explode("\n", $_POST['opsi'])));
-                    $stOpt = $pdo->prepare("INSERT INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)");
-                    foreach ($opsi as $i => $o) if ($o) $stOpt->execute([$id,$o,$i+1]);
+                $pdo->prepare('DELETE FROM form_field_options WHERE field_id=?')->execute([$id]);
+                if (! empty($_POST['opsi'])) {
+                    $opsi = array_filter(array_map('trim', explode("\n", $_POST['opsi'])));
+                    $stOpt = $pdo->prepare('INSERT INTO form_field_options (field_id,nilai,urutan) VALUES (?,?,?)');
+                    foreach ($opsi as $i => $o) {
+                        if ($o) {
+                            $stOpt->execute([$id, $o, $i + 1]);
+                        }
+                    }
                 }
             }
-            $_SESSION['msg']      = "Field \"$label\" berhasil diperbarui.";
+            $_SESSION['msg'] = "Field \"$label\" berhasil diperbarui.";
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=fields"); exit;
+        header('Location: admin_manajemen.php?tab=fields');
+        exit;
     }
 
     // ── FIELD: Toggle aktif ──────────────────────────────────
     if ($action === 'toggle_field') {
-        $id = (int)$_POST['id'];
-        $pdo->prepare("UPDATE form_fields SET aktif = 1 - aktif WHERE id=?")->execute([$id]);
-        $_SESSION['msg']      = "Status field berhasil diubah.";
+        $id = (int) $_POST['id'];
+        $pdo->prepare('UPDATE form_fields SET aktif = 1 - aktif WHERE id=?')->execute([$id]);
+        $_SESSION['msg'] = 'Status field berhasil diubah.';
         $_SESSION['msg_type'] = 'success';
-        header("Location: admin_manajemen.php?tab=fields"); exit;
+        header('Location: admin_manajemen.php?tab=fields');
+        exit;
     }
 
     // ── FIELD: Hapus ─────────────────────────────────────────
     if ($action === 'hapus_field') {
-        $id = (int)$_POST['id'];
-        $pdo->prepare("DELETE FROM form_fields WHERE id=?")->execute([$id]);
-        $_SESSION['msg']      = "Field berhasil dihapus.";
+        $id = (int) $_POST['id'];
+        $pdo->prepare('DELETE FROM form_fields WHERE id=?')->execute([$id]);
+        $_SESSION['msg'] = 'Field berhasil dihapus.';
         $_SESSION['msg_type'] = 'success';
-        header("Location: admin_manajemen.php?tab=fields"); exit;
+        header('Location: admin_manajemen.php?tab=fields');
+        exit;
     }
 
     // ── FIELD: Ubah urutan ───────────────────────────────────
     if ($action === 'ubah_urutan') {
         $ids = $_POST['urutan'] ?? [];
-        $st  = $pdo->prepare("UPDATE form_fields SET urutan=? WHERE id=?");
-        foreach ($ids as $urut => $fieldId) $st->execute([$urut+1, (int)$fieldId]);
-        echo 'ok'; exit;
+        $st = $pdo->prepare('UPDATE form_fields SET urutan=? WHERE id=?');
+        foreach ($ids as $urut => $fieldId) {
+            $st->execute([$urut + 1, (int) $fieldId]);
+        }
+        echo 'ok';
+        exit;
     }
 
     // ── SATWA: Tambah ────────────────────────────────────────
@@ -320,60 +364,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nama = trim($_POST['nama'] ?? '');
         if ($nama) {
             $fotoPath = null;
-            if (!empty($_FILES['foto']['name'])) {
+            if (! empty($_FILES['foto']['name'])) {
                 $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg','jpeg','png','webp'])) {
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                     $dir = 'uploads/satwa/';
-                    if (!is_dir($dir)) mkdir($dir, 0755, true);
-                    $fn = 'satwa_'.time().'_'.rand(100,999).'.'.$ext;
-                    if (move_uploaded_file($_FILES['foto']['tmp_name'], $dir.$fn)) $fotoPath = $dir.$fn;
-                }
-            }
-            $pdo->prepare("INSERT INTO jenis_satwa (nama,foto_path) VALUES (?,?)")->execute([$nama,$fotoPath]);
-            $_SESSION['msg']      = "Satwa \"$nama\" berhasil ditambahkan.";
-            $_SESSION['msg_type'] = 'success';
-        }
-        header("Location: admin_manajemen.php?tab=satwa"); exit;
-    }
-
-    // ── SATWA: Edit ──────────────────────────────────────────
-    if ($action === 'edit_satwa') {
-        $id = (int)$_POST['id']; $nama = trim($_POST['nama'] ?? '');
-        if ($id && $nama) {
-            $old = $pdo->prepare("SELECT foto_path FROM jenis_satwa WHERE id=?");
-            $old->execute([$id]); $oldFoto = $old->fetchColumn();
-            $fotoPath = $oldFoto;
-            if (!empty($_FILES['foto']['name'])) {
-                $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg','jpeg','png','webp'])) {
-                    $dir = 'uploads/satwa/';
-                    if (!is_dir($dir)) mkdir($dir, 0755, true);
-                    $fn = 'satwa_'.time().'_'.rand(100,999).'.'.$ext;
+                    if (! is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $fn = 'satwa_'.time().'_'.rand(100, 999).'.'.$ext;
                     if (move_uploaded_file($_FILES['foto']['tmp_name'], $dir.$fn)) {
-                        if ($oldFoto && file_exists($oldFoto)) @unlink($oldFoto);
                         $fotoPath = $dir.$fn;
                     }
                 }
             }
-            $pdo->prepare("UPDATE jenis_satwa SET nama=?,foto_path=? WHERE id=?")->execute([$nama,$fotoPath,$id]);
-            $_SESSION['msg']      = "Satwa berhasil diperbarui.";
+            $pdo->prepare('INSERT INTO jenis_satwa (nama,foto_path) VALUES (?,?)')->execute([$nama, $fotoPath]);
+            $_SESSION['msg'] = "Satwa \"$nama\" berhasil ditambahkan.";
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=satwa"); exit;
+        header('Location: admin_manajemen.php?tab=satwa');
+        exit;
+    }
+
+    // ── SATWA: Edit ──────────────────────────────────────────
+    if ($action === 'edit_satwa') {
+        $id = (int) $_POST['id'];
+        $nama = trim($_POST['nama'] ?? '');
+        if ($id && $nama) {
+            $old = $pdo->prepare('SELECT foto_path FROM jenis_satwa WHERE id=?');
+            $old->execute([$id]);
+            $oldFoto = $old->fetchColumn();
+            $fotoPath = $oldFoto;
+            if (! empty($_FILES['foto']['name'])) {
+                $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $dir = 'uploads/satwa/';
+                    if (! is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $fn = 'satwa_'.time().'_'.rand(100, 999).'.'.$ext;
+                    if (move_uploaded_file($_FILES['foto']['tmp_name'], $dir.$fn)) {
+                        if ($oldFoto && file_exists($oldFoto)) {
+                            @unlink($oldFoto);
+                        }
+                        $fotoPath = $dir.$fn;
+                    }
+                }
+            }
+            $pdo->prepare('UPDATE jenis_satwa SET nama=?,foto_path=? WHERE id=?')->execute([$nama, $fotoPath, $id]);
+            $_SESSION['msg'] = 'Satwa berhasil diperbarui.';
+            $_SESSION['msg_type'] = 'success';
+        }
+        header('Location: admin_manajemen.php?tab=satwa');
+        exit;
     }
 
     // ── SATWA: Hapus ─────────────────────────────────────────
     if ($action === 'hapus_satwa') {
-        $id = (int)$_POST['id'];
+        $id = (int) $_POST['id'];
         if ($id) {
-            $st = $pdo->prepare("SELECT foto_path FROM jenis_satwa WHERE id=?");
-            $st->execute([$id]); $foto = $st->fetchColumn();
-            if ($foto && file_exists($foto)) @unlink($foto);
-            $pdo->prepare("DELETE FROM jenis_satwa WHERE id=?")->execute([$id]);
-            $_SESSION['msg']      = "Satwa berhasil dihapus.";
+            $st = $pdo->prepare('SELECT foto_path FROM jenis_satwa WHERE id=?');
+            $st->execute([$id]);
+            $foto = $st->fetchColumn();
+            if ($foto && file_exists($foto)) {
+                @unlink($foto);
+            }
+            $pdo->prepare('DELETE FROM jenis_satwa WHERE id=?')->execute([$id]);
+            $_SESSION['msg'] = 'Satwa berhasil dihapus.';
             $_SESSION['msg_type'] = 'success';
         }
-        header("Location: admin_manajemen.php?tab=satwa"); exit;
+        header('Location: admin_manajemen.php?tab=satwa');
+        exit;
     }
 }
 
@@ -391,9 +451,9 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `users` (
 // Pastikan kolom users lengkap jika tabel sudah ada sebelumnya tanpa kolom ini
 $requiredUserCols = [
     'namalengkap' => "VARCHAR(150) NOT NULL DEFAULT ''",
-    'role'       => "ENUM('admin','pegawai') DEFAULT 'pegawai'",
-    'aktif'      => "TINYINT(1) DEFAULT 1",
-    'created_at' => "DATETIME DEFAULT CURRENT_TIMESTAMP",
+    'role' => "ENUM('admin','pegawai') DEFAULT 'pegawai'",
+    'aktif' => 'TINYINT(1) DEFAULT 1',
+    'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
 ];
 foreach ($requiredUserCols as $colName => $colDef) {
     $exists = $pdo->query("SHOW COLUMNS FROM users LIKE '$colName'")->fetchAll();
@@ -403,15 +463,17 @@ foreach ($requiredUserCols as $colName => $colDef) {
 }
 
 // ── Ambil data ───────────────────────────────────────────────
-$fields  = $pdo->query("SELECT *, COALESCE(gridmap_path,'') AS gridmap_path FROM form_fields ORDER BY urutan ASC")->fetchAll();
-$satwas  = $pdo->query("SELECT * FROM jenis_satwa ORDER BY id")->fetchAll();
-$users   = $pdo->query("SELECT id,namalengkap,username,role,1 AS aktif,created_at FROM users ORDER BY id ASC")->fetchAll();
-$tipeList = ['text'=>'Teks Pendek','textarea'=>'Teks Panjang','dropdown'=>'Dropdown','date'=>'Tanggal','number'=>'Angka','file'=>'Upload File','grid'=>'Gridmap'];
+$fields = $pdo->query("SELECT *, COALESCE(gridmap_path,'') AS gridmap_path FROM form_fields ORDER BY urutan ASC")->fetchAll();
+$satwas = $pdo->query('SELECT * FROM jenis_satwa ORDER BY id')->fetchAll();
+$users = $pdo->query('SELECT id,namalengkap,username,role,1 AS aktif,created_at FROM users ORDER BY id ASC')->fetchAll();
+$tipeList = ['text' => 'Teks Pendek', 'textarea' => 'Teks Panjang', 'dropdown' => 'Dropdown', 'date' => 'Tanggal', 'number' => 'Angka', 'file' => 'Upload File', 'grid' => 'Gridmap'];
 
 // Ambil opsi per field dropdown
 $opsiPerField = [];
-$allOpsi = $pdo->query("SELECT * FROM form_field_options ORDER BY field_id, id")->fetchAll();
-foreach ($allOpsi as $o) $opsiPerField[$o['field_id']][] = $o['nilai'];
+$allOpsi = $pdo->query('SELECT * FROM form_field_options ORDER BY field_id, id')->fetchAll();
+foreach ($allOpsi as $o) {
+    $opsiPerField[$o['field_id']][] = $o['nilai'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -749,22 +811,22 @@ tbody tr:hover td{background:#F9FFFE}
 
     <!-- Baris bawah: tab navigasi -->
     <div class="topbar-tabs">
-      <a href="?tab=fields" class="tab-btn <?= $tab==='fields'?'active':'' ?>">
+      <a href="?tab=fields" class="tab-btn <?= $tab === 'fields' ? 'active' : '' ?>">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
         Field Form
         <span class="badge-count"><?= count($fields) ?></span>
       </a>
-      <a href="?tab=satwa" class="tab-btn <?= $tab==='satwa'?'active':'' ?>">
+      <a href="?tab=satwa" class="tab-btn <?= $tab === 'satwa' ? 'active' : '' ?>">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Jenis Satwa
         <span class="badge-count"><?= count($satwas) ?></span>
       </a>
-      <a href="?tab=users" class="tab-btn <?= $tab==='users'?'active':'' ?>">
+      <a href="?tab=users" class="tab-btn <?= $tab === 'users' ? 'active' : '' ?>">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Kelola User
         <span class="badge-count"><?= count($users) ?></span>
       </a>
-      <a href="?tab=preview" class="tab-btn <?= $tab==='preview'?'active':'' ?>">
+      <a href="?tab=preview" class="tab-btn <?= $tab === 'preview' ? 'active' : '' ?>">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Preview Form
       </a>
@@ -773,13 +835,13 @@ tbody tr:hover td{background:#F9FFFE}
 
   <div class="content">
 
-    <?php if($msg): ?>
-    <div class="alert alert-<?= $msgType==='success'?'success':'error' ?>">
+    <?php if ($msg) { ?>
+    <div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>">
       <?= htmlspecialchars($msg) ?>
     </div>
-    <?php endif; ?>
+    <?php } ?>
 
-    <?php if($tab === 'fields'): ?>
+    <?php if ($tab === 'fields') { ?>
     <!-- ════════════════════════
          TAB: FIELD FORM
     ════════════════════════ -->
@@ -810,7 +872,7 @@ tbody tr:hover td{background:#F9FFFE}
             </tr>
           </thead>
           <tbody id="sortable-fields">
-            <?php foreach($fields as $i => $f): ?>
+            <?php foreach ($fields as $i => $f) { ?>
             <tr data-id="<?= $f['id'] ?>">
               <td>
                 <span class="drag-handle" title="Drag untuk ubah urutan">
@@ -821,37 +883,37 @@ tbody tr:hover td{background:#F9FFFE}
                   </svg>
                 </span>
               </td>
-              <td style="color:#999"><?= $i+1 ?></td>
+              <td style="color:#999"><?= $i + 1 ?></td>
               <td>
                 <div style="font-weight:600;font-size:13px"><?= htmlspecialchars($f['label']) ?></div>
-                <?php if($f['keterangan']): ?>
+                <?php if ($f['keterangan']) { ?>
                 <div style="font-size:11px;color:#888;margin-top:2px"><?= htmlspecialchars($f['keterangan']) ?></div>
-                <?php endif; ?>
-                <?php if($f['tipe']==='dropdown' && !empty($opsiPerField[$f['id']])): ?>
+                <?php } ?>
+                <?php if ($f['tipe'] === 'dropdown' && ! empty($opsiPerField[$f['id']])) { ?>
                 <div style="font-size:11px;color:#3b82f6;margin-top:2px">
                   <?= count($opsiPerField[$f['id']]) ?> opsi:
-                  <?= htmlspecialchars(implode(', ', array_slice($opsiPerField[$f['id']],0,3))) ?>
-                  <?= count($opsiPerField[$f['id']])>3 ? '...' : '' ?>
+                  <?= htmlspecialchars(implode(', ', array_slice($opsiPerField[$f['id']], 0, 3))) ?>
+                  <?= count($opsiPerField[$f['id']]) > 3 ? '...' : '' ?>
                 </div>
-                <?php endif; ?>
+                <?php } ?>
               </td>
-              <td><span class="badge badge-tipe"><?= $f['nama_field']==='tanda_tangan' ? 'Signature' : ($tipeList[$f['tipe']] ?? $f['tipe']) ?></span></td>
+              <td><span class="badge badge-tipe"><?= $f['nama_field'] === 'tanda_tangan' ? 'Signature' : ($tipeList[$f['tipe']] ?? $f['tipe']) ?></span></td>
               <td>
                 <form method="POST" style="display:inline">
                   <input type="hidden" name="action" value="toggle_field">
                   <input type="hidden" name="id" value="<?= $f['id'] ?>">
                   <label class="toggle-wrap" style="cursor:pointer">
                     <label class="toggle">
-                      <input type="checkbox" <?= $f['aktif']?'checked':'' ?> onchange="this.closest('form').submit()">
+                      <input type="checkbox" <?= $f['aktif'] ? 'checked' : '' ?> onchange="this.closest('form').submit()">
                       <span class="toggle-slider"></span>
                     </label>
-                    <span style="color:<?= $f['aktif']?'#166534':'#991b1b' ?>"><?= $f['aktif']?'Aktif':'Nonaktif' ?></span>
+                    <span style="color:<?= $f['aktif'] ? '#166534' : '#991b1b' ?>"><?= $f['aktif'] ? 'Aktif' : 'Nonaktif' ?></span>
                   </label>
                 </form>
               </td>
               <td>
-                <span class="badge <?= $f['wajib']?'badge-wajib':'badge-opsional' ?>">
-                  <?= $f['wajib']?'Wajib':'Opsional' ?>
+                <span class="badge <?= $f['wajib'] ? 'badge-wajib' : 'badge-opsional' ?>">
+                  <?= $f['wajib'] ? 'Wajib' : 'Opsional' ?>
                 </span>
               </td>
               <td>
@@ -867,14 +929,14 @@ tbody tr:hover td{background:#F9FFFE}
                 </div>
               </td>
             </tr>
-            <?php endforeach; ?>
+            <?php } ?>
           </tbody>
         </table>
         </div>
       </div>
     </div>
 
-    <?php elseif($tab === 'satwa'): ?>
+    <?php } elseif ($tab === 'satwa') { ?>
     <!-- ════════════════════════
          TAB: JENIS SATWA
     ════════════════════════ -->
@@ -889,21 +951,21 @@ tbody tr:hover td{background:#F9FFFE}
           Tambah Satwa
         </button>
       </div>
-      <?php if(empty($satwas)): ?>
+      <?php if (empty($satwas)) { ?>
       <div style="text-align:center;padding:40px;color:#999;font-size:13px">Belum ada jenis satwa.</div>
-      <?php else: ?>
+      <?php } else { ?>
       <div class="satwa-grid-wrap"><div class="satwa-grid">
-        <?php foreach($satwas as $s): ?>
+        <?php foreach ($satwas as $s) { ?>
         <div class="satwa-card">
           <div class="satwa-img">
-            <?php if(!empty($s['foto_path']) && file_exists($s['foto_path'])): ?>
+            <?php if (! empty($s['foto_path']) && file_exists($s['foto_path'])) { ?>
             <img src="<?= htmlspecialchars($s['foto_path']) ?>" alt="<?= htmlspecialchars($s['nama']) ?>">
-            <?php else: ?>
+            <?php } else { ?>
             <div class="satwa-img-ph">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
               <span>Belum ada foto</span>
             </div>
-            <?php endif; ?>
+            <?php } ?>
           </div>
           <div class="satwa-body">
             <div class="satwa-nama"><?= htmlspecialchars($s['nama']) ?></div>
@@ -913,13 +975,13 @@ tbody tr:hover td{background:#F9FFFE}
             </div>
           </div>
         </div>
-        <?php endforeach; ?>
+        <?php } ?>
       </div></div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
 
 
-    <?php elseif($tab === 'users'): ?>
+    <?php } elseif ($tab === 'users') { ?>
     <!-- ════════════════════════
          TAB: KELOLA USER
     ════════════════════════ -->
@@ -945,13 +1007,13 @@ tbody tr:hover td{background:#F9FFFE}
           </tr>
         </thead>
         <tbody>
-          <?php foreach($users as $i => $u): ?>
-          <tr style="border-bottom:1px solid #f0f3f7;<?= $u['aktif']?'':'background:#fafafa;opacity:.7' ?>">
-            <td style="padding:10px 14px;color:#999"><?= $i+1 ?></td>
+          <?php foreach ($users as $i => $u) { ?>
+          <tr style="border-bottom:1px solid #f0f3f7;<?= $u['aktif'] ? '' : 'background:#fafafa;opacity:.7' ?>">
+            <td style="padding:10px 14px;color:#999"><?= $i + 1 ?></td>
             <td style="padding:10px 14px;font-weight:600;color:#1a2332"><?= htmlspecialchars($u['namalengkap']) ?></td>
             <td style="padding:10px 14px;color:#5a7a8a"><?= htmlspecialchars($u['username']) ?></td>
             <td style="padding:10px 14px">
-              <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;<?= $u['role']==='admin'?'background:#FEF3C7;color:#92400E':'background:#E0F2FE;color:#0369A1' ?>">
+              <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;<?= $u['role'] === 'admin' ? 'background:#FEF3C7;color:#92400E' : 'background:#E0F2FE;color:#0369A1' ?>">
                 <?= ucfirst($u['role']) ?>
               </span>
             </td>
@@ -960,9 +1022,9 @@ tbody tr:hover td{background:#F9FFFE}
                 <input type="hidden" name="action" value="toggle_user">
                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                 <button type="submit" style="background:none;border:none;cursor:pointer;padding:0"
-                        title="<?= $u['aktif']?'Nonaktifkan':'Aktifkan' ?>">
-                  <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;<?= $u['aktif']?'background:#DCFCE7;color:#166534;border-color:#BBF7D0':'background:#FEE2E2;color:#991B1B;border-color:#FECACA' ?>">
-                    <?= $u['aktif']?'Aktif':'Nonaktif' ?>
+                        title="<?= $u['aktif'] ? 'Nonaktifkan' : 'Aktifkan' ?>">
+                  <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;<?= $u['aktif'] ? 'background:#DCFCE7;color:#166534;border-color:#BBF7D0' : 'background:#FEE2E2;color:#991B1B;border-color:#FECACA' ?>">
+                    <?= $u['aktif'] ? 'Aktif' : 'Nonaktif' ?>
                   </span>
                 </button>
               </form>
@@ -983,10 +1045,10 @@ tbody tr:hover td{background:#F9FFFE}
               </div>
             </td>
           </tr>
-          <?php endforeach; ?>
-          <?php if(empty($users)): ?>
+          <?php } ?>
+          <?php if (empty($users)) { ?>
           <tr><td colspan="7" style="padding:24px;text-align:center;color:#999">Belum ada user terdaftar.</td></tr>
-          <?php endif; ?>
+          <?php } ?>
         </tbody>
       </table>
     </div>
@@ -1064,7 +1126,7 @@ tbody tr:hover td{background:#F9FFFE}
       </div>
     </div>
 
-    <?php elseif($tab === 'preview'): ?>
+    <?php } elseif ($tab === 'preview') { ?>
     <!-- ════════════════════════
          TAB: PREVIEW FORM
     ════════════════════════ -->
@@ -1080,71 +1142,74 @@ tbody tr:hover td{background:#F9FFFE}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           Form Laporan — seperti yang tampil ke user
         </div>
-        <?php foreach($fields as $f): ?>
-        <div class="preview-field <?= !$f['aktif']?'preview-nonaktif':'' ?>">
+        <?php foreach ($fields as $f) { ?>
+        <div class="preview-field <?= ! $f['aktif'] ? 'preview-nonaktif' : '' ?>">
           <div class="preview-label">
             <?= htmlspecialchars($f['label']) ?>
-            <?php if($f['wajib']): ?><span>*</span><?php endif; ?>
+            <?php if ($f['wajib']) { ?><span>*</span><?php } ?>
           </div>
-          <?php if($f['nama_field']==='tanda_tangan'): ?>
+          <?php if ($f['nama_field'] === 'tanda_tangan') { ?>
           <div style="border:1.5px dashed #cbd5e1;border-radius:8px;background:repeating-linear-gradient(135deg,#fafbfc,#fafbfc 10px,#f3f6f8 10px,#f3f6f8 20px);height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#9aa5b1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9aa5b1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17.5c2-2 4-1 5.5.5s3.5 3 5.5 1 2-4 4-5.5"/><circle cx="18" cy="6" r="2.5"/></svg>
             <span style="font-size:12px">Area tanda tangan digital (gambar dengan jari/mouse)</span>
           </div>
           <div style="margin-top:6px"><button type="button" class="btn btn-ghost btn-sm" disabled>Hapus Tanda Tangan</button></div>
-          <?php elseif($f['tipe']==='textarea'): ?>
+          <?php } elseif ($f['tipe'] === 'textarea') { ?>
           <textarea class="preview-input" rows="3" placeholder="<?= htmlspecialchars($f['placeholder']) ?>" readonly></textarea>
-          <?php elseif($f['tipe']==='dropdown'): ?>
+          <?php } elseif ($f['tipe'] === 'dropdown') { ?>
           <select class="preview-select" disabled>
             <option><?= htmlspecialchars($f['placeholder'] ?: 'Pilih...') ?></option>
-            <?php foreach($opsiPerField[$f['id']] ?? [] as $opt): ?>
+            <?php foreach ($opsiPerField[$f['id']] ?? [] as $opt) { ?>
             <option><?= htmlspecialchars($opt) ?></option>
-            <?php endforeach; ?>
+            <?php } ?>
           </select>
-          <?php elseif($f['tipe']==='grid'): ?>
+          <?php } elseif ($f['tipe'] === 'grid') { ?>
           <?php
             $gmPath = $f['gridmap_path'] ?? '';
-            if(empty($gmPath)) {
-              foreach(['uploads/gridmap_injourney.jpeg','uploads/gridmap_injourney.jpg','uploads/gridmap_injourney.png','gridmap_injourney.jpeg','gridmap_injourney.jpg','gridmap_injourney.png'] as $gp) {
-                if(file_exists($gp)) { $gmPath = $gp; break; }
+              if (empty($gmPath)) {
+                  foreach (['uploads/gridmap_injourney.jpeg', 'uploads/gridmap_injourney.jpg', 'uploads/gridmap_injourney.png', 'gridmap_injourney.jpeg', 'gridmap_injourney.jpg', 'gridmap_injourney.png'] as $gp) {
+                      if (file_exists($gp)) {
+                          $gmPath = $gp;
+                          break;
+                      }
+                  }
               }
-            }
-          ?>
-          <?php if($gmPath && file_exists($gmPath)): ?>
+              ?>
+          <?php if ($gmPath && file_exists($gmPath)) { ?>
           <div style="border:1px solid #d0eef5;border-radius:8px;overflow:hidden;position:relative">
             <img src="<?= htmlspecialchars($gmPath) ?>" style="width:100%;display:block">
             <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,169,193,0.9);color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600">Klik sel grid atau isi manual</div>
           </div>
-          <?php else: ?>
+          <?php } else { ?>
           <div style="background:#f0fbfc;border:1px dashed #00A9C1;border-radius:7px;padding:14px;font-size:12px;color:#888;text-align:center">
             Belum ada gambar gridmap — upload di tab Field Form → Edit field Gridmap
           </div>
-          <?php endif; ?>
-          <?php elseif($f['tipe']==='file'): ?>
+          <?php } ?>
+          <?php } elseif ($f['tipe'] === 'file') { ?>
           <input class="preview-input" type="text" placeholder="Upload file..." readonly>
-          <?php else: ?>
-          <input class="preview-input" type="<?= $f['tipe']==='date'?'text':$f['tipe'] ?>" placeholder="<?= htmlspecialchars($f['placeholder']) ?>" readonly>
-          <?php endif; ?>
-          <?php if($f['keterangan']): ?>
+          <?php } else { ?>
+          <input class="preview-input" type="<?= $f['tipe'] === 'date' ? 'text' : $f['tipe'] ?>" placeholder="<?= htmlspecialchars($f['placeholder']) ?>" readonly>
+          <?php } ?>
+          <?php if ($f['keterangan']) { ?>
           <div class="preview-hint"><?= htmlspecialchars($f['keterangan']) ?></div>
-          <?php endif; ?>
+          <?php } ?>
         </div>
-        <?php endforeach; ?>
+        <?php } ?>
 
         <!-- PILIH SATWA -->
         <div style="margin-top:20px;padding-top:16px;border-top:1.5px dashed #d0eef5">
           <div class="preview-label" style="font-size:14px;font-weight:700;margin-bottom:6px">Pilih jenis satwa yang ditemukan <span>*</span></div>
           <div style="font-size:12px;color:#888;margin-bottom:10px">Klik kartu untuk memilih. Setiap kartu bisa ditambahkan beberapa lokasi dengan jumlah berbeda.</div>
-          <?php if(!empty($satwas)): ?>
+          <?php if (! empty($satwas)) { ?>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px">
-            <?php foreach($satwas as $s): ?>
+            <?php foreach ($satwas as $s) { ?>
             <div style="border:1.5px solid #d0eef5;border-radius:10px;overflow:hidden">
               <div style="height:90px;background:#eef8fb;display:flex;align-items:center;justify-content:center;overflow:hidden">
-                <?php if(!empty($s['foto_path']) && file_exists($s['foto_path'])): ?>
+                <?php if (! empty($s['foto_path']) && file_exists($s['foto_path'])) { ?>
                 <img src="<?= htmlspecialchars($s['foto_path']) ?>" style="width:100%;height:100%;object-fit:cover">
-                <?php else: ?>
+                <?php } else { ?>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-                <?php endif; ?>
+                <?php } ?>
               </div>
               <div style="padding:6px 8px;font-size:11px;font-weight:600;color:#414141"><?= htmlspecialchars($s['nama_satwa'] ?? $s['nama'] ?? '') ?></div>
               <div style="padding:0 8px 8px;font-size:10px;color:#888;display:flex;gap:4px">
@@ -1152,11 +1217,11 @@ tbody tr:hover td{background:#F9FFFE}
                 <span style="background:#f0f9fb;border:1px solid #d0eef5;border-radius:4px;padding:2px 6px">Lokasi</span>
               </div>
             </div>
-            <?php endforeach; ?>
+            <?php } ?>
           </div>
-          <?php else: ?>
+          <?php } else { ?>
           <div style="background:#f0f9fb;border:1px dashed #00A9C1;border-radius:8px;padding:14px;text-align:center;font-size:12px;color:#888">Belum ada jenis satwa — tambahkan di tab Jenis Satwa</div>
-          <?php endif; ?>
+          <?php } ?>
         </div>
 
         <!-- UPLOAD FOTO TAMBAHAN -->
@@ -1178,7 +1243,7 @@ tbody tr:hover td{background:#F9FFFE}
 
       </div>
     </div>
-    <?php endif; ?>
+    <?php } ?>
 
   </div>
 </div>
@@ -1196,9 +1261,9 @@ tbody tr:hover td{background:#F9FFFE}
       <div class="form-group">
         <label>Tipe Input *</label>
         <select name="tipe" class="form-input" id="tambah-tipe" onchange="toggleOpsiTambah(this.value)">
-          <?php foreach($tipeList as $k=>$v): ?>
+          <?php foreach ($tipeList as $k => $v) { ?>
           <option value="<?= $k ?>"><?= $v ?></option>
-          <?php endforeach; ?>
+          <?php } ?>
         </select>
       </div>
       <div class="form-group">
@@ -1242,9 +1307,9 @@ tbody tr:hover td{background:#F9FFFE}
       <div class="form-group">
         <label>Tipe Input *</label>
         <select name="tipe" id="ef-tipe" class="form-input" onchange="toggleOpsiEdit(this.value)">
-          <?php foreach($tipeList as $k=>$v): ?>
+          <?php foreach ($tipeList as $k => $v) { ?>
           <option value="<?= $k ?>"><?= $v ?></option>
-          <?php endforeach; ?>
+          <?php } ?>
         </select>
       </div>
       <div class="form-group">
@@ -1504,14 +1569,14 @@ function togglePw(inputId, btn) {
 }
 
 // Auto scroll ke atas saat preview
-<?php if($tab === 'preview'): ?>
+<?php if ($tab === 'preview') { ?>
 window.addEventListener('load', function(){
     var el = document.querySelector('.content');
     if(el) el.scrollTop = 0;
     var ps = document.querySelector('.preview-section');
     if(ps) ps.scrollTop = 0;
 });
-<?php endif; ?>
+<?php } ?>
 </script>
 </body>
 </html>

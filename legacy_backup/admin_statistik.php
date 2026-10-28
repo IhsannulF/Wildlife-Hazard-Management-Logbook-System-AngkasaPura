@@ -1,18 +1,18 @@
 <?php
 session_start();
 // Cek login — kalau belum login, arahkan ke halaman login
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
+if (! isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit;
 }
 require_once 'koneksi.php';
 
-$tahun      = (int)($_GET['tahun'] ?? date('Y'));
-$zona       = $_GET['zona'] ?? '';
-$search     = trim($_GET['search'] ?? '');
+$tahun = (int) ($_GET['tahun'] ?? date('Y'));
+$zona = $_GET['zona'] ?? '';
+$search = trim($_GET['search'] ?? '');
 $activePage = 'statistic';
 
-$barisGrid = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+$barisGrid = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 $kolomGrid = range(1, 29);
 
 // Grid yang ada datanya
@@ -27,21 +27,21 @@ $stmtGrid->execute([$tahun]);
 $gridAda = $stmtGrid->fetchAll(PDO::FETCH_COLUMN);
 
 // Jenis satwa (daftar master untuk dataset/warna chart)
-$jenisList  = $pdo->prepare(
-    "SELECT DISTINCT ds.nama_satwa AS nama
+$jenisList = $pdo->prepare(
+    'SELECT DISTINCT ds.nama_satwa AS nama
      FROM detail_satwa ds
      JOIN laporan l ON l.id = ds.laporan_id
      WHERE YEAR(l.tanggal) = ?
-     " . ($search ? "AND ds.nama_satwa LIKE ?" : "") . "
-     ORDER BY ds.nama_satwa"
+     '.($search ? 'AND ds.nama_satwa LIKE ?' : '').'
+     ORDER BY ds.nama_satwa'
 );
 $jenisList->execute($search ? [$tahun, "%$search%"] : [$tahun]);
 $jenisList = $jenisList->fetchAll();
-$paletteHex = ['#e8602c','#5bb8d4','#78c15a','#3a8a3f','#f0a070','#2255aa','#e040fb','#00bcd4'];
+$paletteHex = ['#e8602c', '#5bb8d4', '#78c15a', '#3a8a3f', '#f0a070', '#2255aa', '#e040fb', '#00bcd4'];
 
-$whereZona   = $zona   ? "AND ds.grid = ?" : "";
-$whereSearch = $search ? "AND ds.nama_satwa LIKE ?" : "";
-$paramZona   = $zona   ? [$zona] : [];
+$whereZona = $zona ? 'AND ds.grid = ?' : '';
+$whereSearch = $search ? 'AND ds.nama_satwa LIKE ?' : '';
+$paramZona = $zona ? [$zona] : [];
 $paramSearch = $search ? ["%$search%"] : [];
 
 // ── GRAFIK 1: Stacked Bar ────────────────────────────────────
@@ -58,13 +58,17 @@ $stmtBar->execute(array_merge([$tahun], $paramZona, $paramSearch));
 $rawBar = $stmtBar->fetchAll();
 
 $mapBar = [];
-foreach ($rawBar as $r) $mapBar[$r['nama']][(int)$r['bulan']] = (int)$r['total'];
+foreach ($rawBar as $r) {
+    $mapBar[$r['nama']][(int) $r['bulan']] = (int) $r['total'];
+}
 
 $datasetsBar = [];
 foreach ($jenisList as $i => $js) {
     $arr = [];
-    for ($m = 1; $m <= 12; $m++) $arr[] = $mapBar[$js['nama']][$m] ?? 0;
-    $datasetsBar[] = ['label'=>$js['nama'], 'data'=>$arr, 'color'=>$paletteHex[$i % count($paletteHex)]];
+    for ($m = 1; $m <= 12; $m++) {
+        $arr[] = $mapBar[$js['nama']][$m] ?? 0;
+    }
+    $datasetsBar[] = ['label' => $js['nama'], 'data' => $arr, 'color' => $paletteHex[$i % count($paletteHex)]];
 }
 
 // ── RANKING: spesies paling banyak per bulan ─────────────────
@@ -78,7 +82,7 @@ for ($m = 1; $m <= 12; $m++) {
             $bulanRank[] = ['nama' => $js['nama'], 'total' => $total];
         }
     }
-    usort($bulanRank, fn($a, $b) => $b['total'] - $a['total']);
+    usort($bulanRank, fn ($a, $b) => $b['total'] - $a['total']);
     $rankPerBulan[$m] = $bulanRank;
 }
 
@@ -95,32 +99,37 @@ $stmtTop = $pdo->prepare("
 ");
 $stmtTop->execute(array_merge([$tahun], $paramZona, $paramSearch));
 $topSatwa = $stmtTop->fetchAll();
-$maxTop   = !empty($topSatwa) ? $topSatwa[0]['total'] : 1;
+$maxTop = ! empty($topSatwa) ? $topSatwa[0]['total'] : 1;
 
 // ── GRAFIK 2: Line Chart ─────────────────────────────────────
 if ($zona) {
-    $stmtLine = $pdo->prepare("
+    $stmtLine = $pdo->prepare('
         SELECT ds.nama_satwa AS nama, MONTH(l.tanggal) AS bulan,
                COALESCE(SUM(ds.jumlah), 0) AS total
         FROM detail_satwa ds
         JOIN laporan l ON l.id = ds.laporan_id
         WHERE YEAR(l.tanggal) = ? AND ds.grid = ?
         GROUP BY ds.nama_satwa, MONTH(l.tanggal)
-    ");
+    ');
     $stmtLine->execute([$tahun, $zona]);
     $rawLine = $stmtLine->fetchAll();
 
     $mapLine = [];
-    foreach ($rawLine as $r) $mapLine[$r['nama']][(int)$r['bulan']] = (int)$r['total'];
+    foreach ($rawLine as $r) {
+        $mapLine[$r['nama']][(int) $r['bulan']] = (int) $r['total'];
+    }
 
     $datasetsLine = [];
     foreach ($jenisList as $i => $js) {
         $arr = [];
-        for ($m = 1; $m <= 12; $m++) $arr[] = $mapLine[$js['nama']][$m] ?? 0;
-        if (array_sum($arr) > 0)
-            $datasetsLine[] = ['label'=>$js['nama'], 'data'=>$arr, 'color'=>$paletteHex[$i % count($paletteHex)]];
+        for ($m = 1; $m <= 12; $m++) {
+            $arr[] = $mapLine[$js['nama']][$m] ?? 0;
+        }
+        if (array_sum($arr) > 0) {
+            $datasetsLine[] = ['label' => $js['nama'], 'data' => $arr, 'color' => $paletteHex[$i % count($paletteHex)]];
+        }
     }
-    $lineTitle    = "Tren per Jenis — Grid $zona";
+    $lineTitle = "Tren per Jenis — Grid $zona";
     $lineSubtitle = "Jumlah individu per jenis burung per bulan · $tahun";
 } else {
     $stmtLine = $pdo->prepare("
@@ -133,32 +142,36 @@ if ($zona) {
         GROUP BY ds.grid, MONTH(l.tanggal)
     ");
     $stmtLine->execute([$tahun]);
-    $rawLine  = $stmtLine->fetchAll();
+    $rawLine = $stmtLine->fetchAll();
     $mapGrid2 = [];
-    foreach ($rawLine as $r) $mapGrid2[$r['grid']][(int)$r['bulan']] = (int)$r['total'];
+    foreach ($rawLine as $r) {
+        $mapGrid2[$r['grid']][(int) $r['bulan']] = (int) $r['total'];
+    }
 
     $datasetsLine = [];
     $idx = 0;
     foreach ($mapGrid2 as $g => $bd) {
         $arr = [];
-        for ($m = 1; $m <= 12; $m++) $arr[] = $bd[$m] ?? 0;
-        $datasetsLine[] = ['label'=>"Grid $g", 'data'=>$arr, 'color'=>$paletteHex[$idx++ % count($paletteHex)]];
+        for ($m = 1; $m <= 12; $m++) {
+            $arr[] = $bd[$m] ?? 0;
+        }
+        $datasetsLine[] = ['label' => "Grid $g", 'data' => $arr, 'color' => $paletteHex[$idx++ % count($paletteHex)]];
     }
-    $lineTitle    = "Tren per Grid ($tahun)";
-    $lineSubtitle = "Total individu per kode grid per bulan";
+    $lineTitle = "Tren per Grid ($tahun)";
+    $lineSubtitle = 'Total individu per kode grid per bulan';
 }
 
 // ── Stat cards ───────────────────────────────────────────────
-$sq = $search ? "AND nama_satwa LIKE " . $pdo->quote("%$search%") : "";
+$sq = $search ? 'AND nama_satwa LIKE '.$pdo->quote("%$search%") : '';
 if ($zona) {
     $q = $pdo->quote($zona);
-    $totalLaporan   = (int)$pdo->query("SELECT COUNT(DISTINCT l.id) FROM laporan l JOIN detail_satwa ds ON ds.laporan_id=l.id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
-    $totalSatwa     = (int)$pdo->query("SELECT COALESCE(SUM(ds.jumlah),0) FROM detail_satwa ds JOIN laporan l ON l.id=ds.laporan_id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
-    $totalJenis     = (int)$pdo->query("SELECT COUNT(DISTINCT ds.nama_satwa) FROM detail_satwa ds JOIN laporan l ON l.id=ds.laporan_id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
+    $totalLaporan = (int) $pdo->query("SELECT COUNT(DISTINCT l.id) FROM laporan l JOIN detail_satwa ds ON ds.laporan_id=l.id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
+    $totalSatwa = (int) $pdo->query("SELECT COALESCE(SUM(ds.jumlah),0) FROM detail_satwa ds JOIN laporan l ON l.id=ds.laporan_id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
+    $totalJenis = (int) $pdo->query("SELECT COUNT(DISTINCT ds.nama_satwa) FROM detail_satwa ds JOIN laporan l ON l.id=ds.laporan_id WHERE YEAR(l.tanggal)=$tahun AND ds.grid=$q $sq")->fetchColumn();
 } else {
-    $totalLaporan   = (int)$pdo->query("SELECT COUNT(DISTINCT l.id) FROM laporan l JOIN detail_satwa ds ON ds.laporan_id=l.id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
-    $totalSatwa     = (int)$pdo->query("SELECT COALESCE(SUM(ls.jumlah),0) FROM detail_satwa ls JOIN laporan l ON l.id=ls.laporan_id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
-    $totalJenis     = (int)$pdo->query("SELECT COUNT(DISTINCT ls.nama_satwa) FROM detail_satwa ls JOIN laporan l ON l.id=ls.laporan_id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
+    $totalLaporan = (int) $pdo->query("SELECT COUNT(DISTINCT l.id) FROM laporan l JOIN detail_satwa ds ON ds.laporan_id=l.id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
+    $totalSatwa = (int) $pdo->query("SELECT COALESCE(SUM(ls.jumlah),0) FROM detail_satwa ls JOIN laporan l ON l.id=ls.laporan_id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
+    $totalJenis = (int) $pdo->query("SELECT COUNT(DISTINCT ls.nama_satwa) FROM detail_satwa ls JOIN laporan l ON l.id=ls.laporan_id WHERE YEAR(l.tanggal)=$tahun $sq")->fetchColumn();
 }
 
 // Daftar satwa di grid yang dipilih (untuk panel detail grid)
@@ -175,11 +188,13 @@ if ($zona) {
     $satwaDiGrid = $stmtSatwaGrid->fetchAll(PDO::FETCH_ASSOC);
 }
 
-$tahunList = $pdo->query("SELECT DISTINCT YEAR(tanggal) AS y FROM laporan ORDER BY y DESC")->fetchAll(PDO::FETCH_COLUMN);
-if (empty($tahunList)) $tahunList = [date('Y')];
+$tahunList = $pdo->query('SELECT DISTINCT YEAR(tanggal) AS y FROM laporan ORDER BY y DESC')->fetchAll(PDO::FETCH_COLUMN);
+if (empty($tahunList)) {
+    $tahunList = [date('Y')];
+}
 
-$namaBulan = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-$medalIcon = ['1.','2.','3.','4.','5.'];
+$namaBulan = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+$medalIcon = ['1.', '2.', '3.', '4.', '5.'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -305,12 +320,12 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
         <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
       </svg>
       Statistic
-      <?php if($zona): ?>
+      <?php if ($zona) { ?>
       <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#1d4ed8;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:600">
         Grid <?= htmlspecialchars($zona) ?>
         <a href="?tahun=<?= $tahun ?>" style="color:#1d4ed8;text-decoration:none;font-weight:700">✕</a>
       </span>
-      <?php endif; ?>
+      <?php } ?>
     </div>
     <div class="topbar-right">
       <a href="export_excel.php?tahun=<?= $tahun ?>&zona=<?= urlencode($zona) ?>" class="btn-export" title="Export ke Excel">
@@ -327,20 +342,20 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
                  value="<?= htmlspecialchars($search) ?>"
                  onchange="this.form.submit()"
                  style="<?= $search ? 'padding-right:20px' : '' ?>">
-          <?php if ($search): ?>
+          <?php if ($search) { ?>
           <a href="admin_statistik.php?tahun=<?= $tahun ?>&zona=<?= urlencode($zona) ?>" 
              style="position:absolute;right:6px;color:#94a3b8;font-size:14px;text-decoration:none;line-height:1"
              title="Hapus pencarian">✕</a>
-          <?php endif; ?>
+          <?php } ?>
         </div>
       </form>
       <form method="GET" style="display:contents">
         <input type="hidden" name="zona" value="<?= htmlspecialchars($zona) ?>">
         <span class="topbar-label">Tahun</span>
         <select name="tahun" class="tb-sel" onchange="this.form.submit()">
-          <?php foreach($tahunList as $y): ?>
-          <option value="<?= $y ?>" <?= $y==$tahun?'selected':'' ?>><?= $y ?></option>
-          <?php endforeach; ?>
+          <?php foreach ($tahunList as $y) { ?>
+          <option value="<?= $y ?>" <?= $y == $tahun ? 'selected' : '' ?>><?= $y ?></option>
+          <?php } ?>
         </select>
       </form>
     </div>
@@ -372,15 +387,15 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
     <div class="filter-card">
       <div class="filter-top">
         <span class="filter-title">Pilih Grid</span>
-        <?php if($zona): ?>
+        <?php if ($zona) { ?>
           <span class="zona-badge">Grid <?= htmlspecialchars($zona) ?> aktif</span>
           <a href="?tahun=<?= $tahun ?><?= $search ? '&search='.urlencode($search) : '' ?>" class="reset-btn">✕ Reset</a>
-        <?php else: ?>
+        <?php } else { ?>
           <span style="font-size:12px;color:#888">Klik grid biru untuk filter data</span>
-        <?php endif; ?>
-        <?php if($search): ?>
+        <?php } ?>
+        <?php if ($search) { ?>
           <span style="font-size:12px;color:#00A9C1;font-weight:600;margin-left:8px">🔍 "<?= htmlspecialchars($search) ?>"</span>
-        <?php endif; ?>
+        <?php } ?>
         <span style="font-size:11px;color:#aaa;margin-left:auto">
           <span style="display:inline-block;width:10px;height:10px;background:#dbeafe;border:1px solid #93c5fd;border-radius:2px;margin-right:3px"></span>Ada data &nbsp;
           <span style="display:inline-block;width:10px;height:10px;background:#ffffff;border:1px solid #d0e8ee;border-radius:2px;margin-right:3px"></span>Kosong
@@ -391,67 +406,72 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
           <thead>
             <tr>
               <th></th>
-              <?php foreach($kolomGrid as $k): ?><th><?= $k ?></th><?php endforeach; ?>
+              <?php foreach ($kolomGrid as $k) { ?><th><?= $k ?></th><?php } ?>
             </tr>
           </thead>
           <tbody>
-            <?php foreach($barisGrid as $b): ?>
+            <?php foreach ($barisGrid as $b) { ?>
             <tr>
               <th><?= $b ?></th>
-              <?php foreach($kolomGrid as $k): ?>
-              <?php $kode=$b.$k; $kodeStrip=$b.'-'.$k; $ada=in_array($kode,$gridAda)||in_array($kodeStrip,$gridAda); $aktif=($zona===$kode||$zona===$kodeStrip); ?>
+              <?php foreach ($kolomGrid as $k) { ?>
+              <?php $kode = $b.$k;
+                  $kodeStrip = $b.'-'.$k;
+                  $ada = in_array($kode, $gridAda) || in_array($kodeStrip, $gridAda);
+                  $aktif = ($zona === $kode || $zona === $kodeStrip); ?>
               <td>
-                <?php if($ada): ?>
+                <?php if ($ada) { ?>
                 <a href="?tahun=<?= $tahun ?>&zona=<?= urlencode($kodeStrip) ?>"
-                   class="grid-btn <?= $aktif?'active':'has-data' ?>"
+                   class="grid-btn <?= $aktif ? 'active' : 'has-data' ?>"
                    title="Grid <?= $kode ?>"><?= $kode ?></a>
-                <?php else: ?>
+                <?php } else { ?>
                 <div class="grid-btn no-data" title="Tidak ada data"><?= $kode ?></div>
-                <?php endif; ?>
+                <?php } ?>
               </td>
-              <?php endforeach; ?>
+              <?php } ?>
             </tr>
-            <?php endforeach; ?>
+            <?php } ?>
           </tbody>
         </table>
       </div>
     </div>
 
-    <?php if ($zona): ?>
+    <?php if ($zona) { ?>
     <div class="chart-card" style="margin-top:16px">
       <div class="chart-title">Satwa di Grid <?= htmlspecialchars($zona) ?></div>
       <div class="chart-sub"><?= $tahun ?></div>
-      <?php if (empty($satwaDiGrid)): ?>
+      <?php if (empty($satwaDiGrid)) { ?>
       <div style="padding:16px 0;color:#718096">Tidak ada data satwa di grid ini.</div>
-      <?php else: ?>
+      <?php } else { ?>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-        <?php foreach ($satwaDiGrid as $s): ?>
+        <?php foreach ($satwaDiGrid as $s) { ?>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
           <span style="font-weight:600;color:#1a202c"><?= htmlspecialchars($s['nama']) ?></span>
-          <span style="color:#1565c0;font-weight:700"><?= number_format((int)$s['total']) ?> ekor</span>
+          <span style="color:#1565c0;font-weight:700"><?= number_format((int) $s['total']) ?> ekor</span>
         </div>
-        <?php endforeach; ?>
+        <?php } ?>
       </div>
-      <?php endif; ?>
+      <?php } ?>
     </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <!-- CHARTS ROW -->
     <div class="charts-row">
       <!-- Stacked Bar -->
       <div class="chart-card">
         <div class="chart-title">Rata-rata jenis burung per bulan</div>
-        <div class="chart-sub"><?= $zona ? "Grid <b>$zona</b>" : "Semua grid" ?> · <?= $tahun ?></div>
+        <div class="chart-sub"><?= $zona ? "Grid <b>$zona</b>" : 'Semua grid' ?> · <?= $tahun ?></div>
         <div style="position:relative;width:100%;height:230px">
           <canvas id="chartBar"></canvas>
         </div>
         <div class="legend">
-          <?php foreach($datasetsBar as $ds): if(array_sum($ds['data'])>0): ?>
+          <?php foreach ($datasetsBar as $ds) {
+              if (array_sum($ds['data']) > 0) { ?>
           <div class="leg-item">
             <div class="leg-dot" style="background:<?= $ds['color'] ?>"></div>
             <?= htmlspecialchars($ds['label']) ?>
           </div>
-          <?php endif; endforeach; ?>
+          <?php }
+              } ?>
         </div>
       </div>
 
@@ -459,25 +479,25 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
       <div class="chart-card">
         <div class="chart-title"><?= htmlspecialchars($lineTitle) ?></div>
         <div class="chart-sub"><?= htmlspecialchars($lineSubtitle) ?></div>
-        <?php if(empty($datasetsLine)): ?>
+        <?php if (empty($datasetsLine)) { ?>
         <div class="empty-state">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Belum ada data untuk grid ini.<br>
           <span style="font-size:11.5px">Pilih grid berwarna biru.</span>
         </div>
-        <?php else: ?>
+        <?php } else { ?>
         <div style="position:relative;width:100%;height:230px">
           <canvas id="chartLine"></canvas>
         </div>
         <div class="legend">
-          <?php foreach($datasetsLine as $ds): ?>
+          <?php foreach ($datasetsLine as $ds) { ?>
           <div class="leg-item">
             <div class="leg-line" style="background:<?= $ds['color'] ?>"></div>
             <?= htmlspecialchars($ds['label']) ?>
           </div>
-          <?php endforeach; ?>
+          <?php } ?>
         </div>
-        <?php endif; ?>
+        <?php } ?>
       </div>
     </div>
 
@@ -488,18 +508,18 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
       <div class="top-card">
         <div class="chart-title">Top Spesies Paling Banyak</div>
         <div class="chart-sub">
-          Peringkat keseluruhan · <?= $zona ? "Grid $zona" : "Semua grid" ?> · <?= $tahun ?>
+          Peringkat keseluruhan · <?= $zona ? "Grid $zona" : 'Semua grid' ?> · <?= $tahun ?>
         </div>
-        <?php if(empty($topSatwa)): ?>
+        <?php if (empty($topSatwa)) { ?>
         <div class="empty-state" style="height:140px">Belum ada data</div>
-        <?php else: ?>
-        <?php foreach($topSatwa as $i => $s):
-          $jenisIdx = array_search($s['nama'], array_column($jenisList,'nama'));
-          $warna    = $paletteHex[$jenisIdx !== false ? $jenisIdx % count($paletteHex) : $i];
-          $pct      = $maxTop > 0 ? round($s['total']/$maxTop*100) : 0;
-        ?>
+        <?php } else { ?>
+        <?php foreach ($topSatwa as $i => $s) {
+            $jenisIdx = array_search($s['nama'], array_column($jenisList, 'nama'));
+            $warna = $paletteHex[$jenisIdx !== false ? $jenisIdx % count($paletteHex) : $i];
+            $pct = $maxTop > 0 ? round($s['total'] / $maxTop * 100) : 0;
+            ?>
         <div class="top-item">
-          <div class="top-rank"><?= $medalIcon[$i] ?? ($i+1).'.' ?></div>
+          <div class="top-rank"><?= $medalIcon[$i] ?? ($i + 1).'.' ?></div>
           <div class="top-name"><?= htmlspecialchars($s['nama']) ?></div>
           <div class="top-bar-wrap">
             <div class="top-bar-bg">
@@ -508,15 +528,15 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
           </div>
           <div class="top-count"><?= number_format($s['total']) ?> ekor</div>
         </div>
-        <?php endforeach; ?>
-        <?php endif; ?>
+        <?php } ?>
+        <?php } ?>
       </div>
 
       <!-- Tabel Ranking Spesies per Bulan -->
       <div class="top-card">
         <div class="chart-title">Spesies Dominan per Bulan</div>
         <div class="chart-sub">
-          Urutan spesies terbanyak tiap bulan · <?= $zona ? "Grid $zona" : "Semua grid" ?> · <?= $tahun ?>
+          Urutan spesies terbanyak tiap bulan · <?= $zona ? "Grid $zona" : 'Semua grid' ?> · <?= $tahun ?>
         </div>
         <div class="rank-table-wrap">
           <table class="rank-table">
@@ -529,31 +549,32 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
               </tr>
             </thead>
             <tbody>
-              <?php for($m=1;$m<=12;$m++):
-                $rankBulan = $rankPerBulan[$m] ?? [];
-                $hasBulan  = !empty($rankBulan);
-              ?>
+              <?php for ($m = 1; $m <= 12; $m++) {
+                  $rankBulan = $rankPerBulan[$m] ?? [];
+                  $hasBulan = ! empty($rankBulan);
+                  ?>
               <tr>
                 <td><span class="month-label"><?= $namaBulan[$m] ?></span></td>
-                <?php if(!$hasBulan): ?>
+                <?php if (! $hasBulan) { ?>
                 <td colspan="3" class="no-data-cell">Tidak ada data</td>
-                <?php else: ?>
-                <?php for($r=0;$r<3;$r++):
-                  if(isset($rankBulan[$r])):
-                    $jenisIdx2 = array_search($rankBulan[$r]['nama'], array_column($jenisList,'nama'));
-                    $w2 = $paletteHex[$jenisIdx2 !== false ? $jenisIdx2 % count($paletteHex) : $r];
-                ?>
+                <?php } else { ?>
+                <?php for ($r = 0; $r < 3; $r++) {
+                    if (isset($rankBulan[$r])) {
+                        $jenisIdx2 = array_search($rankBulan[$r]['nama'], array_column($jenisList, 'nama'));
+                        $w2 = $paletteHex[$jenisIdx2 !== false ? $jenisIdx2 % count($paletteHex) : $r];
+                        ?>
                 <td>
                   <div style="display:flex;align-items:center;gap:5px">
                     <div class="pill-dot" style="background:<?= $w2 ?>"></div>
                     <span style="font-size:12px"><?= htmlspecialchars($rankBulan[$r]['nama']) ?></span>
-                    <?php if($r===0): ?><span class="dominant-badge"><?= number_format($rankBulan[$r]['total']) ?></span><?php endif; ?>
+                    <?php if ($r === 0) { ?><span class="dominant-badge"><?= number_format($rankBulan[$r]['total']) ?></span><?php } ?>
                   </div>
                 </td>
-                <?php else: ?><td class="no-data-cell">—</td><?php endif; endfor; ?>
-                <?php endif; ?>
+                <?php } else { ?><td class="no-data-cell">—</td><?php }
+                } ?>
+                <?php } ?>
               </tr>
-              <?php endfor; ?>
+              <?php } ?>
             </tbody>
           </table>
         </div>
@@ -568,17 +589,20 @@ body{font-family:'DM Sans',sans-serif;display:flex;height:100vh;overflow:hidden;
 const bulanLabel = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
 
 // Stacked Bar
-const barData = <?= json_encode(array_map(fn($d)=>[
-  'label'           => $d['label'],
-  'data'            => $d['data'],
-  'backgroundColor' => $d['color'],
-  'borderRadius'    => 2,
-  'borderSkipped'   => false,
+const barData = <?= json_encode(array_map(fn ($d) => [
+    'label' => $d['label'],
+    'data' => $d['data'],
+    'backgroundColor' => $d['color'],
+    'borderRadius' => 2,
+    'borderSkipped' => false,
 ], $datasetsBar)) ?>;
 
 // Hitung dominan per bulan untuk tooltip
-const dominanPerBulan = <?= json_encode(array_map(function($rank) use ($namaBulan) {
-    if(empty($rank)) return null;
+const dominanPerBulan = <?= json_encode(array_map(function ($rank) {
+    if (empty($rank)) {
+        return null;
+    }
+
     return ['nama' => $rank[0]['nama'], 'total' => $rank[0]['total']];
 }, $rankPerBulan)) ?>;
 
@@ -609,21 +633,21 @@ new Chart(document.getElementById('chartBar'), {
 });
 
 // Line Chart
-<?php if(!empty($datasetsLine)): ?>
+<?php if (! empty($datasetsLine)) { ?>
 new Chart(document.getElementById('chartLine'), {
   type: 'line',
   data: {
     labels: bulanLabel,
-    datasets: <?= json_encode(array_map(fn($d)=>[
-      'label'           => $d['label'],
-      'data'            => $d['data'],
-      'borderColor'     => $d['color'],
-      'backgroundColor' => $d['color'].'33',
-      'tension'         => 0.4,
-      'pointRadius'     => 4,
-      'pointHoverRadius'=> 6,
-      'borderWidth'     => 2.5,
-      'fill'            => false,
+    datasets: <?= json_encode(array_map(fn ($d) => [
+        'label' => $d['label'],
+        'data' => $d['data'],
+        'borderColor' => $d['color'],
+        'backgroundColor' => $d['color'].'33',
+        'tension' => 0.4,
+        'pointRadius' => 4,
+        'pointHoverRadius' => 6,
+        'borderWidth' => 2.5,
+        'fill' => false,
     ], $datasetsLine)) ?>
   },
   options: {
@@ -638,7 +662,7 @@ new Chart(document.getElementById('chartLine'), {
     }
   }
 });
-<?php endif; ?>
+<?php } ?>
 </script>
 </body>
 </html>

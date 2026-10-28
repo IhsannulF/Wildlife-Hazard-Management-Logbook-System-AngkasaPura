@@ -1,10 +1,10 @@
 <?php
 // partials/sidebar.php
 $activePage = $activePage ?? 'statistic';
-$role       = $_SESSION['role']     ?? 'user';
-$namaUser   = $_SESSION['namalengkap'] ?? $_SESSION['username'] ?? 'User';
-$jabatan    = $_SESSION['jabatan']  ?? ucfirst($role);
-$inisial    = strtoupper(substr($namaUser, 0, 2));
+$role = $_SESSION['role'] ?? 'user';
+$namaUser = $_SESSION['namalengkap'] ?? $_SESSION['username'] ?? 'User';
+$jabatan = $_SESSION['jabatan'] ?? ucfirst($role);
+$inisial = strtoupper(substr($namaUser, 0, 2));
 ?>
 <aside class="sidebar">
 
@@ -19,14 +19,14 @@ $inisial    = strtoupper(substr($namaUser, 0, 2));
 
   <!-- Nav -->
   <nav class="sb-nav">
-    <a href="admin_dashboard.php" class="sb-item <?= $activePage==='dashboard'?'active':'' ?>">
+    <a href="admin_dashboard.php" class="sb-item <?= $activePage === 'dashboard' ? 'active' : '' ?>">
       <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
         <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
       </svg>
       Dashboard
     </a>
-    <a href="admin_statistik.php" class="sb-item <?= $activePage==='statistic'?'active':'' ?>">
+    <a href="admin_statistik.php" class="sb-item <?= $activePage === 'statistic' ? 'active' : '' ?>">
       <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="20" x2="18" y2="10"/>
         <line x1="12" y1="20" x2="12" y2="4"/>
@@ -35,7 +35,7 @@ $inisial    = strtoupper(substr($namaUser, 0, 2));
       </svg>
       Statistic
     </a>
-    <a href="admin_manajemen.php" class="sb-item <?= $activePage==='laporan'?'active':'' ?>">
+    <a href="admin_manajemen.php" class="sb-item <?= $activePage === 'laporan' ? 'active' : '' ?>">
       <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14,2 14,8 20,8"/>

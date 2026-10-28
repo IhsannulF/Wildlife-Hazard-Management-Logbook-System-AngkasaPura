@@ -15,6 +15,7 @@ class AuthController extends Controller
             if (Auth::user()->role === 'admin') {
                 return redirect()->route('admin.dashboard');
             }
+
             return redirect()->route('user.dashboard');
         }
 
@@ -23,15 +24,39 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $throttleKey = Str::transliterate(Str::lower($request->input('username')) . '|' . $request->ip());
+        $inputUsername = strtolower(trim($request->input('username')));
+
+        // Pemetaan alias username ke 5 akun resmi departemen: admin, amc, pk, safety, security
+        $aliases = [
+            'admin.utama' => 'admin',
+            'amc.divisi' => 'amc',
+            'arff.divisi' => 'pk',
+            'arff' => 'pk',
+            'pk.divisi' => 'pk',
+            'smsohs.divisi' => 'safety',
+            'sms.divisi' => 'safety',
+            'sms' => 'safety',
+            'security.divisi' => 'security',
+            'avsec.divisi' => 'security',
+            'avsec' => 'security',
+        ];
+        $targetUsername = $aliases[$inputUsername] ?? $inputUsername;
+
+        $credentials = [
+            'username' => $targetUsername,
+            'password' => $request->input('password'),
+        ];
+
+        $throttleKey = Str::transliterate(Str::lower($targetUsername).'|'.$request->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+
             return back()->withErrors([
                 'username' => "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam $seconds detik.",
             ])->onlyInput('username');
@@ -42,8 +67,9 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            if (!$user->aktif) {
+            if (! $user->aktif) {
                 Auth::logout();
+
                 return back()->withErrors([
                     'username' => 'Akun Anda sedang dinonaktifkan. Hubungi admin.',
                 ]);

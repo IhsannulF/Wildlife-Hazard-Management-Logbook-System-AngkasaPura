@@ -1,11 +1,11 @@
 <?php
 require_once 'koneksi.php';
 
-$tahun = (int)($_GET['tahun'] ?? date('Y'));
-$zona  = $_GET['zona'] ?? '';
+$tahun = (int) ($_GET['tahun'] ?? date('Y'));
+$zona = $_GET['zona'] ?? '';
 
-$jenisList = $pdo->query("SELECT DISTINCT nama_satwa AS nama FROM detail_satwa WHERE laporan_id > 0 ORDER BY nama_satwa")->fetchAll();
-$whereZona = $zona ? "AND l.grid_lokasi = " . $pdo->quote($zona) : "";
+$jenisList = $pdo->query('SELECT DISTINCT nama_satwa AS nama FROM detail_satwa WHERE laporan_id > 0 ORDER BY nama_satwa')->fetchAll();
+$whereZona = $zona ? 'AND l.grid_lokasi = '.$pdo->quote($zona) : '';
 
 $rawBar = $pdo->query("
     SELECT ls.nama_satwa, MONTH(l.tanggal) AS bulan,
@@ -18,7 +18,9 @@ $rawBar = $pdo->query("
 ")->fetchAll();
 
 $mapBar = [];
-foreach ($rawBar as $r) $mapBar[$r['nama_satwa']][(int)$r['bulan']] = (int)$r['total'];
+foreach ($rawBar as $r) {
+    $mapBar[$r['nama_satwa']][(int) $r['bulan']] = (int) $r['total'];
+}
 
 $topSatwa = $pdo->query("
     SELECT ls.nama_satwa, COALESCE(SUM(ls.jumlah),0) AS total
@@ -34,9 +36,11 @@ for ($m = 1; $m <= 12; $m++) {
     $arr = [];
     foreach ($jenisList as $js) {
         $t = $mapBar[$js['nama']][$m] ?? 0;
-        if ($t > 0) $arr[] = ['nama'=>$js['nama'],'total'=>$t];
+        if ($t > 0) {
+            $arr[] = ['nama' => $js['nama'], 'total' => $t];
+        }
     }
-    usort($arr, fn($a,$b) => $b['total'] - $a['total']);
+    usort($arr, fn ($a, $b) => $b['total'] - $a['total']);
     $rankPerBulan[$m] = $arr;
 }
 
@@ -53,10 +57,10 @@ $laporans = $pdo->query("
     GROUP BY l.id ORDER BY l.tanggal
 ")->fetchAll();
 
-$namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni',
-              'Juli','Agustus','September','Oktober','November','Desember'];
+$namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-$grandTotal    = 0;
+$grandTotal = 0;
 $totalPerJenis = array_fill(0, count($jenisList), 0);
 $totalPerBulan = array_fill(1, 12, 0);
 for ($m = 1; $m <= 12; $m++) {
@@ -67,16 +71,16 @@ for ($m = 1; $m <= 12; $m++) {
         $grandTotal += $v;
     }
 }
-$totalLaporan   = count($laporans);
-$totalDitemukan = count(array_filter($laporans, fn($l) => $l['status']==='ditangani'));
-$pctDitemukan   = $totalLaporan > 0 ? round($totalDitemukan/$totalLaporan*100,1) : 0;
-$cakupan        = $zona ? "Grid $zona" : "Semua Grid";
-$judulFile      = "Statistik_Satwa_{$tahun}" . ($zona ? "_Grid{$zona}" : "") . ".xls";
+$totalLaporan = count($laporans);
+$totalDitemukan = count(array_filter($laporans, fn ($l) => $l['status'] === 'ditangani'));
+$pctDitemukan = $totalLaporan > 0 ? round($totalDitemukan / $totalLaporan * 100, 1) : 0;
+$cakupan = $zona ? "Grid $zona" : 'Semua Grid';
+$judulFile = "Statistik_Satwa_{$tahun}".($zona ? "_Grid{$zona}" : '').'.xls';
 
-header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+header('Content-Type: application/vnd.ms-excel; charset=utf-8');
 header("Content-Disposition: attachment; filename=\"$judulFile\"");
-header("Pragma: no-cache");
-header("Expires: 0");
+header('Pragma: no-cache');
+header('Expires: 0');
 ?>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:x="urn:schemas-microsoft-com:office:excel"
@@ -269,48 +273,50 @@ td, th { padding: 5px 10px; }
     <th class="th-total" width="80" rowspan="2">Total</th>
   </tr>
   <tr>
-    <?php foreach($jenisList as $js): ?>
+    <?php foreach ($jenisList as $js) { ?>
     <th class="th-jenis" style="min-width:100px">
       <?= htmlspecialchars($js['nama']) ?>
     </th>
-    <?php endforeach; ?>
+    <?php } ?>
   </tr>
 
   <!-- Data per bulan -->
-  <?php for($m=1;$m<=12;$m++):
-    $rowVals = [];
-    foreach($jenisList as $js) $rowVals[] = $mapBar[$js['nama']][$m] ?? 0;
-    $maxRow = !empty($rowVals) ? max($rowVals) : 0;
-    $rowCls = ($m%2===0) ? 're' : 'ro';
-  ?>
+  <?php for ($m = 1; $m <= 12; $m++) {
+      $rowVals = [];
+      foreach ($jenisList as $js) {
+          $rowVals[] = $mapBar[$js['nama']][$m] ?? 0;
+      }
+      $maxRow = ! empty($rowVals) ? max($rowVals) : 0;
+      $rowCls = ($m % 2 === 0) ? 're' : 'ro';
+      ?>
   <tr class="<?= $rowCls ?>">
     <td class="td-c" style="border:1px solid #E8E8E8;color:#999"><?= $m ?></td>
     <td class="td-bulan"><?= $namaBulan[$m] ?></td>
-    <?php foreach($jenisList as $j => $js):
-      $v   = $mapBar[$js['nama']][$m] ?? 0;
-      $cls = $v === 0 ? 'td-zero' : ($v === $maxRow && $maxRow > 0 ? 'td-hi' : 'td-val');
-    ?>
+    <?php foreach ($jenisList as $j => $js) {
+        $v = $mapBar[$js['nama']][$m] ?? 0;
+        $cls = $v === 0 ? 'td-zero' : ($v === $maxRow && $maxRow > 0 ? 'td-hi' : 'td-val');
+        ?>
     <td class="<?= $cls ?>"><?= $v > 0 ? number_format($v) : '&mdash;' ?></td>
-    <?php endforeach; ?>
+    <?php } ?>
     <td class="td-rowtot"><?= $totalPerBulan[$m] > 0 ? number_format($totalPerBulan[$m]) : '&mdash;' ?></td>
   </tr>
-  <?php endfor; ?>
+  <?php } ?>
 
   <!-- Total per jenis -->
   <tr>
     <td colspan="2" class="th-total" style="text-align:right;padding-right:12px">Total per Jenis</td>
-    <?php foreach($totalPerJenis as $t): ?>
+    <?php foreach ($totalPerJenis as $t) { ?>
     <td class="td-coltot"><?= number_format($t) ?></td>
-    <?php endforeach; ?>
+    <?php } ?>
     <td class="td-grand"><?= number_format($grandTotal) ?></td>
   </tr>
 
   <!-- Persentase kontribusi -->
   <tr>
     <td colspan="2" class="td-pct" style="text-align:right;padding-right:12px">% Kontribusi</td>
-    <?php foreach($totalPerJenis as $t): ?>
-    <td class="td-pct"><?= $grandTotal>0 ? round($t/$grandTotal*100,1).'%' : '&mdash;' ?></td>
-    <?php endforeach; ?>
+    <?php foreach ($totalPerJenis as $t) { ?>
+    <td class="td-pct"><?= $grandTotal > 0 ? round($t / $grandTotal * 100, 1).'%' : '&mdash;' ?></td>
+    <?php } ?>
     <td class="td-pct" style="font-weight:bold">100%</td>
   </tr>
   <tr><td colspan="<?= $colSpan ?>" style="height:22px"></td></tr>
@@ -334,40 +340,40 @@ td, th { padding: 5px 10px; }
     <th class="th-dark" width="90">% Tahunan</th>
   </tr>
 
-  <?php for($m=1;$m<=12;$m++):
-    $rank    = $rankPerBulan[$m] ?? [];
-    $showMax = min(3, count($rank));
-    $rowCls  = ($m%2===0)?'re':'ro';
-    $rankCls = ['rank-1','rank-2','rank-3'];
-    $rankLbl = ['1','2','3'];
-  ?>
+  <?php for ($m = 1; $m <= 12; $m++) {
+      $rank = $rankPerBulan[$m] ?? [];
+      $showMax = min(3, count($rank));
+      $rowCls = ($m % 2 === 0) ? 're' : 'ro';
+      $rankCls = ['rank-1', 'rank-2', 'rank-3'];
+      $rankLbl = ['1', '2', '3'];
+      ?>
 
-  <?php if($showMax === 0): ?>
+  <?php if ($showMax === 0) { ?>
   <tr class="<?= $rowCls ?>">
     <td class="td-month-lbl"><?= $namaBulan[$m] ?></td>
     <td colspan="5" class="td-empty-rank">Tidak ada data pengamatan</td>
   </tr>
   <tr><td colspan="6" class="td-spacer"></td></tr>
 
-  <?php else: ?>
-  <?php for($r=0;$r<$showMax;$r++):
-    $sp     = $rank[$r];
-    $pctBln = $totalPerBulan[$m] > 0 ? round($sp['total']/$totalPerBulan[$m]*100,1) : 0;
-    $pctThn = $grandTotal > 0 ? round($sp['total']/$grandTotal*100,1) : 0;
-  ?>
+  <?php } else { ?>
+  <?php for ($r = 0; $r < $showMax; $r++) {
+      $sp = $rank[$r];
+      $pctBln = $totalPerBulan[$m] > 0 ? round($sp['total'] / $totalPerBulan[$m] * 100, 1) : 0;
+      $pctThn = $grandTotal > 0 ? round($sp['total'] / $grandTotal * 100, 1) : 0;
+      ?>
   <tr class="<?= $rowCls ?>">
-    <?php if($r===0): ?>
+    <?php if ($r === 0) { ?>
     <td class="td-month-lbl" rowspan="<?= $showMax + 1 ?>" style="vertical-align:middle">
       <?= $namaBulan[$m] ?>
     </td>
-    <?php endif; ?>
-    <td class="td-num-rank" style="font-weight:<?= $r===0?'bold':'normal' ?>"><?= $rankLbl[$r] ?></td>
+    <?php } ?>
+    <td class="td-num-rank" style="font-weight:<?= $r === 0 ? 'bold' : 'normal' ?>"><?= $rankLbl[$r] ?></td>
     <td class="<?= $rankCls[$r] ?>"><?= htmlspecialchars($sp['nama']) ?></td>
-    <td class="td-num-rank" style="font-weight:<?= $r===0?'bold':'normal' ?>"><?= number_format($sp['total']) ?></td>
+    <td class="td-num-rank" style="font-weight:<?= $r === 0 ? 'bold' : 'normal' ?>"><?= number_format($sp['total']) ?></td>
     <td class="td-pct-rank"><?= $pctBln ?>%</td>
     <td class="td-pct-rank"><?= $pctThn ?>%</td>
   </tr>
-  <?php endfor; ?>
+  <?php } ?>
 
   <!-- Subtotal baris bulan -->
   <tr style="background:#F5F5F5">
@@ -381,9 +387,9 @@ td, th { padding: 5px 10px; }
     <td colspan="2" class="td-pct"></td>
   </tr>
   <tr><td colspan="6" class="td-spacer"></td></tr>
-  <?php endif; ?>
+  <?php } ?>
 
-  <?php endfor; ?>
+  <?php } ?>
   <tr><td colspan="6" style="height:20px"></td></tr>
 </table>
 
@@ -402,18 +408,18 @@ td, th { padding: 5px 10px; }
     <th class="th-dark" width="110">Persentase</th>
   </tr>
   <?php
-  $maxTop = !empty($topSatwa) ? $topSatwa[0]['total'] : 1;
-  $bgTop  = ['#FFFDF0','#F8F8F8','#FAF8F6','#FAFAFA','#FAFAFA'];
-  foreach($topSatwa as $i => $s):
-    $pct = $grandTotal > 0 ? round($s['total']/$grandTotal*100,1) : 0;
-  ?>
+      $maxTop = ! empty($topSatwa) ? $topSatwa[0]['total'] : 1;
+$bgTop = ['#FFFDF0', '#F8F8F8', '#FAF8F6', '#FAFAFA', '#FAFAFA'];
+foreach ($topSatwa as $i => $s) {
+    $pct = $grandTotal > 0 ? round($s['total'] / $grandTotal * 100, 1) : 0;
+    ?>
   <tr style="background:<?= $bgTop[$i] ?>">
-    <td class="td-top-rank"><?= $i+1 ?></td>
+    <td class="td-top-rank"><?= $i + 1 ?></td>
     <td class="td-top-nama"><?= htmlspecialchars($s['nama_satwa']) ?></td>
     <td class="td-top-num"><?= number_format($s['total']) ?></td>
     <td class="td-top-pct"><?= $pct ?>%</td>
   </tr>
-  <?php endforeach; ?>
+  <?php } ?>
   <tr><td colspan="4" style="height:22px"></td></tr>
 </table>
 
@@ -438,33 +444,33 @@ td, th { padding: 5px 10px; }
     <th class="th-det" width="75">Individu</th>
     <th class="th-det" width="110">Status</th>
   </tr>
-  <?php foreach($laporans as $i => $lap):
-    $rc = ($i%2===0) ? '#FDFDFD' : '#FFFFFF';
-  ?>
+  <?php foreach ($laporans as $i => $lap) {
+      $rc = ($i % 2 === 0) ? '#FDFDFD' : '#FFFFFF';
+      ?>
   <tr style="background:<?= $rc ?>">
     <td class="td-c" style="color:#999"><?= $lap['id'] ?></td>
     <td class="td-b"><?= htmlspecialchars($lap['nama_petugas']) ?></td>
-    <td class="td-l"><?= htmlspecialchars($lap['username']??'') ?></td>
+    <td class="td-l"><?= htmlspecialchars($lap['username'] ?? '') ?></td>
     <td class="td-c"><?= date('d/m/Y', strtotime($lap['tanggal'])) ?></td>
-    <td class="td-bc"><?= htmlspecialchars($lap['grid_lokasi']??'&mdash;') ?></td>
+    <td class="td-bc"><?= htmlspecialchars($lap['grid_lokasi'] ?? '&mdash;') ?></td>
     <td class="td-l"><?= htmlspecialchars($lap['area_inspeksi']) ?></td>
-    <td class="td-l"><?= htmlspecialchars($lap['unit_kerja']??'&mdash;') ?></td>
+    <td class="td-l"><?= htmlspecialchars($lap['unit_kerja'] ?? '&mdash;') ?></td>
     <td class="td-c"><?= htmlspecialchars($lap['kondisi_cuaca']) ?></td>
     <td class="td-c"><?= $lap['jenis_satwa'] ?></td>
     <td class="td-bc"><?= number_format($lap['total_satwa']) ?></td>
-    <td class="<?= $lap['status']==='ditangani'?'st-y':'st-n' ?>">
-      <?= $lap['status']==='ditangani' ? 'Ditemukan' : 'Belum Ditemukan' ?>
+    <td class="<?= $lap['status'] === 'ditangani' ? 'st-y' : 'st-n' ?>">
+      <?= $lap['status'] === 'ditangani' ? 'Ditemukan' : 'Belum Ditemukan' ?>
     </td>
   </tr>
-  <?php endforeach; ?>
-  <?php if(empty($laporans)): ?>
+  <?php } ?>
+  <?php if (empty($laporans)) { ?>
   <tr>
     <td colspan="11" style="text-align:center;padding:20px;color:#BBBBBB;
         font-style:italic;border:1px solid #E8E8E8">
       Tidak ada data laporan untuk periode ini.
     </td>
   </tr>
-  <?php endif; ?>
+  <?php } ?>
 </table>
 
 <!-- Footer -->

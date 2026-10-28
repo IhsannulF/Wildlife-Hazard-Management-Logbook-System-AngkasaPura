@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailSatwa;
 use App\Models\FormField;
+use App\Models\FotoLaporan;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
-use App\Models\DetailSatwa;
-use App\Models\FotoLaporan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class LaporanController extends Controller
 {
@@ -18,14 +16,22 @@ class LaporanController extends Controller
     {
         $user = Auth::user();
 
-        // Opsi dropdown dari DB
+        // Opsi dropdown dari DB berdasarkan akun departemen
         $mapJabatanUnitKerja = [
-            'AMC Divisi'      => 'Apron Movement Control',
-            'ARFF Divisi'     => 'Airport Rescue & Fire Fighting',
-            'Security Divisi' => 'Airport Security',
-            'SMSOHS Divisi'   => 'SMS & OHS',
+            'amc' => 'Apron Movement Control (AMC)',
+            'pk' => 'Airport Rescue & Fire Fighting (PK / ARFF)',
+            'security' => 'Airport Security (Avsec)',
+            'safety' => 'Safety Management System (SMS)',
+            'Apron Movement Control (AMC)' => 'Apron Movement Control (AMC)',
+            'Airport Rescue & Fire Fighting (PK / ARFF)' => 'Airport Rescue & Fire Fighting (PK / ARFF)',
+            'Airport Security (Avsec)' => 'Airport Security (Avsec)',
+            'Safety Management System (SMS)' => 'Safety Management System (SMS)',
+            'AMC Divisi' => 'Apron Movement Control (AMC)',
+            'ARFF Divisi' => 'Airport Rescue & Fire Fighting (PK / ARFF)',
+            'Security Divisi' => 'Airport Security (Avsec)',
+            'SMSOHS Divisi' => 'Safety Management System (SMS)',
         ];
-        $unitKerjaUser = $mapJabatanUnitKerja[$user->namalengkap] ?? '';
+        $unitKerjaUser = $mapJabatanUnitKerja[$user->username] ?? $mapJabatanUnitKerja[$user->namalengkap] ?? '';
 
         $formFields = FormField::where('aktif', true)
             ->orderBy('urutan', 'asc')
@@ -40,8 +46,8 @@ class LaporanController extends Controller
         }
 
         $kondisi_cuaca_opt = $this->getDropdownOpsi('kondisi_cuaca', ['Cerah', 'Berawan', 'Hujan Ringan', 'Hujan Lebat', 'Berkabut']);
-        $unit_kerja_opt    = $this->getDropdownOpsi('unit_kerja', ['Apron Movement Control', 'Airport Rescue & Fire Fighting', 'Airport Security', 'SMS & OHS']);
-        $area_opt          = $this->getDropdownOpsi('area_inspeksi', ['Apron', 'Taxiway', 'Runway', 'Perimeter', 'Terminal', 'Gedung Operasional', 'Area Parkir']);
+        $unit_kerja_opt = $this->getDropdownOpsi('unit_kerja', ['Apron Movement Control', 'Airport Rescue & Fire Fighting', 'Airport Security', 'SMS & OHS']);
+        $area_opt = $this->getDropdownOpsi('area_inspeksi', ['Apron', 'Taxiway', 'Runway', 'Perimeter', 'Terminal', 'Gedung Operasional', 'Area Parkir']);
         $kondisi_apron_opt = $this->getDropdownOpsi('kondisi_apron', ['Hidup', 'Mati', 'Tidak ditemukan']);
         $tindak_lanjut_opt = $this->getDropdownOpsi('tindak_lanjut', ['Telah ditangani', 'Belum ditangani']);
 
@@ -72,6 +78,7 @@ class LaporanController extends Controller
         if ($field && $field->options->isNotEmpty()) {
             return $field->options->pluck('nilai')->toArray();
         }
+
         return $fallback;
     }
 
@@ -89,7 +96,7 @@ class LaporanController extends Controller
         foreach ($requiredFields as $rf) {
             if ($rf->nama_field === 'tanda_tangan') {
                 $rules['tanda_tangan'] = 'required|string';
-            } elseif (!in_array($rf->nama_field, ['grid_lokasi', 'satwa', 'foto_lainnya'])) {
+            } elseif (! in_array($rf->nama_field, ['grid_lokasi', 'satwa', 'foto_lainnya'])) {
                 $rules[$rf->nama_field] = 'required';
             }
         }
@@ -102,7 +109,7 @@ class LaporanController extends Controller
 
         foreach ($satwaInput as $s) {
             foreach ($s['lokasi'] ?? [] as $lok) {
-                if ((int)($lok['jumlah'] ?? 0) > 0) {
+                if ((int) ($lok['jumlah'] ?? 0) > 0) {
                     $adaSatwa = true;
                     break 2;
                 }
@@ -111,7 +118,7 @@ class LaporanController extends Controller
 
         $adaFotoExtra = $request->hasFile('foto_lainnya');
 
-        if (!$adaSatwa && !$adaFotoExtra) {
+        if (! $adaSatwa && ! $adaFotoExtra) {
             return back()->withInput()->with('error', 'Pilih minimal satu satwa atau upload foto satwa tidak terdaftar.');
         }
 
@@ -122,7 +129,7 @@ class LaporanController extends Controller
         if (empty($firstGrid)) {
             foreach ($satwaInput as $s) {
                 foreach ($s['lokasi'] ?? [] as $lok) {
-                    if (!empty($lok['grid'])) {
+                    if (! empty($lok['grid'])) {
                         $firstGrid = $lok['grid'];
                         break 2;
                     }
@@ -131,27 +138,27 @@ class LaporanController extends Controller
         }
 
         $laporan = Laporan::create([
-            'user_id'           => $user->id,
-            'nama_petugas'      => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
-            'tanggal'           => $request->input('tanggal'),
-            'kondisi_cuaca'     => $request->input('kondisi_cuaca', ''),
-            'unit_kerja'        => $request->input('unit_kerja', ''),
-            'area_inspeksi'     => $request->input('area_inspeksi', ''),
-            'tanda_tangan'      => $request->input('tanda_tangan'),
-            'grid_lokasi'       => strtoupper($firstGrid ?: '-'),
-            'ciri_ukuran'       => $request->input('ciri_ukuran', '-'),
-            'kondisi_apron'     => $request->input('kondisi_apron', '-'),
-            'aktivitas_satwa'   => $request->input('aktivitas_satwa', '-'),
-            'tindak_lanjut'     => $request->input('tindak_lanjut', 'Belum ditangani'),
+            'user_id' => $user->id,
+            'nama_petugas' => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
+            'tanggal' => $request->input('tanggal'),
+            'kondisi_cuaca' => $request->input('kondisi_cuaca', ''),
+            'unit_kerja' => $request->input('unit_kerja', ''),
+            'area_inspeksi' => $request->input('area_inspeksi', ''),
+            'tanda_tangan' => $request->input('tanda_tangan'),
+            'grid_lokasi' => strtoupper($firstGrid ?: '-'),
+            'ciri_ukuran' => $request->input('ciri_ukuran', '-'),
+            'kondisi_apron' => $request->input('kondisi_apron', '-'),
+            'aktivitas_satwa' => $request->input('aktivitas_satwa', '-'),
+            'tindak_lanjut' => $request->input('tindak_lanjut', 'Belum ditangani'),
             'detail_pengusiran' => $request->input('detail_pengusiran', '-'),
-            'status'            => $statusLaporan,
+            'status' => $statusLaporan,
         ]);
 
         // Simpan field dinamis ke extra_data (JSON)
         $standardFields = [
             'nama_petugas', 'tanggal', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
             'tanda_tangan', 'grid_lokasi', 'satwa', 'ciri_ukuran', 'kondisi_apron',
-            'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran', '_token', 'foto_lainnya'
+            'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran', '_token', 'foto_lainnya',
         ];
 
         $extraData = [];
@@ -161,7 +168,7 @@ class LaporanController extends Controller
                 $extraData[$ef->nama_field] = $request->input($ef->nama_field);
             }
         }
-        if (!empty($extraData)) {
+        if (! empty($extraData)) {
             $laporan->update(['extra_data' => $extraData]);
         }
 
@@ -171,30 +178,30 @@ class LaporanController extends Controller
             $locations = $s['lokasi'] ?? [];
 
             foreach ($locations as $lokIdx => $lok) {
-                $jumlah = (int)($lok['jumlah'] ?? 0);
+                $jumlah = (int) ($lok['jumlah'] ?? 0);
                 if ($jumlah > 0) {
                     $grid = strtoupper($lok['grid'] ?? '');
 
                     $detail = DetailSatwa::create([
                         'laporan_id' => $laporan->id,
                         'nama_satwa' => $namaSatwa,
-                        'jumlah'     => $jumlah,
-                        'grid'       => $grid,
+                        'jumlah' => $jumlah,
+                        'grid' => $grid,
                     ]);
 
                     // Cek upload foto per satwa
                     if ($request->hasFile("satwa.{$idx}.foto")) {
                         $file = $request->file("satwa.{$idx}.foto");
                         if ($file->isValid()) {
-                            $filename = 'satwa_' . $laporan->id . '_' . $detail->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                            $filename = 'satwa_'.$laporan->id.'_'.$detail->id.'_'.time().'.'.$file->getClientOriginalExtension();
                             $file->storeAs('uploads/satwa', $filename, 'public');
 
                             FotoLaporan::create([
-                                'laporan_id'      => $laporan->id,
+                                'laporan_id' => $laporan->id,
                                 'detail_satwa_id' => $detail->id,
-                                'nama_file'       => $filename,
-                                'tipe'            => 'satwa',
-                                'foto_path'       => 'uploads/satwa/' . $filename,
+                                'nama_file' => $filename,
+                                'tipe' => 'satwa',
+                                'foto_path' => 'uploads/satwa/'.$filename,
                             ]);
                         }
                     }
@@ -205,21 +212,21 @@ class LaporanController extends Controller
         // Simpan Foto Extra (Satwa Tidak Terdaftar)
         if ($request->hasFile('foto_lainnya')) {
             $extraFiles = $request->file('foto_lainnya');
-            if (!is_array($extraFiles)) {
+            if (! is_array($extraFiles)) {
                 $extraFiles = [$extraFiles];
             }
 
             foreach ($extraFiles as $eIdx => $efile) {
                 if ($efile && $efile->isValid()) {
-                    $extFilename = 'extra_' . $laporan->id . '_' . $eIdx . '_' . time() . '.' . $efile->getClientOriginalExtension();
+                    $extFilename = 'extra_'.$laporan->id.'_'.$eIdx.'_'.time().'.'.$efile->getClientOriginalExtension();
                     $efile->storeAs('uploads/extra', $extFilename, 'public');
 
                     FotoLaporan::create([
-                        'laporan_id'      => $laporan->id,
+                        'laporan_id' => $laporan->id,
                         'detail_satwa_id' => null,
-                        'nama_file'       => $extFilename,
-                        'tipe'            => 'extra',
-                        'foto_path'       => 'uploads/extra/' . $extFilename,
+                        'nama_file' => $extFilename,
+                        'tipe' => 'extra',
+                        'foto_path' => 'uploads/extra/'.$extFilename,
                     ]);
                 }
             }

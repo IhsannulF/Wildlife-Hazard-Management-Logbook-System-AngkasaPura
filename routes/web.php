@@ -73,5 +73,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Cetak & Export
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
-    Route::get('/export-excel', [AdminReportController::class, 'exportExcel'])->name('export.excel');
+    Route::get('/export-excel', [AdminReportController::class, 'index'])->name('export.excel');
+    Route::match(['get', 'post'], '/export-excel/download', [AdminReportController::class, 'downloadExcel'])->name('export.excel.download');
+    Route::get('/export-excel/count', [AdminReportController::class, 'countMatching'])->name('export.excel.count');
 });

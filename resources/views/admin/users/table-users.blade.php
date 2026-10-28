@@ -7,7 +7,7 @@
         Daftar Akun Petugas &amp; Hak Akses
       </h3>
       <p class="text-[11px] text-secondary mt-0.5">
-        Kelola kredensial akun dinas petugas lapangan AMC, ARFF, Avsec, dan tim keselamatan operasional.
+        Kelola 5 akun dinas departemen operasional sisi udara: Admin, AMC, PK / ARFF, Safety (SMS), dan Security (Avsec).
       </p>
     </div>
 
