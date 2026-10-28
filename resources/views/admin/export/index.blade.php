@@ -64,43 +64,34 @@
   <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'export_excel'])
 
+  <!-- TOP UNIFIED PAGE HEADER -->
+  @include('partials.page-header', [
+    'title' => 'Pusat Konfigurasi & Ekspor Laporan Excel',
+    'subtitle' => 'Pilih data apa saja yang ingin dimasukkan ke dalam laporan, sesuaikan rentang waktu, dan format audit.',
+    'icon' => 'table_chart',
+    'maxWidth' => 'max-w-[1680px]',
+    'actions' => '
+      <a href="' . route('admin.verifikasi') . '" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
+        <span class="material-symbols-outlined text-base">arrow_back</span>
+        Kembali ke Logbook
+      </a>
+    '
+  ])
+
   <!-- ================= MAIN CONTAINER ================= -->
-  <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+  <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-    <!-- 1. BREADCRUMB & HEADER -->
-    <div class="space-y-1">
-      <nav class="flex items-center gap-2 text-xs text-slate-500 font-medium">
-        <a href="{{ route('admin.dashboard') }}" class="hover:text-primary transition-colors flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">home</span>
-          Beranda
-        </a>
-        <span>/</span>
-        <a href="{{ route('admin.verifikasi') }}" class="hover:text-primary transition-colors">Logbook Operasional</a>
-        <span>/</span>
-        <span class="text-slate-800 font-semibold">Pusat Ekspor Spreadsheet</span>
-      </nav>
-
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <span class="p-2 rounded-xl bg-cyan-50 text-[#00A9C1] border border-cyan-100 flex items-center justify-center">
-              <span class="material-symbols-outlined text-2xl">table_chart</span>
-            </span>
-            Pusat Konfigurasi & Ekspor Laporan Excel
-          </h1>
-          <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Pilih data apa saja yang ingin dimasukkan ke dalam laporan, sesuaikan rentang waktu, dan pilih format standar audit Ditjen Hubud (DKPPU) atau rekapitulasi operasional internal.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <a href="{{ route('admin.verifikasi') }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors shadow-2xs">
-            <span class="material-symbols-outlined text-base">arrow_back</span>
-            Kembali ke Logbook
-          </a>
-        </div>
-      </div>
-    </div>
+    <!-- 1. BREADCRUMB -->
+    <nav class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+      <a href="{{ route('admin.dashboard') }}" class="hover:text-primary transition-colors flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">home</span>
+        Beranda
+      </a>
+      <span>/</span>
+      <a href="{{ route('admin.verifikasi') }}" class="hover:text-primary transition-colors">Logbook Operasional</a>
+      <span>/</span>
+      <span class="text-slate-800 font-semibold">Pusat Ekspor Spreadsheet</span>
+    </nav>
 
     <!-- FORM UTAMA EKSPOR -->
     <form id="exportForm" action="{{ route('admin.export.excel.download') }}" method="POST" class="space-y-6">

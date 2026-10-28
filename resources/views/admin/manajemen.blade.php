@@ -146,6 +146,27 @@
   <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'manajemen'])
 
+  <!-- TOP UNIFIED PAGE HEADER -->
+  @include('partials.page-header', [
+    'title' => 'Katalog Master Satwa Liar Sisi Udara',
+    'subtitle' => 'Pusat pengelolaan master data spesies, tingkat risiko satwa, dan konfigurasi sistem.',
+    'icon' => 'pets',
+    'actions' => '
+      <a href="' . route('admin.export.excel') . '" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-800 hover:bg-slate-50 transition-colors shadow-2xs shrink-0 whitespace-nowrap">
+        <span class="material-symbols-outlined text-sm">download</span>
+        <span>Export Excel</span>
+      </a>
+      <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-800 hover:bg-slate-50 transition-colors shadow-2xs shrink-0 whitespace-nowrap">
+        <span class="material-symbols-outlined text-sm">print</span>
+        <span>Cetak PDF</span>
+      </button>
+      <button type="button" onclick="openModal(\'addSpeciesModal\')" class="inline-flex items-center gap-1 px-3 py-1.5 sm:py-2 text-xs font-bold rounded-lg bg-[#00A9C1] hover:bg-[#007fa3] text-white shadow-xs transition-all active:scale-[0.98] shrink-0 whitespace-nowrap cursor-pointer">
+        <span class="material-symbols-outlined text-sm">add</span>
+        <span>Tambah Spesies</span>
+      </button>
+    '
+  ])
+
   <!-- ================= MAIN OPERATIONAL CONTENT CONTAINER ================= -->
   <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
     

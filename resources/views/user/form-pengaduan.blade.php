@@ -46,12 +46,21 @@
   <!-- Shared Unified Side Navigation Bar -->
   @include('partials.navbar', ['activePage' => 'create'])
 
-  <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-    <!-- Header Title -->
-    <div class="mb-8 text-center sm:text-left">
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Form Pengaduan Satwa Liar</h1>
-      <p class="text-sm text-slate-500">Lengkapi formulir pengamatan satwa liar di area sisi udara bandara secara teliti.</p>
-    </div>
+  <!-- TOP UNIFIED PAGE HEADER -->
+  @include('partials.page-header', [
+    'title' => 'Form Pengaduan Satwa Liar',
+    'subtitle' => 'Lengkapi formulir pengamatan satwa liar di area sisi udara bandara secara teliti.',
+    'icon' => 'edit_note',
+    'maxWidth' => 'max-w-4xl',
+    'actions' => '
+      <a href="' . (auth()->user()->role === 'admin' ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
+        <span class="material-symbols-outlined text-base">arrow_back</span>
+        Kembali
+      </a>
+    '
+  ])
+
+  <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6">
 
     @if($errors->any())
       <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mb-6 text-sm">

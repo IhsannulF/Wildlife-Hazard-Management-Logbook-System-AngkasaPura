@@ -1,23 +1,5 @@
-<!-- PAGE HERO & EXECUTIVE METRIC BENTO CARDS (VERIFIKASI BERITA ACARA) -->
+<!-- PAGE EXECUTIVE METRIC BENTO CARDS (VERIFIKASI BERITA ACARA) -->
 <section class="space-y-space-md">
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
-    <div>
-      <h1 class="text-base sm:text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#007fa3] text-2xl">fact_check</span>
-        Verifikasi Berita Acara (BA)
-      </h1>
-      <p class="text-[11px] sm:text-xs text-secondary mt-0.5">
-        Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.
-      </p>
-    </div>
-    <div class="flex items-center gap-2">
-      <span class="text-[11px] text-secondary font-medium">Pembaruan otomatis 60d</span>
-      <button class="p-1.5 text-secondary hover:text-injourney-teal transition-colors rounded hover:bg-surface-container-low cursor-pointer" onclick="refreshData()" title="Muat Ulang Data">
-        <span class="material-symbols-outlined text-sm">sync</span>
-      </button>
-    </div>
-  </div>
-
   <!-- 4 Aviation Metric Summary Cards -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
     

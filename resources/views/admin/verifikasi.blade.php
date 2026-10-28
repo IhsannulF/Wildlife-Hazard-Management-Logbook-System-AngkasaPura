@@ -176,6 +176,14 @@
   <!-- SIDEBAR NAVIGATION -->
   @include('partials.navbar', ['activePage' => 'verifikasi'])
 
+  <!-- TOP UNIFIED PAGE HEADER -->
+  @include('partials.page-header', [
+    'title' => 'Verifikasi Berita Acara (BA)',
+    'subtitle' => 'Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.',
+    'icon' => 'fact_check',
+    'actions' => '<div class="flex items-center gap-2"><span class="text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
+  ])
+
   <!-- MAIN VIEWPORT CONTAINER -->
   <main class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-space-xl py-space-lg space-y-space-lg">
     

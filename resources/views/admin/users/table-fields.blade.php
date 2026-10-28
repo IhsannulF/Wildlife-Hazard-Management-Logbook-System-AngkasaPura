@@ -13,7 +13,7 @@
 
     <button type="button" onclick="openModal('modalAddField')" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white shadow-xs transition-all active:scale-[0.98] self-start sm:self-center cursor-pointer">
       <span class="material-symbols-outlined text-sm">add</span>
-      <span>+ Tambah Field Baru</span>
+      <span>Tambah Field Baru</span>
     </button>
   </div>
 

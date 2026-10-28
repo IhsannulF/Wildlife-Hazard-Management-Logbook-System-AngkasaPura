@@ -8,6 +8,19 @@
   <!-- Shared Unified Side Navigation Bar -->
   @include('partials.navbar', ['activePage' => 'dashboard'])
 
+  <!-- TOP UNIFIED PAGE HEADER -->
+  @include('partials.page-header', [
+    'title' => 'Portal Satwa Liar',
+    'subtitle' => 'Sistem pencatatan logbook digital pemantauan dan pengendalian bahaya satwa liar.',
+    'icon' => 'space_dashboard',
+    'actions' => '
+      <a href="' . route('laporan.create') . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-[#00A9C1] hover:bg-[#007fa3] text-white shadow-xs transition-all">
+        <span class="material-symbols-outlined text-sm">add</span>
+        <span>Buat Laporan</span>
+      </a>
+    '
+  ])
+
   <!-- Main Hero Content -->
   <main class="flex-1 flex items-center justify-center p-6 sm:p-10">
     <div class="w-full max-w-xl bg-white/90 backdrop-blur-xl border border-white/70 rounded-3xl p-8 sm:p-12 text-center shadow-2xl shadow-slate-900/10">
