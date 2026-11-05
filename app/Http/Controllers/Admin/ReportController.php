@@ -16,7 +16,11 @@ class ReportController extends Controller
      */
     public function cetak(int $id)
     {
-        $lap = Laporan::with(['user', 'detailSatwa', 'fotoLaporan'])->findOrFail($id);
+        $lap = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])->findOrFail($id);
+
+        if (auth()->check() && auth()->user()->role !== 'admin' && $lap->user_id !== auth()->id()) {
+            abort(403, 'Anda tidak berhak mengakses atau mencetak berita acara milik petugas lain.');
+        }
 
         $satwa_list = [];
         foreach ($lap->detailSatwa as $ds) {

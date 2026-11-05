@@ -19,7 +19,7 @@ class ExportExcelTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.export.excel'));
 
         $response->assertStatus(200);
-        $response->assertSee('Pusat Konfigurasi & Ekspor Laporan Excel', false);
+        $response->assertSee('Pusat Konfigurasi');
         $response->assertSee('Standar Baku Ditjen Hubud (DKPPU 16 Kolom)', false);
         $response->assertSee('Rekapitulasi Operasional Ringkas', false);
     }

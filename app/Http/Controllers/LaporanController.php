@@ -141,11 +141,14 @@ class LaporanController extends Controller
             'user_id' => $user->id,
             'nama_petugas' => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
             'tanggal' => $request->input('tanggal'),
+            'jam' => $request->input('jam', now()->format('H:i:s')),
             'kondisi_cuaca' => $request->input('kondisi_cuaca', ''),
             'unit_kerja' => $request->input('unit_kerja', ''),
             'area_inspeksi' => $request->input('area_inspeksi', ''),
             'tanda_tangan' => $request->input('tanda_tangan'),
             'grid_lokasi' => strtoupper($firstGrid ?: '-'),
+            'gps_lat' => $request->input('gps_lat'),
+            'gps_lng' => $request->input('gps_lng'),
             'ciri_ukuran' => $request->input('ciri_ukuran', '-'),
             'kondisi_apron' => $request->input('kondisi_apron', '-'),
             'aktivitas_satwa' => $request->input('aktivitas_satwa', '-'),
@@ -233,5 +236,31 @@ class LaporanController extends Controller
         }
 
         return redirect()->route('user.dashboard')->with('sukses', 'Laporan berhasil dikirim dan tersimpan di sistem.');
+    }
+
+    /**
+     * Mengambil data detail laporan untuk modal pratinjau pegawai
+     */
+    public function detail(int $id)
+    {
+        $user = Auth::user();
+        $query = Laporan::with([
+            'user',
+            'detailSatwa.fotoLaporan',
+            'fotoLaporan',
+            'tanggapan.user',
+        ]);
+
+        // Isolasi data: jika bukan admin, hanya izinkan pemilik laporan
+        if ($user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
+
+        $laporan = $query->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $laporan,
+        ]);
     }
 }

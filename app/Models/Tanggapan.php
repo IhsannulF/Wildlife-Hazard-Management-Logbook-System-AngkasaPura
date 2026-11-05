@@ -15,6 +15,7 @@ class Tanggapan extends Model
     protected $fillable = [
         'laporan_id',
         'user_id',
+        'kategori_tanggapan',
         'isi',
     ];
 

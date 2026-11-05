@@ -27,6 +27,8 @@ Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->nam
 Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
     Route::get('/laporan/create', [LaporanController::class, 'create'])->name('laporan.create');
     Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
+    Route::get('/laporan/{id}/detail', [LaporanController::class, 'detail'])->name('laporan.detail.user');
+    Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
 });
 
 // Rute Pegawai
