@@ -10,7 +10,20 @@
         Rekaman per sesi patroli runway, perimeter, dan koordinasi dengan ATC Airside Juanda.
       </p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-1.5 text-xs text-secondary font-body-sm">
+        <label for="perPagePatroliTop" class="font-medium whitespace-nowrap text-secondary flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm text-[#007fa3]">tune</span>
+          Tampilkan:
+        </label>
+        <select id="perPagePatroliTop" onchange="changePerPage(this.value)" class="h-8 pl-2.5 pr-7 py-1 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-1 focus:ring-injourney-teal cursor-pointer shadow-2xs">
+          <option value="10" {{ ($perPage ?? 10) == 10 ? 'selected' : '' }}>10 data</option>
+          <option value="20" {{ ($perPage ?? 10) == 20 ? 'selected' : '' }}>20 data</option>
+          <option value="50" {{ ($perPage ?? 10) == 50 ? 'selected' : '' }}>50 data</option>
+          <option value="100" {{ ($perPage ?? 10) == 100 ? 'selected' : '' }}>100 data</option>
+        </select>
+      </div>
+      <div class="h-4 w-px bg-border-subtle hidden sm:block"></div>
       <span class="text-xs text-secondary font-medium">Total: <strong>{{ $laporans->total() }}</strong> sesi tercatat</span>
       <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-xs font-semibold text-secondary hover:text-on-surface hover:bg-slate-50 transition-colors">
         <span class="material-symbols-outlined text-sm">download</span>
@@ -142,10 +155,23 @@
     </table>
   </div>
 
-  <!-- Pagination -->
-  @if($laporans->hasPages())
-    <div class="pt-2">
+  <!-- Pagination Footer -->
+  <div class="pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3 text-xs text-secondary">
+    <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+      <span>Total: <strong class="text-on-surface font-semibold">{{ $laporans->total() }}</strong> sesi patroli</span>
+      <div class="h-4 w-px bg-border-subtle hidden sm:block"></div>
+      <div class="flex items-center gap-1.5">
+        <label for="perPagePatroliBottom" class="text-secondary font-medium whitespace-nowrap">Tampilkan per halaman:</label>
+        <select id="perPagePatroliBottom" onchange="changePerPage(this.value)" class="h-8 pl-2.5 pr-7 py-1 text-xs font-semibold rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-1 focus:ring-injourney-teal cursor-pointer shadow-2xs">
+          <option value="10" {{ ($perPage ?? 10) == 10 ? 'selected' : '' }}>10 data</option>
+          <option value="20" {{ ($perPage ?? 10) == 20 ? 'selected' : '' }}>20 data</option>
+          <option value="50" {{ ($perPage ?? 10) == 50 ? 'selected' : '' }}>50 data</option>
+          <option value="100" {{ ($perPage ?? 10) == 100 ? 'selected' : '' }}>100 data</option>
+        </select>
+      </div>
+    </div>
+    <div>
       {{ $laporans->links() }}
     </div>
-  @endif
+  </div>
 </section>

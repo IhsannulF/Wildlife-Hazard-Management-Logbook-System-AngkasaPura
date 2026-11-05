@@ -53,21 +53,6 @@
       <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 mt-2 cursor-pointer">
         Masuk ke Sistem
       </button>
-
-      <!-- 5 Akun Departemen Info -->
-      <div class="mt-4 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1.5">
-        <div class="font-bold text-slate-700 flex items-center justify-between">
-          <span>5 Akun Dinas Resmi:</span>
-          <span class="font-normal text-[10px] text-slate-400">Password: <code class="font-mono bg-white px-1 rounded border border-slate-200">juanda123</code></span>
-        </div>
-        <div class="flex flex-wrap gap-1">
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono text-[10px]"><strong class="text-teal-700">admin</strong> (Admin)</span>
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono text-[10px]"><strong class="text-teal-700">amc</strong> (AMC)</span>
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono text-[10px]"><strong class="text-teal-700">pk</strong> (ARFF)</span>
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono text-[10px]"><strong class="text-teal-700">safety</strong> (SMS)</span>
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono text-[10px]"><strong class="text-teal-700">security</strong> (Avsec)</span>
-        </div>
-      </div>
     </form>
 
     <div class="mt-6 pt-5 border-t border-slate-200/60 text-center text-xs text-slate-400 leading-relaxed">

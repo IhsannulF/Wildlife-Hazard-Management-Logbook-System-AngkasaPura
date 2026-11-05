@@ -176,4 +176,102 @@ class VerifikasiBATest extends TestCase
         $response->assertSee('value="2026-06-24"', false);
         $response->assertSee('24 Jun 2026');
     }
+
+    public function test_admin_can_set_custom_per_page_on_verifikasi(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        // Test per_page = 20
+        $response20 = $this->actingAs($admin)->get('/admin/verifikasi?per_page=20');
+        $response20->assertStatus(200);
+        $response20->assertSee('id="perPageTop"', false);
+        $response20->assertSee('id="perPageBottom"', false);
+        $response20->assertSee('<option value="20" selected>20 data</option>', false);
+        $this->assertEquals(20, $response20->viewData('perPage'));
+        $this->assertEquals(20, $response20->viewData('laporans')->perPage());
+
+        // Test per_page = 50
+        $response50 = $this->actingAs($admin)->get('/admin/verifikasi?per_page=50');
+        $response50->assertStatus(200);
+        $response50->assertSee('<option value="50" selected>50 data</option>', false);
+        $this->assertEquals(50, $response50->viewData('perPage'));
+        $this->assertEquals(50, $response50->viewData('laporans')->perPage());
+    }
+
+    public function test_admin_per_page_falls_back_to_default_when_invalid(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $responseInvalid = $this->actingAs($admin)->get('/admin/verifikasi?per_page=999');
+        $responseInvalid->assertStatus(200);
+        $responseInvalid->assertSee('<option value="10" selected>10 data</option>', false);
+        $this->assertEquals(10, $responseInvalid->viewData('perPage'));
+        $this->assertEquals(10, $responseInvalid->viewData('laporans')->perPage());
+    }
+
+    public function test_admin_per_page_persists_in_session(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        // Set per_page=50 and store in session
+        $this->actingAs($admin)->get('/admin/verifikasi?per_page=50')
+            ->assertSessionHas('verifikasi_per_page', 50);
+
+        // Subsequent access without query param should remember session
+        $subsequentResponse = $this->actingAs($admin)->get('/admin/verifikasi');
+        $subsequentResponse->assertStatus(200);
+        $this->assertEquals(50, $subsequentResponse->viewData('perPage'));
+        $this->assertEquals(50, $subsequentResponse->viewData('laporans')->perPage());
+    }
+
+    public function test_admin_can_set_custom_per_page_on_all_sub_features(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        // Sub 1: Patroli
+        $resPatroli = $this->actingAs($admin)->get('/admin/verifikasi/patroli?per_page=20');
+        $resPatroli->assertStatus(200);
+        $resPatroli->assertSee('id="perPagePatroliTop"', false);
+        $resPatroli->assertSee('id="perPagePatroliBottom"', false);
+        $this->assertEquals(20, $resPatroli->viewData('perPage'));
+
+        // Sub 2: Detail Temuan
+        $resDetail = $this->actingAs($admin)->get('/admin/verifikasi/detail-temuan?per_page=20');
+        $resDetail->assertStatus(200);
+        $resDetail->assertSee('id="perPageDetailTop"', false);
+        $resDetail->assertSee('id="perPageDetailBottom"', false);
+        $this->assertEquals(20, $resDetail->viewData('detailTemuanList')->perPage());
+
+        // Sub 3: Back Up Detail Temuan
+        $resBackup = $this->actingAs($admin)->get('/admin/verifikasi/backup-temuan?per_page=20');
+        $resBackup->assertStatus(200);
+        $resBackup->assertSee('id="perPageBackupTop"', false);
+        $resBackup->assertSee('id="perPageBackupBottom"', false);
+        $this->assertEquals(20, $resBackup->viewData('backupTemuanList')->perPage());
+
+        // Sub 4: Master Titik
+        $resTitik = $this->actingAs($admin)->get('/admin/verifikasi/master-titik?per_page=20');
+        $resTitik->assertStatus(200);
+        $resTitik->assertSee('id="perPageTitikTop"', false);
+        $resTitik->assertSee('id="perPageTitikBottom"', false);
+        $this->assertEquals(20, $resTitik->viewData('masterTitikList')->perPage());
+
+        // Sub 5: Master Jenis
+        $resJenis = $this->actingAs($admin)->get('/admin/verifikasi/master-jenis?per_page=20');
+        $resJenis->assertStatus(200);
+        $resJenis->assertSee('id="perPageJenisTop"', false);
+        $resJenis->assertSee('id="perPageJenisBottom"', false);
+        $this->assertEquals(20, $resJenis->viewData('masterJenisList')->perPage());
+
+        // Sub 6: Master Preview
+        $resPreview = $this->actingAs($admin)->get('/admin/verifikasi/master-preview?per_page=20');
+        $resPreview->assertStatus(200);
+        $resPreview->assertSee('id="perPagePreviewTop"', false);
+        $resPreview->assertSee('id="perPagePreviewBottom"', false);
+        $this->assertEquals(20, $resPreview->viewData('previewList')->perPage());
+    }
 }

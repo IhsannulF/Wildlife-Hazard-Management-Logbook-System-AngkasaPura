@@ -356,6 +356,20 @@
     }
   }
 
+  function changePerPage(val) {
+    document.querySelectorAll('select[id^="perPage"]').forEach(s => s.value = val);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', val);
+    url.searchParams.delete('page');
+    url.searchParams.delete('detail_page');
+    url.searchParams.delete('backup_page');
+    url.searchParams.delete('titik_page');
+    url.searchParams.delete('jenis_page');
+    url.searchParams.delete('preview_page');
+    window.location.href = url.toString();
+  }
+
   function resetFilters() {
     const url = new URL(window.location.href);
     const hasServerFilters = url.searchParams.has('status') || url.searchParams.has('search') || url.searchParams.has('start_date') || url.searchParams.has('end_date');
@@ -363,9 +377,11 @@
     if (hasServerFilters) {
       const sub = url.searchParams.get('sub');
       const tab = url.searchParams.get('tab');
+      const perPage = url.searchParams.get('per_page');
       const cleanUrl = new URL(window.location.pathname, window.location.origin);
       if (sub) cleanUrl.searchParams.set('sub', sub);
       if (tab) cleanUrl.searchParams.set('tab', tab);
+      if (perPage) cleanUrl.searchParams.set('per_page', perPage);
       window.location.href = cleanUrl.toString();
     } else {
       const sInput = document.getElementById('searchInput');

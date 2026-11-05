@@ -8,6 +8,7 @@ use App\Models\FormField;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class DashboardController extends Controller
 {
@@ -230,6 +231,13 @@ class DashboardController extends Controller
         $statusFilter = $request->query('status', '');
         $startDate = $request->query('start_date', $request->query('tanggal_awal', $request->query('tanggal', '')));
         $endDate = $request->query('end_date', $request->query('tanggal_akhir', ''));
+        $perPage = (int) $request->query('per_page', session('verifikasi_per_page', 10));
+        if (! in_array($perPage, [10, 20, 50, 100], true)) {
+            $perPage = 10;
+        }
+        if ($request->has('per_page')) {
+            session(['verifikasi_per_page' => $perPage]);
+        }
 
         // Determine Active Sub-Item
         $currentSub = 'autocrat';
@@ -345,7 +353,7 @@ class DashboardController extends Controller
             $query->whereDate('tanggal', '<=', $endDate);
         }
 
-        $laporans = $query->paginate(10)->withQueryString();
+        $laporans = $query->paginate($perPage)->withQueryString();
 
         // Sub-data: Detail Temuan
         $detailTemuanQuery = DetailSatwa::has('laporan')->with(['laporan.user', 'fotoLaporan'])->orderBy('id', 'desc');
@@ -375,7 +383,7 @@ class DashboardController extends Controller
                 }
             });
         }
-        $detailTemuanList = $detailTemuanQuery->paginate(15, ['*'], 'detail_page')->withQueryString();
+        $detailTemuanList = $detailTemuanQuery->paginate($perPage, ['*'], 'detail_page')->withQueryString();
 
         // Sub-data: Back Up Detail Temuan
         $backupTemuanQuery = DetailSatwa::with('laporan.user')->orderBy('id', 'asc');
@@ -400,7 +408,7 @@ class DashboardController extends Controller
                 }
             });
         }
-        $backupTemuanList = $backupTemuanQuery->paginate(20, ['*'], 'backup_page')->withQueryString();
+        $backupTemuanList = $backupTemuanQuery->paginate($perPage, ['*'], 'backup_page')->withQueryString();
 
         // Sub-data: Master Titik & Zona Juanda
         $masterTitikList = [
@@ -422,9 +430,11 @@ class DashboardController extends Controller
         ];
 
         // Sub-data: Master Jenis
-        $masterJenisList = JenisSatwa::all();
-        if ($masterJenisList->isEmpty()) {
-            $masterJenisList = collect([
+        $masterJenisQuery = JenisSatwa::query();
+        if ($masterJenisQuery->count() > 0) {
+            $masterJenisList = $masterJenisQuery->paginate($perPage, ['*'], 'jenis_page')->withQueryString();
+        } else {
+            $fallbackJenis = collect([
                 (object) ['id' => 1, 'nama' => 'Burung Kuntul (Little / Cattle Egret)', 'kategori' => 'Avian / Burung', 'tingkat_risiko' => 'Tinggi', 'grid_hotspot' => 'K-10', 'deskripsi' => 'Kawanan burung pemakan serangga di bahu runway strip', 'foto_path' => 'kuntul_kecil.jpeg'],
                 (object) ['id' => 2, 'nama' => 'Burung Cangak Abu (Grey Heron)', 'kategori' => 'Avian / Burung', 'tingkat_risiko' => 'Kritis', 'grid_hotspot' => 'D-9', 'deskripsi' => 'Burung air berukuran besar sering melintas di kanal drainase', 'foto_path' => 'cangak_abu.jpeg'],
                 (object) ['id' => 3, 'nama' => 'Burung Cangak Merah (Purple Heron)', 'kategori' => 'Avian / Burung', 'tingkat_risiko' => 'Kritis', 'grid_hotspot' => 'K-11', 'deskripsi' => 'Burung air pemangsa ikan dengan bentang sayap lebar', 'foto_path' => 'cangak_merah.jpeg'],
@@ -434,12 +444,20 @@ class DashboardController extends Controller
                 (object) ['id' => 7, 'nama' => 'Cabak Kota (Savanna Nightjar)', 'kategori' => 'Avian / Burung', 'tingkat_risiko' => 'Kritis', 'grid_hotspot' => 'K-10', 'deskripsi' => 'Burung nokturnal sering berdiam di aspal runway saat malam/senja', 'foto_path' => null],
                 (object) ['id' => 8, 'nama' => 'Kerak Kerbau (Javan Myna)', 'kategori' => 'Avian / Burung', 'tingkat_risiko' => 'Sedang', 'grid_hotspot' => 'H-3', 'deskripsi' => 'Burung pemakan serangga berkumpul di area apron & rumput', 'foto_path' => null],
             ]);
+            $jenisPage = (int) $request->query('jenis_page', 1);
+            $masterJenisList = new LengthAwarePaginator(
+                $fallbackJenis->forPage($jenisPage, $perPage)->values(),
+                $fallbackJenis->count(),
+                $perPage,
+                $jenisPage,
+                ['path' => $request->url(), 'pageName' => 'jenis_page', 'query' => $request->query()]
+            );
         }
 
         // Sub-data: Master Preview (Foto Dokumentasi Lapangan)
         $previewList = DetailSatwa::has('laporan')->with(['laporan.user', 'fotoLaporan'])
             ->orderBy('id', 'desc')
-            ->paginate(12, ['*'], 'preview_page')
+            ->paginate($perPage, ['*'], 'preview_page')
             ->withQueryString();
 
         // Daftar Grid Koordinat Airside untuk Filter Grid Cepat & Pencarian Grid
@@ -466,6 +484,16 @@ class DashboardController extends Controller
                 'hotspot' => in_array(strtoupper($m['grid']), array_map('strtoupper', $topGrids)),
             ];
         }
+
+        $titikPage = (int) $request->query('titik_page', 1);
+        $masterTitikCollection = collect($masterTitikList);
+        $masterTitikList = new LengthAwarePaginator(
+            $masterTitikCollection->forPage($titikPage, $perPage)->values(),
+            $masterTitikCollection->count(),
+            $perPage,
+            $titikPage,
+            ['path' => $request->url(), 'pageName' => 'titik_page', 'query' => $request->query()]
+        );
 
         $allGridCodes = collect(array_keys($titikGridLookup))
             ->merge($dbGrids->map(fn ($g) => strtoupper($g)))
@@ -514,7 +542,8 @@ class DashboardController extends Controller
             'masterTitikList',
             'masterJenisList',
             'previewList',
-            'availableGrids'
+            'availableGrids',
+            'perPage'
         ));
     }
 
