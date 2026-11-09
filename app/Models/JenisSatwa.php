@@ -60,4 +60,104 @@ class JenisSatwa extends Model
             default => 'Risiko Sedang (Kategori 3)',
         };
     }
+
+    public function getNamaIlmiahAttribute(): string
+    {
+        $name = strtolower($this->nama);
+        if (str_contains($name, 'biawak')) {
+            return 'Varanus salvator';
+        }
+        if (str_contains($name, 'blekok')) {
+            return 'Ardeola speciosa';
+        }
+        if (str_contains($name, 'kuntul kerbau')) {
+            return 'Bubulcus ibis';
+        }
+        if (str_contains($name, 'kuntul kecil')) {
+            return 'Egretta garzetta';
+        }
+        if (str_contains($name, 'cangak abu')) {
+            return 'Ardea cinerea';
+        }
+        if (str_contains($name, 'cangak merah')) {
+            return 'Ardea purpurea';
+        }
+        if (str_contains($name, 'pecuk')) {
+            return 'Microcarbo niger';
+        }
+        if (str_contains($name, 'kera') || str_contains($name, 'monyet')) {
+            return 'Macaca fascicularis';
+        }
+        if (str_contains($name, 'anjing') || str_contains($name, 'kucing')) {
+            return 'Canis lupus familiaris';
+        }
+        if (str_contains($name, 'ular')) {
+            return 'Malayopython reticulatus';
+        }
+
+        return 'Spesies liar';
+    }
+
+    public function getTaksonPillAttribute(): string
+    {
+        $name = strtolower($this->nama);
+        if (str_contains($name, 'biawak') || str_contains($name, 'ular')) {
+            return 'Reptil';
+        }
+        if (str_contains($name, 'kera') || str_contains($name, 'anjing') || str_contains($name, 'kucing')) {
+            return 'Mamalia';
+        }
+
+        return 'Avian';
+    }
+
+    public function getTagRisikoAttribute(): array
+    {
+        $name = strtolower($this->nama);
+        if (str_contains($name, 'biawak')) {
+            return ['label' => 'Tinggi Risiko Runway', 'class' => 'bg-rose-50 text-rose-600 border border-rose-200/80'];
+        }
+        if (str_contains($name, 'blekok')) {
+            return ['label' => 'Risiko Sedang', 'class' => 'bg-amber-50 text-amber-700 border border-amber-200/80'];
+        }
+        if (str_contains($name, 'kuntul kerbau') || str_contains($name, 'kuntul kecil')) {
+            return ['label' => 'Risiko Flocking', 'class' => 'bg-amber-50 text-amber-700 border border-amber-200/80'];
+        }
+        if (str_contains($name, 'kera')) {
+            return ['label' => 'Zona Perimeter', 'class' => 'bg-slate-50 text-slate-600 border border-slate-200'];
+        }
+        if (str_contains($name, 'anjing') || str_contains($name, 'kucing')) {
+            return ['label' => 'Tinggi Bahaya', 'class' => 'bg-rose-50 text-rose-600 border border-rose-200/80'];
+        }
+        if (str_contains($name, 'ular')) {
+            return ['label' => 'Risiko Saluran', 'class' => 'bg-amber-50 text-amber-700 border border-amber-200/80'];
+        }
+
+        return ['label' => 'Risiko Sedang', 'class' => 'bg-amber-50 text-amber-700 border border-amber-200/80'];
+    }
+
+    public function getKodeSpesiesAttribute(): string
+    {
+        $name = strtolower($this->nama);
+        if (str_contains($name, 'biawak')) {
+            return '#SAT-094';
+        }
+        if (str_contains($name, 'blekok')) {
+            return '#SAT-021';
+        }
+        if (str_contains($name, 'kuntul kerbau')) {
+            return '#SAT-015';
+        }
+        if (str_contains($name, 'kera')) {
+            return '#SAT-052';
+        }
+        if (str_contains($name, 'anjing') || str_contains($name, 'kucing')) {
+            return '#SAT-063';
+        }
+        if (str_contains($name, 'ular')) {
+            return '#SAT-088';
+        }
+
+        return '#SAT-'.str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+    }
 }

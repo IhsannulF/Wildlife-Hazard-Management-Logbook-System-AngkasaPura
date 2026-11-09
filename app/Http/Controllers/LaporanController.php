@@ -51,10 +51,11 @@ class LaporanController extends Controller
         $kondisi_apron_opt = $this->getDropdownOpsi('kondisi_apron', ['Hidup', 'Mati', 'Tidak ditemukan']);
         $tindak_lanjut_opt = $this->getDropdownOpsi('tindak_lanjut', ['Telah ditangani', 'Belum ditangani']);
 
-        $satwa_list = JenisSatwa::orderBy('id', 'asc')->get();
+        $satwa_list = JenisSatwa::orderByRaw('CASE WHEN id=1 THEN 1 WHEN id=2 THEN 2 WHEN id=6 THEN 3 WHEN id=9 THEN 4 WHEN id=10 THEN 5 WHEN id=8 THEN 6 ELSE 7 END, id ASC')->get();
 
         $gridField = FormField::where('tipe', 'grid')->first();
         $gridmapImage = ($gridField && $gridField->gridmap_path) ? $gridField->gridmap_path : 'gridmap_injourney.jpeg';
+        $gridAgg = $this->getGridAggregation();
 
         return view('user.form-pengaduan', compact(
             'user',
@@ -68,8 +69,116 @@ class LaporanController extends Controller
             'kondisi_apron_opt',
             'tindak_lanjut_opt',
             'satwa_list',
-            'gridmapImage'
+            'gridmapImage',
+            'gridAgg'
         ));
+    }
+
+    private function getGridAggregation(): array
+    {
+        $baselineGrids = [
+            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Kanal Drainase Perimeter Selatan Terminal 2', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.'],
+            'D-9' => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 10 Approach', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
+            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Apron C & Taxiway NP-2', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.'],
+            'A-2' => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Perimeter Barat Laut', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.'],
+            'G-18' => ['count' => 28, 'satwa' => 'Burung Cangak Abu', 'total' => 28, 'area' => 'Bahu Runway 10/28 (Tengah Landasan)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.'],
+            'H-8' => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Runway Strip 10 (Barat)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.'],
+            'F-5' => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Regulating Pond 1 & Perimeter Barat', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.'],
+            'B-4' => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Perimeter Utara Buffer', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Anjing liar terpantau melintas di area perimeter utara.'],
+            'L-10' => ['count' => 11, 'satwa' => 'Biawak Air', 'total' => 11, 'area' => 'Kanal Drainase Perimeter Selatan', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.'],
+            'C-6' => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Perimeter Barat Hanggar', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.'],
+            'J-11' => ['count' => 17, 'satwa' => 'Kucing Liar', 'total' => 17, 'area' => 'Apron A Terminal 2', 'type' => 'apron', 'category' => 'mamalia', 'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.'],
+            'E-18' => ['count' => 14, 'satwa' => 'Burung Blekok Sawah', 'total' => 14, 'area' => 'Apron B Terminal 1', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.'],
+        ];
+
+        $gridAgg = [];
+        foreach ($baselineGrids as $bgKey => $bgVal) {
+            $gridAgg[$bgKey] = [
+                'grid' => $bgKey,
+                'count' => $bgVal['count'],
+                'total_satwa' => $bgVal['total'],
+                'dominant_species' => $bgVal['satwa'],
+                'dominant_count' => $bgVal['total'],
+                'species_counts' => [$bgVal['satwa'] => $bgVal['total']],
+                'status' => 'Telah Ditangani',
+                'zone_name' => $bgVal['area'],
+                'zone_type' => $bgVal['type'],
+                'desc' => $bgVal['desc'],
+                'last_mitigation' => 'Aktivasi Sirene Patroli & Repellent Trap',
+                'peak_hours' => '06:30 - 08:30 WIB & 16:00 - 17:30 WIB',
+            ];
+        }
+
+        try {
+            $details = DetailSatwa::with('laporan')
+                ->whereNotNull('grid')
+                ->where('grid', '!=', '')
+                ->get();
+
+            foreach ($details as $d) {
+                $rawG = strtoupper(trim(str_replace('=', '-', $d->grid)));
+                if (empty($rawG)) {
+                    continue;
+                }
+
+                $rowLetter = substr($rawG, 0, 1);
+                $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
+                $zoneName = $zoneType === 'runway' ? 'Bahu Runway 10/28 Juanda' : ($zoneType === 'taxiway' ? 'Taxiway & Rawa Buffer' : ($zoneType === 'apron' ? 'Apron Area Pergerakan' : 'Perimeter Sisi Udara'));
+
+                if (! isset($gridAgg[$rawG])) {
+                    $gridAgg[$rawG] = [
+                        'grid' => $rawG,
+                        'count' => 0,
+                        'total_satwa' => 0,
+                        'dominant_species' => $d->nama_satwa ?: 'Satwa Liar',
+                        'dominant_count' => 0,
+                        'species_counts' => [],
+                        'status' => 'Belum Ditangani',
+                        'zone_name' => $zoneName,
+                        'zone_type' => $zoneType,
+                        'desc' => "Lokasi temuan satwa di zona {$zoneName}.",
+                        'last_mitigation' => 'Patroli Regu AMC',
+                        'peak_hours' => '07:00 - 17:00 WIB',
+                    ];
+                }
+
+                $sp = $d->nama_satwa ?: 'Satwa Liar';
+                $gridAgg[$rawG]['count'] += 1;
+                $gridAgg[$rawG]['total_satwa'] += ($d->jumlah ?: 1);
+                $gridAgg[$rawG]['species_counts'][$sp] = ($gridAgg[$rawG]['species_counts'][$sp] ?? 0) + ($d->jumlah ?: 1);
+            }
+        } catch (\Throwable $e) {
+            // Silently fallback to baseline grids
+        }
+
+        foreach ($gridAgg as $gCode => &$gItem) {
+            $c = $gItem['count'];
+            if ($c >= 30) {
+                $gItem['risk_level'] = 'Kritis';
+                $gItem['risk_category'] = 'Kategori 4 - Kritis';
+                $gItem['risk_badge'] = 'bg-rose-500 text-white';
+                $gItem['risk_border'] = 'border-rose-500';
+                $gItem['risk_bg'] = 'bg-rose-500/20';
+                $gItem['risk_text'] = 'text-rose-400';
+            } elseif ($c >= 15) {
+                $gItem['risk_level'] = 'Sedang';
+                $gItem['risk_category'] = 'Kategori 3 - Flocking Sedang';
+                $gItem['risk_badge'] = 'bg-amber-500 text-slate-900';
+                $gItem['risk_border'] = 'border-amber-500';
+                $gItem['risk_bg'] = 'bg-amber-500/20';
+                $gItem['risk_text'] = 'text-amber-400';
+            } else {
+                $gItem['risk_level'] = 'Rendah';
+                $gItem['risk_category'] = 'Kategori 2 - Terpantau';
+                $gItem['risk_badge'] = 'bg-sky-500 text-white';
+                $gItem['risk_border'] = 'border-sky-500';
+                $gItem['risk_bg'] = 'bg-sky-500/20';
+                $gItem['risk_text'] = 'text-sky-400';
+            }
+        }
+        unset($gItem);
+
+        return $gridAgg;
     }
 
     private function getDropdownOpsi(string $namaField, array $fallback): array

@@ -70,6 +70,11 @@ class ExampleTest extends TestCase
         $response = $this->actingAs($pegawai)->get('/laporan/create');
         $response->assertStatus(200);
         $response->assertSee('Form Pengaduan Satwa Liar');
+        $response->assertSee('Bagian 2 — Pengamatan Satwa & Foto Burung', false);
+        $response->assertSee('inputKameraBelakang');
+        $response->assertSee('selectJenisBurung');
+        $response->assertSee('inputJumlahBurung');
+        $response->assertSee('selectGridBurung');
     }
 
     public function test_admin_can_access_statistik(): void

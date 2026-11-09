@@ -6,10 +6,10 @@
 <style>
   .satwa-check {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 22px;
-    height: 22px;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: #00A9C1;
     color: white;
@@ -20,22 +20,43 @@
     justify-content: center;
     opacity: 0;
     transform: scale(0.6);
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    border: 2px solid #ffffff;
+    z-index: 10;
+  }
+  .satwa-card {
+    transition: all 0.2s ease-in-out;
+  }
+  .satwa-card:hover {
+    transform: translateY(-2px);
   }
   .satwa-card.selected {
     border-color: #00A9C1 !important;
-    box-shadow: 0 0 0 2px rgba(0,169,193,0.3) !important;
-    background: #f0f9fb !important;
+    box-shadow: 0 0 0 2px rgba(0,169,193,0.35), 0 4px 12px rgba(0,169,193,0.1) !important;
+    background: #ffffff !important;
   }
   .satwa-card.selected .satwa-check {
     opacity: 1;
     transform: scale(1);
   }
-  .satwa-card.selected .lokasi-rows {
-    display: flex !important;
+  .grid-cell-pulse {
+    animation: cellPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  .satwa-card.selected .btn-tambah-lokasi {
-    display: flex !important;
+  @keyframes cellPulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.65; }
+  }
+  .juanda-grid-row {
+    display: grid;
+    grid-template-columns: 32px repeat(29, minmax(32px, 1fr));
+    gap: 2px;
+    align-items: center;
+  }
+  .grid-hit-cell:hover {
+    fill: rgba(0, 169, 193, 0.25) !important;
+    stroke: #00A9C1 !important;
+    stroke-width: 1.8 !important;
   }
 </style>
 @endsection
@@ -51,7 +72,7 @@
     'title' => 'Form Pengaduan Satwa Liar',
     'subtitle' => 'Lengkapi formulir pengamatan satwa liar di area sisi udara bandara secara teliti.',
     'icon' => 'edit_note',
-    'maxWidth' => 'max-w-4xl',
+    'maxWidth' => 'max-w-5xl',
     'actions' => '
       <a href="' . (auth()->user()->role === 'admin' ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
         <span class="material-symbols-outlined text-base">arrow_back</span>
@@ -60,7 +81,7 @@
     '
   ])
 
-  <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6">
+  <div class="max-w-5xl mx-auto py-6 px-4 sm:px-6">
 
     @if($errors->any())
       <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mb-6 text-sm">
@@ -133,75 +154,283 @@
         </div>
       </div>
 
-      <!-- SECTION 2: Inventarisasi Satwa -->
-      <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
+      <!-- SECTION 2: Pengamatan Satwa & Foto Burung -->
+      <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm relative z-30">
         <div class="border-b border-slate-100 pb-4 mb-6">
           <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 font-bold text-xs flex items-center justify-center border border-teal-200">2</span>
-            Bagian 2 — Inventarisasi Satwa Liar
+            Bagian 2 — Pengamatan Satwa & Foto Burung
           </h2>
-          <p class="text-xs text-slate-500 mt-1 pl-9">Pilih jenis satwa yang terpantau, masukkan jumlah ekor, dan koordinat grid lokasi temuan</p>
+          <p class="text-xs text-slate-500 mt-1 pl-9">Ambil foto burung dan tentukan jenis burung, jumlah, dan grid lokasi</p>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          @foreach($satwa_list as $idx => $s)
-            <div class="satwa-card relative bg-slate-50 border-2 border-slate-200/80 rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-teal-400 transition-all duration-200 select-none overflow-hidden" id="satwaCard{{ $idx }}" onclick="toggleSatwaCard({{ $idx }})">
-              <div class="satwa-check">&#10003;</div>
-              <div class="w-full h-24 rounded-xl overflow-hidden mb-2 bg-white flex items-center justify-center border border-slate-100">
-                <img src="{{ $s->foto_url }}" alt="{{ $s->nama }}" class="w-full h-full object-cover" loading="lazy">
+        <div class="space-y-5">
+          <!-- 1. Foto Burung -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-bold text-slate-700">Foto Burung <span class="text-rose-500">*</span></label>
+              <span id="fotoStatusBadge" class="text-xs text-slate-400">Wajib terlampir</span>
+            </div>
+
+            <!-- Preview Foto -->
+            <div id="fotoPreviewContainer" class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-4 flex flex-col items-center justify-center text-center transition-all min-h-[190px]">
+              
+              <!-- Placeholder State -->
+              <div id="fotoPlaceholder" class="flex flex-col items-center justify-center py-4">
+                <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mb-2">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <circle cx="12" cy="13" r="3" />
+                  </svg>
+                </div>
+                <div class="font-bold text-slate-800 text-sm mb-0.5">Belum Ada Foto Burung</div>
+                <p class="text-xs text-slate-500">Ambil foto langsung dengan kamera HP atau unggah dari galeri.</p>
               </div>
-              <div class="font-bold text-xs text-slate-800 mb-2 leading-tight">{{ $s->nama }}</div>
 
-              <input type="hidden" name="satwa[{{ $idx }}][nama]" value="{{ $s->nama }}">
-              <input type="hidden" name="satwa[{{ $idx }}][aktif]" id="hiddenAktif{{ $idx }}" value="0">
-
-              <div class="lokasi-rows hidden w-full flex-col gap-2 mt-2 pt-2 border-t border-slate-200" id="lokasiRows{{ $idx }}">
-                <div class="flex items-center gap-1.5 text-xs">
-                  <label class="font-bold text-slate-500">Jml</label>
-                  <input type="number" min="1" name="satwa[{{ $idx }}][lokasi][0][jumlah]" placeholder="0" class="w-12 px-1.5 py-1 bg-white border border-slate-200 rounded text-center text-xs" onclick="event.stopPropagation()" oninput="event.stopPropagation(); autoSelectSatwa({{ $idx }})">
-                  <label class="font-bold text-slate-500">Grid</label>
-                  <input type="text" name="satwa[{{ $idx }}][lokasi][0][grid]" placeholder="K-5" class="w-14 px-1.5 py-1 bg-white border border-slate-200 rounded text-center text-xs uppercase" onclick="event.stopPropagation()" oninput="event.stopPropagation(); autoSelectSatwa({{ $idx }})">
-                  <button type="button" onclick="event.stopPropagation(); hapusLokasi({{ $idx }}, this)" class="text-rose-500 font-bold px-1 invisible">&times;</button>
+              <!-- Filled State -->
+              <div id="fotoPreviewFilled" class="hidden w-full flex-col items-center">
+                <div class="w-full max-h-[320px] rounded-lg overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
+                  <img id="fotoPreviewImg" src="" alt="Preview Foto" class="w-full max-h-[320px] object-contain">
+                </div>
+                <div class="w-full mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap text-left">
+                  <div class="min-w-0">
+                    <div id="fotoNamaFile" class="font-bold text-xs text-slate-800 truncate">foto_burung.jpg</div>
+                    <div id="fotoUkuranFile" class="text-[11px] text-slate-500">Ukuran: -</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="klikAmbilFoto()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors">
+                      Ganti Foto
+                    </button>
+                    <button type="button" onclick="hapusFotoBurung()" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer">
+                      Hapus
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <button type="button" class="btn-tambah-lokasi hidden items-center justify-center text-[11px] font-bold text-teal-600 hover:text-teal-800 mt-2 py-1 px-2 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all w-full" onclick="event.stopPropagation(); tambahLokasi({{ $idx }})">
-                + Titik Grid
+            </div>
+
+            <!-- Tombol Kamera & Galeri (Kompak, Rapi & Jelas Terlihat) -->
+            <div class="grid grid-cols-2 gap-2.5 mt-2.5">
+              <!-- Tombol Kamera Cerdas (HP: Kamera HP, Laptop: Webcam di Layar) -->
+              <button type="button" onclick="klikAmbilFoto()" style="background-color: #00A9C1 !important; color: #ffffff !important;" class="py-2.5 px-3 rounded-lg hover:opacity-90 active:scale-[0.98] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all text-center select-none">
+                <svg class="w-4 h-4 shrink-0" style="color: #ffffff !important;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+                <span style="color: #ffffff !important;">Ambil Foto (Kamera)</span>
+              </button>
+
+              <!-- Tombol Galeri via direct label touch -->
+              <label for="inputGaleriFoto" style="background-color: #ffffff !important; color: #334155 !important; border: 1px solid #cbd5e1 !important;" class="py-2.5 px-3 rounded-lg hover:bg-slate-50 active:bg-slate-100 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.98] transition-all text-center select-none">
+                <svg class="w-4 h-4 shrink-0" style="color: #64748b !important;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span style="color: #334155 !important;">Upload Galeri</span>
+              </label>
+            </div>
+
+            <!-- Hidden File Inputs (Tersembunyi total tanpa teks inline default browser) -->
+            <input type="file" id="inputKameraBelakang" name="satwa[0][foto]" accept="image/*" capture="environment" style="display: none !important;" class="hidden" onchange="handleFileSelected(this)">
+            <input type="file" id="inputGaleriFoto" accept="image/*" style="display: none !important;" class="hidden" onchange="handleFileSelected(this)">
+            <input type="file" name="satwa[0][foto]" id="formSatwaFotoInput" style="display: none !important;" class="hidden" accept="image/*">
+            <input type="file" name="foto_lainnya[]" id="formFotoLainnyaInput" style="display: none !important;" class="hidden" accept="image/*">
+
+          </div>
+
+          <!-- 2. Pilihan Jenis Burung (Dropdown Interaktif dengan Search & Pagination 8 Item per Slide) -->
+          <div class="relative z-40" id="dropdownBurungContainer">
+            <label class="block text-xs font-bold text-slate-700 mb-2">
+              Jenis Burung <span class="text-rose-500">*</span>
+            </label>
+
+            <!-- Hidden input untuk pengiriman form & validasi submit -->
+            <input type="hidden" name="satwa[0][nama]" id="selectJenisBurung" value="{{ old('satwa.0.nama', '') }}" required>
+
+            <!-- Tombol Trigger Dropdown (Desain serasi dengan dropdown form lainnya) -->
+            <button type="button" 
+                    id="btnTriggerBurung" 
+                    onclick="toggleBurungDropdown()" 
+                    class="w-full px-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm flex items-center justify-between text-left cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white shadow-2xs">
+              <div class="flex items-center gap-2.5 min-w-0 pr-2">
+                <span id="triggerBurungDot" class="w-2 h-2 rounded-full {{ old('satwa.0.nama') ? 'bg-teal-500' : 'bg-slate-300' }} shrink-0"></span>
+                <span id="triggerBurungText" class="truncate font-medium {{ old('satwa.0.nama') ? 'text-slate-800' : 'text-slate-500' }}">
+                  {{ old('satwa.0.nama', '-- Pilih Jenis Burung --') }}
+                </span>
+              </div>
+              <svg id="chevronBurung" class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Panel Dropdown Menu (Membuka ke bawah seperti dropdown lainnya, z-50 melayang di atas bagian form lainnya) -->
+            <div id="menuBurungDropdown" 
+                 onclick="event.stopPropagation()"
+                 class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+              
+              <!-- Kolom Search Real-Time -->
+              <div class="p-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+                <div class="relative">
+                  <input type="text" 
+                         id="inputSearchBurung" 
+                         oninput="onSearchBurungRealtime(this.value)" 
+                         placeholder="Cari nama burung atau nama ilmiah..." 
+                         autocomplete="off"
+                         class="w-full pl-8 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                  <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <button type="button" 
+                          id="btnResetSearchBurung" 
+                          onclick="resetSearchBurung()" 
+                          class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Daftar Jenis Burung (Maksimal 5 item per slide/halaman) -->
+              <div id="listBurungContainer" class="p-1 divide-y divide-slate-50 overflow-y-auto max-h-[260px]">
+                <!-- Item burung dirender dinamis via renderBurungList() -->
+              </div>
+
+              <!-- Navigasi Pagination di bagian bawah -->
+              <div id="paginationBurungFooter" class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 shrink-0">
+                <span id="burungPageInfo" class="text-[11px] font-medium text-slate-500 truncate">
+                  Memuat data...
+                </span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" 
+                          id="btnBurungPrev" 
+                          onclick="changeBurungPage(-1, event)" 
+                          class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 active:bg-slate-200 font-semibold text-slate-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors flex items-center gap-1">
+                    <span id="btnBurungPrevText">‹ Prev</span>
+                  </button>
+                  <span id="burungCurrentPageBadge" class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-bold text-[11px]">
+                    1 / 1
+                  </span>
+                  <button type="button" 
+                          id="btnBurungNext" 
+                          onclick="changeBurungPage(1, event)" 
+                          class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 active:bg-slate-200 font-semibold text-teal-600 hover:text-teal-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors flex items-center gap-1">
+                    <span id="btnBurungNextText">Slide Selanjutnya (Next) ›</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Specimen Info Card (Optional) -->
+            <div id="satwaInfoPill" class="hidden mt-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-lg overflow-hidden bg-slate-200 shrink-0 border border-slate-200">
+                  <img id="satwaPillThumb" src="" class="w-full h-full object-cover">
+                </div>
+                <div class="min-w-0">
+                  <div id="satwaPillNama" class="font-bold text-slate-800 truncate"></div>
+                  <div id="satwaPillLatin" class="text-slate-500 italic text-[11px] truncate"></div>
+                </div>
+              </div>
+              <div class="shrink-0">
+                <span id="satwaPillRisiko" class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
+                  Risiko Sedang
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Pilihan Jumlah Burung -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Jumlah Burung <span class="text-rose-500">*</span></label>
+            <div class="flex items-center gap-3">
+              <div class="inline-flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                <button type="button" onclick="stepJumlahBurung(-1)" class="w-10 h-10 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-base flex items-center justify-center transition-colors border-r border-slate-200 select-none cursor-pointer">
+                  −
+                </button>
+                <input type="number" name="satwa[0][lokasi][0][jumlah]" id="inputJumlahBurung" value="{{ old('satwa.0.lokasi.0.jumlah', 1) }}" min="1" step="1" class="w-20 h-10 bg-white text-center font-bold text-sm text-slate-800 focus:outline-none select-all" required oninput="if(this.value < 1) this.value = 1;">
+                <button type="button" onclick="stepJumlahBurung(1)" class="w-10 h-10 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-base flex items-center justify-center transition-colors border-l border-slate-200 select-none cursor-pointer">
+                  +
+                </button>
+              </div>
+              <span class="text-xs text-slate-500">Ekor / Individu</span>
+            </div>
+          </div>
+
+          <!-- 4. Pilihan Grid (Kolom Input Teks Kosong) -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="selectGridBurung" class="block text-xs font-bold text-slate-700">Pilihan Grid <span class="text-rose-500">*</span></label>
+              <button type="button" onclick="scrollKePetaBagian3()" class="text-xs font-semibold text-[#00A9C1] hover:underline flex items-center gap-1 cursor-pointer">
+                <span>🗺 Lihat / Pilih di Peta</span>
               </button>
             </div>
-          @endforeach
-        </div>
+            
+            <input type="text" 
+                   name="satwa[0][lokasi][0][grid]" 
+                   id="selectGridBurung" 
+                   value="{{ old('satwa.0.lokasi.0.grid', '') }}" 
+                   placeholder="Ketik nomor grid (misal: K-10, D-9) atau klik peta di bawah" 
+                   class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#00A9C1] focus:border-[#00A9C1] transition-all uppercase" 
+                   oninput="onGridTextInput(this.value)" 
+                   required>
 
-        <!-- Satwa Tak Terdaftar (Extra) -->
-        <div class="bg-slate-50/80 border border-dashed border-slate-300 rounded-xl p-4">
-          <label class="text-xs font-bold text-slate-800 block mb-1">
-            Foto Satwa Tidak Terdaftar (Opsional)
-          </label>
-          <p class="text-xs text-slate-500 mb-3">
-            Jika Anda menemukan spesies satwa yang tidak ada pada daftar di atas, unggah foto dokumentasinya di sini:
-          </p>
-          <input type="file" name="foto_lainnya[]" multiple accept="image/*" class="text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer">
+            <div id="gridPillSummary" class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
+              <span>Grid Terpilih: <strong id="gridPillText" class="text-slate-800 font-semibold">{{ old('satwa.0.lokasi.0.grid') ? ('Grid ' . old('satwa.0.lokasi.0.grid')) : '-' }}</strong></span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- SECTION 3: Denah Gridmap Bandara -->
-      <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
+      <!-- Live Camera Viewfinder Modal -->
+      <div id="liveCameraModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+          <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <span class="font-bold text-xs sm:text-sm">Kamera Langsung di Layar</span>
+            </div>
+            <button type="button" onclick="tutupLiveKameraModal()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          
+          <div class="relative bg-black flex items-center justify-center min-h-[300px] max-h-[65vh] overflow-hidden">
+            <video id="liveCameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+            <canvas id="liveCameraCanvas" class="hidden"></canvas>
+            <div id="cameraLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 gap-2">
+              <svg class="w-8 h-8 animate-spin text-teal-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+              <span>Mengaktifkan kamera...</span>
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-around">
+            <button type="button" onclick="switchKameraLive()" id="btnSwitchCamera" class="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center cursor-pointer" title="Putar Kamera Depan / Belakang">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+
+            <button type="button" onclick="ambilFotoDariLiveVideo()" class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 shadow-lg active:scale-90 transition-transform flex items-center justify-center text-teal-600 cursor-pointer" title="Jepret Foto">
+              <div class="w-12 h-12 rounded-full bg-teal-500"></div>
+            </button>
+
+            <button type="button" onclick="tutupLiveKameraModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Denah Gridmap Bandara Interaktif -->
+      <div id="petaKoordinatSection" class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm scroll-mt-6 relative z-10">
         <div class="border-b border-slate-100 pb-4 mb-6">
           <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 font-bold text-xs flex items-center justify-center border border-teal-200">3</span>
-            Bagian 3 — Peta Koordinat Gridmap Bandara
+            Bagian 3 — Peta Koordinat Grid Sisi Udara Bandara
           </h2>
-          <p class="text-xs text-slate-500 mt-1 pl-9">Gunakan peta grid apron/runway berikut sebagai referensi penentuan kode grid lokasi</p>
+          <p class="text-xs text-slate-500 mt-1 pl-9">Gunakan peta grid interaktif apron/runway Bandara Juanda berikut untuk menentukan kode grid lokasi secara cepat dan presisi</p>
         </div>
 
-        <div class="rounded-xl overflow-hidden border border-slate-200 mb-5 bg-slate-100 p-1">
-          <img src="{{ asset('images/' . $gridmapImage) }}" alt="Gridmap InJourney" class="w-full max-h-96 object-contain mx-auto rounded-lg">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-2">Grid Lokasi Pengamatan Utama <span class="text-rose-500">*</span></label>
-          <input type="text" name="grid_lokasi" value="{{ old('grid_lokasi') }}" placeholder="Contoh: K-10" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
-        </div>
+        @include('partials.grid-map-picker')
       </div>
 
       <!-- SECTION 4: Detail Kondisi & Tindak Lanjut -->
@@ -305,57 +534,514 @@
     signaturePad.clear();
   });
 
-  // ── Satwa Card Selection & Location Handling ──
-  const lokasiCounts = {};
+  // ── Bagian 2: Kamera & Upload Foto Burung ──
+  let hasBirdPhoto = false;
+  let liveCameraStream = null;
+  let activeFacingMode = "environment"; // Prioritaskan kamera belakang
 
-  function toggleSatwaCard(idx) {
-    const card = document.getElementById('satwaCard' + idx);
-    const hidden = document.getElementById('hiddenAktif' + idx);
-    card.classList.toggle('selected');
-    const isSelected = card.classList.contains('selected');
-    hidden.value = isSelected ? '1' : '0';
-
-    if (isSelected && !lokasiCounts[idx]) {
-      lokasiCounts[idx] = 1;
+  function klikAmbilFoto() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Pada HP/Mobile: buka langsung kamera HP
+      const camInput = document.getElementById('inputKameraBelakang');
+      if (camInput) camInput.click();
+    } else {
+      // Pada Laptop/Desktop: buka webcam kamera laptop langsung di layar
+      bukaLiveKameraModal();
     }
   }
 
-  function autoSelectSatwa(idx) {
-    const card = document.getElementById('satwaCard' + idx);
-    const hidden = document.getElementById('hiddenAktif' + idx);
-    if (!card.classList.contains('selected')) {
-      card.classList.add('selected');
-      hidden.value = '1';
-      if (!lokasiCounts[idx]) lokasiCounts[idx] = 1;
+  function handleFileSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    applyPhotoFile(input.files[0], input);
+  }
+
+  function applyPhotoFile(file, sourceInput = null) {
+    hasBirdPhoto = true;
+
+    // Create object URL for instant high-quality preview
+    const previewUrl = URL.createObjectURL(file);
+    const img = document.getElementById('fotoPreviewImg');
+    const ph = document.getElementById('fotoPlaceholder');
+    const filled = document.getElementById('fotoPreviewFilled');
+    const nama = document.getElementById('fotoNamaFile');
+    const ukuran = document.getElementById('fotoUkuranFile');
+    const badge = document.getElementById('fotoStatusBadge');
+
+    if (img) img.src = previewUrl;
+    if (ph) ph.classList.add('hidden');
+    if (filled) {
+      filled.classList.remove('hidden');
+      filled.classList.add('flex');
+    }
+
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+    if (nama) nama.textContent = file.name;
+    if (ukuran) ukuran.textContent = `Ukuran: ${sizeMb} MB • Format: ${file.type || 'image/jpeg'}`;
+    if (badge) {
+      badge.innerHTML = '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Terlampir</span>';
+    }
+
+    // Assign file to form input
+    const cam = document.getElementById('inputKameraBelakang');
+    const gal = document.getElementById('inputGaleriFoto');
+    const satwaFoto = document.getElementById('formSatwaFotoInput');
+
+    if (sourceInput === cam) {
+      cam.name = 'satwa[0][foto]';
+      if (gal) gal.removeAttribute('name');
+    } else if (sourceInput === gal) {
+      gal.name = 'satwa[0][foto]';
+      if (cam) cam.removeAttribute('name');
+    } else {
+      // From live camera or canvas snapshot
+      if (satwaFoto && window.DataTransfer) {
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          satwaFoto.files = dt.files;
+          satwaFoto.name = 'satwa[0][foto]';
+          if (cam) cam.removeAttribute('name');
+          if (gal) gal.removeAttribute('name');
+        } catch (e) {}
+      }
     }
   }
 
-  function tambahLokasi(idx) {
-    if (!lokasiCounts[idx]) lokasiCounts[idx] = 1;
-    const count = lokasiCounts[idx]++;
-    const wrap = document.getElementById('lokasiRows' + idx);
+  function hapusFotoBurung() {
+    hasBirdPhoto = false;
+    const img = document.getElementById('fotoPreviewImg');
+    const ph = document.getElementById('fotoPlaceholder');
+    const filled = document.getElementById('fotoPreviewFilled');
+    const badge = document.getElementById('fotoStatusBadge');
+    const cam = document.getElementById('inputKameraBelakang');
+    const gal = document.getElementById('inputGaleriFoto');
+    const satwaFoto = document.getElementById('formSatwaFotoInput');
 
-    const row = document.createElement('div');
-    row.className = 'flex items-center gap-1.5 text-xs mt-1.5';
-    row.innerHTML = `
-      <label class="font-bold text-slate-500">Jml</label>
-      <input type="number" min="1" name="satwa[${idx}][lokasi][${count}][jumlah]" placeholder="0" class="w-12 px-1.5 py-1 bg-white border border-slate-200 rounded text-center text-xs" onclick="event.stopPropagation()" oninput="event.stopPropagation(); autoSelectSatwa(${idx})">
-      <label class="font-bold text-slate-500">Grid</label>
-      <input type="text" name="satwa[${idx}][lokasi][${count}][grid]" placeholder="K-5" class="w-14 px-1.5 py-1 bg-white border border-slate-200 rounded text-center text-xs uppercase" onclick="event.stopPropagation()" oninput="event.stopPropagation(); autoSelectSatwa(${idx})">
-      <button type="button" class="text-rose-500 font-bold px-1 text-sm hover:text-rose-700" onclick="event.stopPropagation(); hapusLokasi(${idx}, this)">&times;</button>
-    `;
-    wrap.appendChild(row);
+    if (img) img.src = '';
+    if (ph) ph.classList.remove('hidden');
+    if (filled) {
+      filled.classList.add('hidden');
+      filled.classList.remove('flex');
+    }
+    if (badge) {
+      badge.innerHTML = '<span class="text-slate-400 font-medium">Wajib terlampir</span>';
+    }
+
+    if (cam) { cam.value = ''; cam.removeAttribute('name'); }
+    if (gal) { gal.value = ''; gal.removeAttribute('name'); }
+    if (satwaFoto) satwaFoto.value = '';
   }
 
-  function hapusLokasi(idx, btn) {
-    const wrap = document.getElementById('lokasiRows' + idx);
-    if (wrap.children.length > 1) {
-      btn.closest('div').remove();
+  // ── Live Camera Modal (WebRTC) ──
+  async function bukaLiveKameraModal() {
+    const modal = document.getElementById('liveCameraModal');
+    const video = document.getElementById('liveCameraVideo');
+    const loading = document.getElementById('cameraLoadingHint');
+    if (!modal || !video) return;
+
+    modal.classList.remove('hidden');
+    if (loading) loading.classList.remove('hidden');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Peramban tidak mendukung live video stream. Menggunakan kamera HP bawaan.');
+      tutupLiveKameraModal();
+      document.getElementById('inputKameraBelakang').click();
+      return;
+    }
+
+    try {
+      if (liveCameraStream) {
+        liveCameraStream.getTracks().forEach(t => t.stop());
+      }
+      liveCameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: activeFacingMode } },
+        audio: false
+      });
+      video.srcObject = liveCameraStream;
+      video.onloadedmetadata = () => {
+        video.play();
+        if (loading) loading.classList.add('hidden');
+      };
+    } catch (err) {
+      console.warn('Live camera error:', err);
+      if (loading) loading.classList.add('hidden');
+      tutupLiveKameraModal();
+      // Fallback langsung ke input kamera bawaan
+      document.getElementById('inputKameraBelakang').click();
     }
   }
 
-  // ── Form Validation ──
+  function tutupLiveKameraModal() {
+    const modal = document.getElementById('liveCameraModal');
+    if (modal) modal.classList.add('hidden');
+    if (liveCameraStream) {
+      liveCameraStream.getTracks().forEach(t => t.stop());
+      liveCameraStream = null;
+    }
+  }
+
+  async function switchKameraLive() {
+    activeFacingMode = (activeFacingMode === "environment") ? "user" : "environment";
+    bukaLiveKameraModal();
+  }
+
+  function ambilFotoDariLiveVideo() {
+    const video = document.getElementById('liveCameraVideo');
+    const canvas = document.getElementById('liveCameraCanvas');
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], 'foto_kamera_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+      applyPhotoFile(file);
+      tutupLiveKameraModal();
+    }, 'image/jpeg', 0.92);
+  }
+
+  // ── Bagian 2: Data & Logika Dropdown Jenis Burung (Search Realtime & Pagination 8 Item) ──
+  const listBurungMaster = [
+    @foreach($satwa_list as $s)
+    {
+      nama: @json($s->nama),
+      latin: @json($s->nama_ilmiah),
+      kategori: @json($s->kategori_label),
+      risiko: @json($s->risiko_label),
+      foto: @json($s->foto_url ?? asset('images/biawak.jpeg')),
+    },
+    @endforeach
+    {
+      nama: "Burung Liar Lainnya (Spesies Baru)",
+      latin: "Belum Terdaftar / Perlu Identifikasi",
+      kategori: "Spesies Baru",
+      risiko: "Spesies Baru",
+      foto: "{{ asset('images/biawak.jpeg') }}",
+    }
+  ];
+
+  let burungFilteredList = [...listBurungMaster];
+  let burungCurrentPage = 1;
+  const BURUNG_PER_PAGE = 5;
+
+  function toggleBurungDropdown() {
+    const menu = document.getElementById('menuBurungDropdown');
+    const chevron = document.getElementById('chevronBurung');
+    if (!menu) return;
+
+    const isHidden = menu.classList.contains('hidden');
+    if (isHidden) {
+      menu.classList.remove('hidden');
+      if (chevron) chevron.classList.add('rotate-180');
+      renderBurungList();
+      const searchInput = document.getElementById('inputSearchBurung');
+      if (searchInput) {
+        setTimeout(() => {
+          searchInput.focus();
+          menu.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
+    } else {
+      tutupBurungDropdown();
+    }
+  }
+
+  function tutupBurungDropdown() {
+    const menu = document.getElementById('menuBurungDropdown');
+    const chevron = document.getElementById('chevronBurung');
+    if (menu) menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+
+  function onSearchBurungRealtime(query) {
+    const q = (query || '').toLowerCase().trim();
+    const btnReset = document.getElementById('btnResetSearchBurung');
+    if (btnReset) {
+      if (q) btnReset.classList.remove('hidden');
+      else btnReset.classList.add('hidden');
+    }
+
+    if (!q) {
+      burungFilteredList = [...listBurungMaster];
+    } else {
+      burungFilteredList = listBurungMaster.filter(b => {
+        const n = (b.nama || '').toLowerCase();
+        const l = (b.latin || '').toLowerCase();
+        const k = (b.kategori || '').toLowerCase();
+        return n.includes(q) || l.includes(q) || k.includes(q);
+      });
+    }
+
+    burungCurrentPage = 1;
+    renderBurungList();
+  }
+
+  function resetSearchBurung() {
+    const searchInput = document.getElementById('inputSearchBurung');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+    onSearchBurungRealtime('');
+  }
+
+  function changeBurungPage(delta, e) {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const totalPages = Math.max(1, Math.ceil(burungFilteredList.length / BURUNG_PER_PAGE));
+    const nextPage = burungCurrentPage + delta;
+    if (nextPage >= 1 && nextPage <= totalPages) {
+      burungCurrentPage = nextPage;
+      renderBurungList();
+      const container = document.getElementById('listBurungContainer');
+      if (container) container.scrollTop = 0;
+    }
+  }
+
+  function renderBurungList() {
+    const container = document.getElementById('listBurungContainer');
+    if (!container) return;
+
+    const currentVal = document.getElementById('selectJenisBurung')?.value || '';
+    const totalItems = burungFilteredList.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / BURUNG_PER_PAGE));
+
+    if (burungCurrentPage > totalPages) {
+      burungCurrentPage = totalPages;
+    }
+
+    const startIndex = (burungCurrentPage - 1) * BURUNG_PER_PAGE;
+    const endIndex = Math.min(startIndex + BURUNG_PER_PAGE, totalItems);
+    const pageItems = burungFilteredList.slice(startIndex, endIndex);
+
+    if (totalItems === 0) {
+      container.innerHTML = `
+        <div class="py-6 px-4 text-center">
+          <p class="text-xs text-slate-500 mb-2">Tidak ditemukan jenis burung dengan kata kunci tersebut.</p>
+          <button type="button" 
+                  onclick="pilihBurungByNama('Burung Liar Lainnya (Spesies Baru)')" 
+                  class="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 font-semibold text-xs hover:bg-teal-100 cursor-pointer transition-colors">
+            Pilih sebagai "Burung Liar Lainnya (Spesies Baru)"
+          </button>
+        </div>
+      `;
+    } else {
+      let html = '';
+      pageItems.forEach((item) => {
+        const isSelected = (currentVal === item.nama);
+        const risikoBadgeColor = item.risiko === 'Tinggi' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                               (item.risiko === 'Sedang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-teal-50 text-teal-700 border-teal-200');
+
+        const escapedNama = item.nama.replace(/'/g, "\\'");
+        html += `
+          <button type="button" 
+                  onclick="pilihBurungByNama('${escapedNama}')" 
+                  class="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-teal-50/80 active:bg-teal-100 flex items-center justify-between gap-3 transition-colors cursor-pointer ${isSelected ? 'bg-teal-50 border border-teal-300 shadow-2xs' : ''}">
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-xs sm:text-sm text-slate-800 truncate ${isSelected ? 'text-[#00A9C1]' : ''}">
+                ${item.nama}
+              </div>
+              <div class="text-[11px] text-slate-500 italic truncate">
+                ${item.latin}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md border ${risikoBadgeColor}">
+                ${item.risiko}
+              </span>
+              ${isSelected ? `
+                <svg class="w-4 h-4 text-[#00A9C1]" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+              ` : ''}
+            </div>
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // Update Footer Pagination (Slide per slide 8 jenis burung)
+    const pageInfo = document.getElementById('burungPageInfo');
+    const pageBadge = document.getElementById('burungCurrentPageBadge');
+    const btnPrev = document.getElementById('btnBurungPrev');
+    const btnNext = document.getElementById('btnBurungNext');
+
+    if (pageInfo) {
+      if (totalItems === 0) {
+        pageInfo.textContent = '0 jenis ditemukan';
+      } else {
+        pageInfo.textContent = `Slide ${burungCurrentPage} dari ${totalPages} (${totalItems} jenis)`;
+      }
+    }
+    if (pageBadge) {
+      pageBadge.textContent = `${burungCurrentPage} / ${totalPages}`;
+    }
+    if (btnPrev) {
+      btnPrev.disabled = (burungCurrentPage <= 1);
+    }
+    if (btnNext) {
+      btnNext.disabled = (burungCurrentPage >= totalPages);
+      const textNext = document.getElementById('btnBurungNextText') || btnNext;
+      textNext.textContent = (burungCurrentPage < totalPages) 
+        ? 'Slide Selanjutnya (Next) ›' 
+        : 'Next ›';
+    }
+  }
+
+  function pilihBurungByNama(nama) {
+    const item = listBurungMaster.find(b => b.nama === nama);
+    if (!item) return;
+
+    const inputHidden = document.getElementById('selectJenisBurung');
+    if (inputHidden) inputHidden.value = item.nama;
+
+    const triggerText = document.getElementById('triggerBurungText');
+    const triggerDot = document.getElementById('triggerBurungDot');
+
+    if (triggerText) {
+      triggerText.textContent = `${item.nama} (${item.latin})`;
+      triggerText.classList.remove('text-slate-500');
+      triggerText.classList.add('text-slate-800');
+    }
+    if (triggerDot) {
+      triggerDot.classList.remove('bg-slate-300');
+      triggerDot.classList.add('bg-[#00A9C1]');
+    }
+
+    // Tampilkan mini info card
+    const pill = document.getElementById('satwaInfoPill');
+    if (pill) {
+      pill.classList.remove('hidden');
+      const namaEl = document.getElementById('satwaPillNama');
+      const latinEl = document.getElementById('satwaPillLatin');
+      const risikoEl = document.getElementById('satwaPillRisiko');
+      const thumbEl = document.getElementById('satwaPillThumb');
+
+      if (namaEl) namaEl.textContent = item.nama;
+      if (latinEl) latinEl.textContent = item.latin;
+      if (risikoEl) risikoEl.textContent = item.risiko;
+      if (thumbEl) thumbEl.src = item.foto;
+    }
+
+    tutupBurungDropdown();
+  }
+
+  // Tutup dropdown saat klik di luar container
+  document.addEventListener('click', function(e) {
+    // Abaikan jika target element sudah terlepas dari dokumen
+    if (!document.contains(e.target)) return;
+
+    const container = document.getElementById('dropdownBurungContainer');
+    if (container && !container.contains(e.target)) {
+      tutupBurungDropdown();
+    }
+  });
+
+  // Inisialisasi awal jika ada input nilai yang tersimpan (old input)
+  document.addEventListener('DOMContentLoaded', function() {
+    const initialVal = document.getElementById('selectJenisBurung')?.value;
+    if (initialVal) {
+      pilihBurungByNama(initialVal);
+    }
+  });
+
+  // ── Bagian 2: Stepper Jumlah Burung ──
+  function stepJumlahBurung(delta) {
+    const inp = document.getElementById('inputJumlahBurung');
+    if (!inp) return;
+    let cur = parseInt(inp.value, 10) || 1;
+    let nextVal = Math.max(1, cur + delta);
+    inp.value = nextVal;
+  }
+
+  // ── Bagian 2: Input Kolom Teks Grid & Sinkronisasi Peta ──
+  function onGridTextInput(gridCode) {
+    const val = (gridCode || '').trim().toUpperCase();
+    const txt = document.getElementById('gridPillText');
+    if (txt) txt.textContent = val ? `Grid ${val}` : '-';
+
+    // Sync input hidden grid_lokasi
+    const inputLokasi = document.getElementById('inputGridLokasi');
+    if (inputLokasi) inputLokasi.value = val;
+
+    // Trigger select on Map in Bagian 3
+    if (val && typeof selectGrid === 'function') {
+      selectGrid(val, true);
+    }
+  }
+
+  // Callback saat peta di Bagian 3 disentuh
+  function onMapGridSelected(gridCode, zoneName) {
+    const inp = document.getElementById('selectGridBurung');
+    if (inp) {
+      inp.value = gridCode;
+    }
+    const fullText = `Grid ${gridCode}` + (zoneName ? ` — ${zoneName}` : '');
+    const txt = document.getElementById('gridPillText');
+    if (txt) {
+      txt.textContent = fullText;
+    }
+  }
+
+  function scrollKePetaBagian3() {
+    const sec = document.getElementById('petaKoordinatSection');
+    if (sec) {
+      sec.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  // ── Form Validation & Pre-submit Sync ──
   document.getElementById('mainForm').addEventListener('submit', function(e) {
+    const jenisBurung = document.getElementById('selectJenisBurung');
+    if (jenisBurung && !jenisBurung.value.trim()) {
+      e.preventDefault();
+      alert('Silakan pilih jenis burung terlebih dahulu.');
+      const btn = document.getElementById('btnTriggerBurung');
+      if (btn) {
+        btn.focus();
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const jumlahBurung = document.getElementById('inputJumlahBurung');
+    if (jumlahBurung && (parseInt(jumlahBurung.value, 10) < 1 || !jumlahBurung.value)) {
+      jumlahBurung.value = 1;
+    }
+
+    const gridBurung = document.getElementById('selectGridBurung');
+    if (gridBurung && !gridBurung.value.trim()) {
+      e.preventDefault();
+      alert('Silakan tentukan Grid lokasi pengamatan.');
+      gridBurung.focus();
+      gridBurung.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Peringatan ramah jika user belum mengambil/upload foto burung
+    if (!hasBirdPhoto) {
+      const confirmNoPhoto = confirm('Anda belum mengambil atau mengunggah foto burung. Apakah Anda yakin ingin melanjutkan tanpa foto?');
+      if (!confirmNoPhoto) {
+        e.preventDefault();
+        document.getElementById('fotoPreviewContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
+    // Default deskripsi ciri morfologi jika kosong
+    const ta = document.querySelector('textarea[name="ciri_ukuran"]');
+    if (ta && !ta.value.trim() && jenisBurung && jenisBurung.value) {
+      ta.value = 'Pengamatan burung ' + jenisBurung.value + ' di ' + (gridBurung ? ('Grid ' + gridBurung.value) : 'area sisi udara.');
+    }
+
+    // Signature verification
     if (signaturePad.isEmpty()) {
       e.preventDefault();
       alert('Mohon bubuhkan tanda tangan digital Anda terlebih dahulu.');
