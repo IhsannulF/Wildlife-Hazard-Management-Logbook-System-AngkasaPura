@@ -16,6 +16,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Tailwind CSS CDN with configuration -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container": "#e5eeff",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#5c647a",
+            "error-container": "#ffdad6",
+            "tertiary": "#006780",
+            "slate-navy": "#0F172A",
+            "primary-container": "#00a3b4",
+            "on-surface": "#0b1c30",
+            "surface-tint": "#006874",
+            "tertiary-fixed": "#b7eaff",
+            "injourney-teal": "#00A9C1",
+            "injourney-dark": "#007fa3",
+          }
+        }
+      }
+    };
+  </script>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   @yield('styles')
 </head>

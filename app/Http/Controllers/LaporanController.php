@@ -55,7 +55,7 @@ class LaporanController extends Controller
 
         $gridField = FormField::where('tipe', 'grid')->first();
         $gridmapImage = ($gridField && $gridField->gridmap_path) ? $gridField->gridmap_path : 'gridmap_injourney.jpeg';
-        $gridAgg = $this->getGridAggregation();
+        $gridAgg = [];
 
         return view('user.form-pengaduan', compact(
             'user',

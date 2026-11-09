@@ -19,18 +19,6 @@
         Tahun {{ $tahun }}
       </a>
     </div>
-
-    <!-- Export Excel -->
-    <a href="{{ route('admin.export.excel', ['tahun' => $tahun]) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200/90 rounded-lg bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-semibold transition-colors shadow-2xs shrink-0 whitespace-nowrap">
-      <span class="material-symbols-outlined text-sm text-slate-500">file_download</span>
-      <span>Export Excel</span>
-    </a>
-
-    <!-- Print Operational PDF Button -->
-    <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200/90 rounded-lg bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-semibold transition-colors shadow-2xs shrink-0 whitespace-nowrap cursor-pointer">
-      <span class="material-symbols-outlined text-sm text-slate-500">print</span>
-      <span>Cetak Peta PDF</span>
-    </button>
   </div>
 @endcomponent
 

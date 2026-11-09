@@ -34,14 +34,12 @@
       padding-left: 16rem !important;
     }
 
-    html.sidebar-pinned #mainSidebar {
-      transform: translateX(0) !important;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
-    }
-
-    /* Keep sidebar open during page navigation until cursor leaves navbar area */
+    html.sidebar-pinned #mainSidebar,
     html.sidebar-nav-open #mainSidebar {
       transform: translateX(0) !important;
+      translate: 0 0 !important;
+      --tw-translate-x: 0 !important;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
     }
 
     html.sidebar-pinned #sidebarTriggerTab,
@@ -67,8 +65,8 @@
 
   /* Ultra-smooth hardware-accelerated sliding transition for the sidebar */
   #mainSidebar {
-    will-change: transform;
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    will-change: transform, translate;
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), translate 0.38s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   /* Visual Affordance Floating Handle (Pojok Kiri Atas) */
@@ -96,10 +94,12 @@
   </div>
 
   <div class="flex items-center gap-2">
-    <a href="{{ route('laporan.create') }}" class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-[#00A9C1] hover:bg-[#007fa3] text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1]">
-      <span class="material-symbols-outlined text-sm">add</span>
-      <span class="hidden sm:inline">Buat Laporan</span>
-    </a>
+    @if(!$isAdmin)
+      <a href="{{ route('laporan.create') }}" class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-[#00A9C1] hover:bg-[#007fa3] text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1]">
+        <span class="material-symbols-outlined text-sm">add</span>
+        <span class="hidden sm:inline">Buat Laporan</span>
+      </a>
+    @endif
     <div class="w-7 h-7 rounded-full bg-cyan-100 text-[#007fa3] border border-cyan-200 flex items-center justify-center font-bold text-xs shrink-0 select-none">
       {{ $initials }}
     </div>
@@ -172,13 +172,15 @@
       </div>
     </div>
     
-    <!-- Primary CTA: Buat Laporan -->
-    <div class="mt-3">
-      <a href="{{ route('laporan.create') }}" class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#00607d] text-white text-xs font-bold shadow-xs hover:shadow-cyan-500/20 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1]">
-        <span class="material-symbols-outlined text-base">add_circle</span>
-        <span>Buat Laporan Baru</span>
-      </a>
-    </div>
+    @if(!$isAdmin)
+      <!-- Primary CTA: Buat Laporan -->
+      <div class="mt-3">
+        <a href="{{ route('laporan.create') }}" class="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#00607d] text-white text-xs font-bold shadow-xs hover:shadow-cyan-500/20 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1]">
+          <span class="material-symbols-outlined text-base">add_circle</span>
+          <span>Buat Laporan Baru</span>
+        </a>
+      </div>
+    @endif
   </div>
 
   <!-- 3. Navigation Links List -->
@@ -197,7 +199,7 @@
         </a>
 
         @if(!$isAdmin)
-          <!-- User Form Laporan -->
+          <!-- Form Laporan -->
           <a href="{{ route('laporan.create') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1] {{ ($currentPage === 'create' || request()->routeIs('laporan.create')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
             <span class="material-symbols-outlined text-lg {{ ($currentPage === 'create' || request()->routeIs('laporan.create')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">edit_note</span>
             <span class="flex-1">Form Input Satwa</span>
@@ -353,6 +355,8 @@
 
     sidebar.classList.remove('-translate-x-full');
     sidebar.classList.add('translate-x-0');
+    sidebar.style.removeProperty('translate');
+    sidebar.style.removeProperty('--tw-translate-x');
   }
 
   function closeDesktopSidebar(delay = 260) {
@@ -487,9 +491,14 @@
 
   // --- INITIALIZE EVENT LISTENERS ---
   document.addEventListener('DOMContentLoaded', function() {
-    syncPinIconState();
-
     const sidebar = document.getElementById('mainSidebar');
+    if (isPinned() && sidebar) {
+      sidebar.classList.remove('-translate-x-full');
+      sidebar.classList.add('translate-x-0');
+      sidebar.style.removeProperty('translate');
+      sidebar.style.removeProperty('--tw-translate-x');
+    }
+    syncPinIconState();
     const triggerZone = document.getElementById('sidebarTriggerZone');
     const triggerTab = document.getElementById('sidebarTriggerTab');
 

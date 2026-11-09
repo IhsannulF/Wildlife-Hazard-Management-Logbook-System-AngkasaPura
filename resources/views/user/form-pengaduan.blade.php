@@ -74,7 +74,7 @@
     'icon' => 'edit_note',
     'maxWidth' => 'max-w-5xl',
     'actions' => '
-      <a href="' . (auth()->user()->role === 'admin' ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
+      <a href="' . ((($user->role ?? (auth()->user()?->role ?? 'pegawai')) === 'admin') ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
         <span class="material-symbols-outlined text-base">arrow_back</span>
         Kembali
       </a>

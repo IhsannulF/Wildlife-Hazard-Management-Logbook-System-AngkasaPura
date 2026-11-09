@@ -6,7 +6,7 @@
 @endphp
 
 <!-- ================= UNIFIED WHMS PAGE TOP HEADER BAR ================= -->
-<header class="whms-page-header static lg:sticky lg:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs select-none">
+<header class="whms-page-header sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs select-none">
   <div class="{{ $headerMaxWidth }} mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 min-h-[62px]">
     
     <!-- Left: Hamburger Menu Trigger (Desktop) + Title & Description -->

@@ -23,10 +23,14 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Rute Laporan (Pegawai & Admin)
-Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
+// Rute Input Pelaporan Khusus Pegawai (Admin tidak melakukan inspeksi lapangan)
+Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/laporan/create', [LaporanController::class, 'create'])->name('laporan.create');
     Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
+});
+
+// Rute Detail & Cetak Laporan (Pegawai & Admin)
+Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
     Route::get('/laporan/{id}/detail', [LaporanController::class, 'detail'])->name('laporan.detail.user');
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
 });
