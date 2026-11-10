@@ -14,6 +14,7 @@
             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200" id="modalStatusBadge">
               <span class="w-2 h-2 rounded-full bg-alert-amber"></span> Belum Ditangani
             </span>
+            <span class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold" id="modalRiskScoreBadge"></span>
           </div>
           <p class="font-body-sm text-body-sm text-secondary">Berita Acara Temuan dan Penanganan Bahaya Satwa Liar Sisi Udara (ICAO Doc 9137 Part 3)</p>
         </div>
@@ -27,6 +28,10 @@
           </button>
           <button class="px-3 py-1 rounded text-xs font-label-md text-secondary hover:text-on-surface cursor-pointer" id="tabBtnPage2" onclick="switchModalPage(2)" type="button">
             Hal 2: Dokumentasi &amp; TTD
+          </button>
+          <button class="px-3 py-1 rounded text-xs font-label-md text-secondary hover:text-on-surface cursor-pointer flex items-center gap-1.5" id="tabBtnPage3" onclick="switchModalPage(3)" type="button">
+            <span>Hal 3: Tanggapan &amp; Instruksi</span>
+            <span id="tabTanggapanBadge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-injourney-teal text-white">0</span>
           </button>
         </div>
         <button class="p-2 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer" onclick="closeReportModal()" type="button">
@@ -225,6 +230,72 @@
               <p><strong class="text-on-surface">Petugas Pelapor:</strong> <span id="modalSigOfficerName">-</span></p>
               <p><strong class="text-on-surface">Unit Kerja:</strong> <span id="modalSigUnitName">-</span></p>
             </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PAGE 3: THREAD TANGGAPAN & FORM INSTRUKSI SAFETY MANAGER -->
+      <div class="hidden space-y-6" id="modalPage3">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Kolom Kiri: Riwayat Thread Tanggapan (7 Kolom) -->
+          <div class="lg:col-span-7 space-y-3 flex flex-col">
+            <div class="flex items-center justify-between">
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-injourney-teal">forum</span>
+                Riwayat Koordinasi &amp; Tanggapan Dinas
+              </span>
+              <span class="text-[11px] text-secondary font-medium" id="threadCountText">0 Catatan</span>
+            </div>
+
+            <div class="flex-1 min-h-[300px] max-h-[420px] overflow-y-auto space-y-3 p-4 rounded-xl border border-border-subtle bg-slate-50/70" id="adminThreadContainer">
+              <!-- Dynamic Cards Injection -->
+            </div>
+          </div>
+
+          <!-- Kolom Kanan: Form Kirim Instruksi Baru (5 Kolom) -->
+          <div class="lg:col-span-5 p-4 rounded-xl bg-surface-container-lowest border border-border-subtle space-y-4">
+            <div class="flex items-center gap-2 border-b border-border-subtle pb-3">
+              <span class="material-symbols-outlined text-injourney-teal text-lg">rate_review</span>
+              <div>
+                <h4 class="font-bold text-xs text-on-surface">Kirim Tanggapan / Instruksi Dinas</h4>
+                <p class="text-[11px] text-secondary">Catatan resmi Safety Manager untuk pelapor lapangan</p>
+              </div>
+            </div>
+
+            <form id="adminTanggapanForm" onsubmit="submitAdminTanggapan(event)" class="space-y-3.5">
+              <!-- Kategori Instruksi -->
+              <div class="space-y-1">
+                <label for="adminKategoriTanggapan" class="text-xs font-semibold text-on-surface block">
+                  Kategori Tindak Lanjut Dinas:
+                </label>
+                <select id="adminKategoriTanggapan" name="kategori_tanggapan" class="w-full text-xs font-semibold rounded-lg border border-border-subtle bg-white text-on-surface py-2 px-2.5 focus:border-injourney-teal focus:ring-1 focus:ring-injourney-teal cursor-pointer">
+                  <option value="instruksi">🚨 Instruksi Lanjutan / Pengusiran Tambahan</option>
+                  <option value="evaluasi">📋 Evaluasi Tindakan Penanganan</option>
+                  <option value="klarifikasi">❓ Permintaan Klarifikasi Data Lapangan</option>
+                  <option value="penutupan">✅ Penutupan Laporan (Closed &amp; Verified)</option>
+                </select>
+                <p class="text-[10px] text-secondary italic" id="kategoriHelpText">
+                  * Kategori 'Penutupan Laporan' akan otomatis memvalidasi Berita Acara menjadi Selesai.
+                </p>
+              </div>
+
+              <!-- Isi Tanggapan -->
+              <div class="space-y-1">
+                <label for="adminIsiTanggapan" class="text-xs font-semibold text-on-surface block">
+                  Instruksi / Catatan Safety Unit:
+                </label>
+                <textarea id="adminIsiTanggapan" name="isi" rows="5" required placeholder="Tuliskan arahan dinas, evaluasi SOP, atau catatan verifikasi untuk petugas..." class="w-full text-xs rounded-lg border border-border-subtle bg-white text-on-surface p-2.5 focus:border-injourney-teal focus:ring-1 focus:ring-injourney-teal placeholder:text-secondary/60 leading-relaxed"></textarea>
+              </div>
+
+              <div class="pt-1">
+                <button type="submit" id="btnSubmitAdminTanggapan" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">send</span>
+                  <span>Kirim Instruksi Dinas</span>
+                </button>
+              </div>
+            </form>
           </div>
 
         </div>

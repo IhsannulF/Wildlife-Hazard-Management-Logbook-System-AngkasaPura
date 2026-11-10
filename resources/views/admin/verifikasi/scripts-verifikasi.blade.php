@@ -1,24 +1,40 @@
 <script>
   let activeModalLaporanId = null;
 
-  // Tab switching in Two-Page Verification Modal
+  // Tab switching in Three-Page Verification Modal
   function switchModalPage(pageNumber) {
     const page1 = document.getElementById('modalPage1');
     const page2 = document.getElementById('modalPage2');
+    const page3 = document.getElementById('modalPage3');
     const btn1 = document.getElementById('tabBtnPage1');
     const btn2 = document.getElementById('tabBtnPage2');
+    const btn3 = document.getElementById('tabBtnPage3');
+
+    const activeClass = 'px-3 py-1 rounded text-xs font-label-md font-bold bg-white text-injourney-teal shadow-xs cursor-pointer flex items-center gap-1.5';
+    const inactiveClass = 'px-3 py-1 rounded text-xs font-label-md text-secondary hover:text-on-surface cursor-pointer flex items-center gap-1.5';
 
     if (pageNumber === 1) {
       page1.classList.remove('hidden');
       page2.classList.add('hidden');
-      btn1.className = 'px-3 py-1 rounded text-xs font-label-md font-bold bg-white text-injourney-teal shadow-xs cursor-pointer';
-      btn2.className = 'px-3 py-1 rounded text-xs font-label-md text-secondary hover:text-on-surface cursor-pointer';
-    } else {
+      if (page3) page3.classList.add('hidden');
+      btn1.className = activeClass;
+      btn2.className = inactiveClass;
+      if (btn3) btn3.className = inactiveClass;
+    } else if (pageNumber === 2) {
       page1.classList.add('hidden');
       page2.classList.remove('hidden');
-      btn2.className = 'px-3 py-1 rounded text-xs font-label-md font-bold bg-white text-injourney-teal shadow-xs cursor-pointer';
-      btn1.className = 'px-3 py-1 rounded text-xs font-label-md text-secondary hover:text-on-surface cursor-pointer';
+      if (page3) page3.classList.add('hidden');
+      btn1.className = inactiveClass;
+      btn2.className = activeClass;
+      if (btn3) btn3.className = inactiveClass;
       setTimeout(initSignaturePad, 60);
+    } else if (pageNumber === 3) {
+      page1.classList.add('hidden');
+      page2.classList.add('hidden');
+      if (page3) page3.classList.remove('hidden');
+      btn1.className = inactiveClass;
+      btn2.className = inactiveClass;
+      if (btn3) btn3.className = activeClass;
     }
   }
 
@@ -127,6 +143,30 @@
         if (document.getElementById('modalSigUnitName')) {
           document.getElementById('modalSigUnitName').innerText = unitName;
         }
+
+        // Update ICAO Risk Score Badge
+        const riskBadge = document.getElementById('modalRiskScoreBadge');
+        if (riskBadge) {
+          const rLvl = (data.risk_level || 'rendah').toLowerCase();
+          const rScore = data.risk_score || 1;
+          riskBadge.classList.remove('hidden');
+          if (rLvl === 'kritis') {
+            riskBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-600 text-white shadow-xs ring-2 ring-rose-300 animate-pulse';
+            riskBadge.innerHTML = `<span class="material-symbols-outlined text-xs">warning</span> ICAO: Kritis (${rScore}/12)`;
+          } else if (rLvl === 'tinggi') {
+            riskBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-600 text-white shadow-xs ring-1 ring-amber-300';
+            riskBadge.innerHTML = `<span class="material-symbols-outlined text-xs">priority_high</span> ICAO: Tinggi (${rScore}/12)`;
+          } else if (rLvl === 'sedang') {
+            riskBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300';
+            riskBadge.innerHTML = `ICAO: Sedang (${rScore}/12)`;
+          } else {
+            riskBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+            riskBadge.innerHTML = `ICAO: Rendah (${rScore}/12)`;
+          }
+        }
+
+        // Render Riwayat Tanggapan Thread
+        renderAdminThread(data.tanggapan || []);
 
         switchModalPage(1);
         document.getElementById('detailModal').classList.remove('hidden');
@@ -469,5 +509,150 @@
     if (noRes) {
       noRes.className = (visibleCount === 0 && rows.length > 1) ? '' : 'hidden';
     }
+  }
+
+  // Render Riwayat Thread Tanggapan Dinas di Modal Admin
+  function renderAdminThread(threadList) {
+    const container = document.getElementById('adminThreadContainer');
+    const countText = document.getElementById('threadCountText');
+    const badge = document.getElementById('tabTanggapanBadge');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const count = threadList ? threadList.length : 0;
+    if (countText) countText.innerText = `${count} Catatan`;
+    if (badge) {
+      if (count > 0) {
+        badge.innerText = count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    if (!threadList || threadList.length === 0) {
+      container.innerHTML = `
+        <div class="h-full flex flex-col items-center justify-center text-center p-6 text-secondary space-y-2">
+          <span class="material-symbols-outlined text-3xl text-slate-300">chat</span>
+          <p class="text-xs font-medium">Belum ada tanggapan atau instruksi dinas pada berita acara ini.</p>
+          <p class="text-[11px] text-secondary/70">Gunakan form di samping untuk memberikan arahan kepada petugas pelapor.</p>
+        </div>
+      `;
+      return;
+    }
+
+    threadList.forEach(t => {
+      const card = document.createElement('div');
+      const isAdmin = t.is_admin;
+      const kategori = t.kategori_tanggapan || 'instruksi';
+
+      let kategoriBadge = '';
+      if (kategori === 'penutupan') {
+        kategoriBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Penutupan Laporan</span>';
+      } else if (kategori === 'evaluasi') {
+        kategoriBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Evaluasi Tindakan</span>';
+      } else if (kategori === 'klarifikasi') {
+        kategoriBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Klarifikasi Lapangan</span>';
+      } else {
+        kategoriBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">Instruksi Lanjutan</span>';
+      }
+
+      card.className = `p-3.5 rounded-xl border ${isAdmin ? 'bg-white border-border-subtle shadow-xs' : 'bg-cyan-50/60 border-cyan-100'} space-y-2`;
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full ${isAdmin ? 'bg-injourney-teal text-white' : 'bg-slate-200 text-slate-700'} text-[10px] font-bold flex items-center justify-center shrink-0">
+              ${isAdmin ? 'SM' : 'FL'}
+            </div>
+            <div>
+              <span class="font-bold text-xs text-on-surface">${t.author_name}</span>
+              <span class="text-[10px] text-secondary">(${t.author_role})</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${kategoriBadge}
+            <span class="text-[10px] text-secondary font-mono">${t.created_at_human || t.created_at || '-'}</span>
+          </div>
+        </div>
+        <p class="text-xs text-on-surface leading-relaxed whitespace-pre-line pl-8">${t.isi}</p>
+      `;
+      container.appendChild(card);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Kirim Tanggapan / Instruksi Dinas dari Admin via AJAX
+  function submitAdminTanggapan(e) {
+    e.preventDefault();
+    if (!activeModalLaporanId) return;
+
+    const submitBtn = document.getElementById('btnSubmitAdminTanggapan');
+    const kategori = document.getElementById('adminKategoriTanggapan').value;
+    const isi = document.getElementById('adminIsiTanggapan').value.trim();
+
+    if (!isi) {
+      showToast('Harap tuliskan instruksi atau catatan dinas.', 'error');
+      return;
+    }
+
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></span> <span>Mengirim...</span>';
+
+    fetch(`/laporan/${activeModalLaporanId}/tanggapan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': token,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        kategori_tanggapan: kategori,
+        isi: isi
+      })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Gagal mengirim tanggapan');
+      return res.json();
+    })
+    .then(data => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span> <span>Kirim Instruksi Dinas</span>';
+
+      if (data.success) {
+        document.getElementById('adminIsiTanggapan').value = '';
+        showToast(data.message || 'Instruksi dinas berhasil dikirimkan!');
+
+        // Ambil ulang detail thread untuk me-refresh tampilan
+        fetch(`/admin/laporan/${activeModalLaporanId}/detail`)
+          .then(r => r.json())
+          .then(freshData => {
+            renderAdminThread(freshData.tanggapan || []);
+            if (freshData.status === 'sudah') {
+              const badge = document.getElementById('modalStatusBadge');
+              const resolveBtn = document.getElementById('modalResolveBtn');
+              badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200';
+              badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-resolved-emerald"></span> Sudah Ditangani';
+              if (resolveBtn) resolveBtn.classList.add('hidden');
+
+              const statusCell = document.getElementById(`status-cell-${activeModalLaporanId}`);
+              if (statusCell) {
+                statusCell.innerHTML = `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] xl:text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-resolved-emerald"></span>
+                    Ditangani
+                  </span>
+                `;
+              }
+            }
+          });
+      }
+    })
+    .catch(err => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span> <span>Kirim Instruksi Dinas</span>';
+      showToast(err.message || 'Terjadi kesalahan saat mengirim instruksi.', 'error');
+    });
   }
 </script>

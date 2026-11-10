@@ -133,7 +133,10 @@ class DashboardController extends Controller
         $zoneLabels = ['Runway 07L/25R', 'Kanal & Rawa', 'Taxiway A & B', 'Apron Komersial', 'Perimeter Luar'];
         $zoneCounts = [84, 46, 34, 28, 18];
 
-        $query = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])
+        $query = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan', 'tanggapan'])
+            ->orderByRaw("CASE WHEN status = 'belum' OR status IS NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE risk_level WHEN 'kritis' THEN 1 WHEN 'tinggi' THEN 2 WHEN 'sedang' THEN 3 ELSE 4 END")
+            ->orderBy('risk_score', 'desc')
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
@@ -318,7 +321,10 @@ class DashboardController extends Controller
         $pctReptil = $totalSatwa > 0 ? round(($reptilCount / $totalSatwa) * 100) : 8;
         $pctMamalia = $totalSatwa > 0 ? max(0, 100 - ($pctBurung + $pctReptil)) : 2;
 
-        $query = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])
+        $query = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan', 'tanggapan'])
+            ->orderByRaw("CASE WHEN status = 'belum' OR status IS NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE risk_level WHEN 'kritis' THEN 1 WHEN 'tinggi' THEN 2 WHEN 'sedang' THEN 3 ELSE 4 END")
+            ->orderBy('risk_score', 'desc')
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
@@ -549,7 +555,14 @@ class DashboardController extends Controller
 
     public function getDetail(int $id)
     {
-        $laporan = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])->find($id);
+        $laporan = Laporan::with([
+            'user',
+            'detailSatwa.fotoLaporan',
+            'fotoLaporan',
+            'tanggapan' => function ($q) {
+                $q->with('user')->orderBy('id', 'asc');
+            },
+        ])->find($id);
 
         if (! $laporan) {
             return response()->json(['error' => 'Laporan tidak ditemukan'], 404);
@@ -573,6 +586,24 @@ class DashboardController extends Controller
             ->map(fn ($f) => asset('storage/uploads/extra/'.$f->nama_file))
             ->values();
 
+        $tanggapanList = [];
+        foreach ($laporan->tanggapan as $t) {
+            $author = $t->user ? ($t->user->namalengkap ?: $t->user->username) : 'Safety Officer';
+            $authorRole = $t->user ? ($t->user->jabatan ?: ($t->user->role === 'admin' ? 'Safety Manager' : 'Petugas Lapangan')) : 'Validator';
+            $tanggapanList[] = [
+                'id' => $t->id,
+                'laporan_id' => $t->laporan_id,
+                'user_id' => $t->user_id,
+                'kategori_tanggapan' => $t->kategori_tanggapan ?: 'instruksi',
+                'isi' => $t->isi,
+                'author_name' => $author,
+                'author_role' => $authorRole,
+                'is_admin' => $t->user ? $t->user->role === 'admin' : false,
+                'created_at' => $t->created_at?->format('Y-m-d H:i:s'),
+                'created_at_human' => $t->created_at ? $t->created_at->translatedFormat('d M Y, H:i').' WIB' : '-',
+            ];
+        }
+
         $standardFields = [
             'nama_petugas', 'tanggal', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
             'tanda_tangan', 'grid', 'grid_lokasi', 'satwa', 'foto_laporan', 'ciri_ukuran',
@@ -584,6 +615,7 @@ class DashboardController extends Controller
         $data['nama_user'] = $laporan->user ? ($laporan->user->namalengkap ?: $laporan->user->username) : '-';
         $data['satwa'] = $satwaData;
         $data['foto_extra'] = $fotoExtra;
+        $data['tanggapan'] = $tanggapanList;
         $data['extra_fields_def'] = $extraFieldsDef;
         $data['extra_data'] = $laporan->extra_data ?: [];
 

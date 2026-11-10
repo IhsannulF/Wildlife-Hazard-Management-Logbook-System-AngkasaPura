@@ -143,18 +143,35 @@
               </div>
             </td>
 
-            <!-- Aktivitas & Risiko -->
+            <!-- Aktivitas & Risiko ICAO -->
             <td class="py-2.5 px-2.5 xl:px-3">
-              <div class="max-w-[115px] xl:max-w-[155px]">
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] xl:text-[11px] font-medium {{ $isPending ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-surface-container text-on-surface' }} truncate max-w-full">
-                  <span class="material-symbols-outlined text-[12px] {{ $isPending ? 'text-alert-amber' : 'text-secondary' }}">{{ $isPending ? 'warning' : 'info' }}</span>
-                  <span class="truncate">{{ Str::limit($lap->aktivitas_satwa ?: ($lap->detail_pengusiran ?: 'Aktivitas terpantau'), 16) }}</span>
-                </span>
-                @if($lap->kondisi_apron)
-                  <div class="text-[9px] xl:text-[10px] text-secondary group-hover:text-injourney-teal flex items-center gap-0.5 mt-0.5 truncate" title="Kondisi: {{ $lap->kondisi_apron }}">
-                    <span class="truncate">Kondisi: {{ Str::limit($lap->kondisi_apron, 14) }}</span>
-                  </div>
+              <div class="max-w-[125px] xl:max-w-[165px] space-y-1">
+                @php
+                  $riskLvl = strtolower($lap->risk_level ?? 'rendah');
+                  $riskSc = $lap->risk_score ?? 1;
+                @endphp
+                @if($riskLvl === 'kritis')
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shadow-xs ring-2 ring-rose-300 animate-pulse whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[12px]">warning</span>
+                    KRITIS ({{ $riskSc }})
+                  </span>
+                @elseif($riskLvl === 'tinggi')
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-600 text-white shadow-xs ring-1 ring-amber-300 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[12px]">priority_high</span>
+                    TINGGI ({{ $riskSc }})
+                  </span>
+                @elseif($riskLvl === 'sedang')
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
+                    SEDANG ({{ $riskSc }})
+                  </span>
+                @else
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap">
+                    RENDAH ({{ $riskSc }})
+                  </span>
                 @endif
+                <div class="text-[10px] text-secondary truncate" title="{{ $lap->aktivitas_satwa ?: ($lap->detail_pengusiran ?: 'Aktivitas terpantau') }}">
+                  {{ Str::limit($lap->aktivitas_satwa ?: ($lap->detail_pengusiran ?: 'Aktivitas terpantau'), 18) }}
+                </div>
               </div>
             </td>
 

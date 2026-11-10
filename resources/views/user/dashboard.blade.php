@@ -238,7 +238,7 @@
                 $firstFoto = $firstSatwa?->fotoLaporan?->first() ?? $lap->fotoLaporan->first();
                 $riskLevel = strtolower($lap->risk_level ?? 'rendah');
               @endphp
-              <tr class="hover:bg-slate-50/70 transition-colors">
+              <tr onclick="openDetailModal({{ $lap->id }})" class="hover:bg-cyan-50/40 transition-colors cursor-pointer group" title="Klik baris untuk membuka rincian Berita Acara #{{ $noReg }}">
                 <!-- No Urut -->
                 <td class="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
                   {{ $laporans->firstItem() + $index }}
@@ -246,7 +246,10 @@
 
                 <!-- No Berita Acara -->
                 <td class="py-3.5 px-4">
-                  <div class="font-mono font-bold text-slate-900 text-xs">{{ $noReg }}</div>
+                  <div class="font-mono font-bold text-slate-900 group-hover:text-[#007fa3] text-xs transition-colors flex items-center gap-1">
+                    <span>{{ $noReg }}</span>
+                    <span class="material-symbols-outlined text-[13px] opacity-0 group-hover:opacity-100 text-[#00A9C1] transition-opacity">open_in_new</span>
+                  </div>
                   <div class="text-[10px] text-slate-500 font-normal mt-0.5 flex items-center gap-1">
                     <span class="material-symbols-outlined text-xs text-slate-400">badge</span>
                     <span>{{ $lap->unit_kerja }}</span>
@@ -303,23 +306,24 @@
                 </td>
 
                 <!-- Tingkat Risiko ICAO -->
-                <td class="py-3.5 px-4 text-center">
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                   @if($riskLevel === 'kritis')
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
-                      <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-                      Kritis
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shadow-xs ring-2 ring-rose-300 animate-pulse">
+                      <span class="material-symbols-outlined text-xs">warning</span>
+                      Kritis ({{ $lap->risk_score ?? 12 }})
                     </span>
                   @elseif($riskLevel === 'tinggi')
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
-                      Tinggi
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-600 text-white shadow-xs ring-1 ring-amber-300">
+                      <span class="material-symbols-outlined text-xs">priority_high</span>
+                      Tinggi ({{ $lap->risk_score ?? 8 }})
                     </span>
                   @elseif($riskLevel === 'sedang')
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-yellow-50 text-yellow-800 border border-yellow-200">
-                      Sedang
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      Sedang ({{ $lap->risk_score ?? 4 }})
                     </span>
                   @else
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Rendah
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Rendah ({{ $lap->risk_score ?? 1 }})
                     </span>
                   @endif
                 </td>
@@ -339,26 +343,15 @@
                   @endif
                 </td>
 
-                <!-- Aksi Tombol -->
-                <td class="py-3.5 px-4 text-center">
-                  <div class="flex items-center justify-center gap-1.5">
-                    <!-- Tombol Lihat Detail (Modal) -->
-                    <button type="button" 
-                            onclick="openDetailModal({{ $lap->id }})" 
-                            class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-[#007fa3] border border-slate-200/90 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs" 
-                            title="Pratinjau Lembar Berita Acara">
-                      <span class="material-symbols-outlined text-sm">visibility</span>
-                      <span class="hidden sm:inline">Detail</span>
-                    </button>
-
-                    <!-- Tombol Cetak / Unduh BA -->
-                    <a href="{{ route('laporan.cetak', $lap->id) }}" 
-                       target="_blank" 
-                       class="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200/90 transition-colors cursor-pointer" 
-                       title="Cetak Berita Acara">
-                      <span class="material-symbols-outlined text-sm">print</span>
-                    </a>
-                  </div>
+                <!-- Aksi Tombol: Hanya Cetak Berita Acara -->
+                <td class="py-3.5 px-4 text-center whitespace-nowrap" onclick="event.stopPropagation()">
+                  <a href="{{ route('laporan.cetak', $lap->id) }}" 
+                     target="_blank" 
+                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-cyan-50 text-slate-600 hover:text-[#007fa3] border border-slate-200/90 hover:border-cyan-200 text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
+                     title="Cetak Berita Acara Resmi (PDF)">
+                    <span class="material-symbols-outlined text-sm text-[#00A9C1]">print</span>
+                    <span>Cetak BA</span>
+                  </a>
                 </td>
               </tr>
             @empty
@@ -482,8 +475,8 @@
           </div>
         </div>
 
-        <!-- 2. Area, Grid & Lokasi GPS -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- 2. Area, Grid & Lokasi GPS + Risiko ICAO -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div class="p-3.5 rounded-2xl border border-slate-200/90 bg-white">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Area Inspeksi</span>
             <div id="mArea" class="font-bold text-slate-800 text-sm mt-1">-</div>
@@ -495,6 +488,12 @@
           <div class="p-3.5 rounded-2xl border border-slate-200/90 bg-white">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Koordinat GPS</span>
             <div id="mGps" class="font-mono font-semibold text-slate-700 text-xs mt-1">-</div>
+          </div>
+          <div class="p-3.5 rounded-2xl border border-slate-200/90 bg-white">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Matriks Risiko ICAO</span>
+            <div id="mRiskScoreBadge" class="mt-1 font-bold text-xs">
+              -
+            </div>
           </div>
         </div>
 
@@ -568,6 +567,27 @@
           <div id="mTanggapanContainer" class="space-y-2.5">
             <!-- Dynamic Injection -->
           </div>
+
+          <!-- FORM BALAS TANGGAPAN DINAS (PEGAWAI) -->
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3 mt-3" id="mReplySection">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base text-[#00A9C1]">reply</span>
+                <span>Balas Tanggapan / Konfirmasi Tindakan Lapangan</span>
+              </span>
+              <span class="text-[10px] text-slate-500">Respon Resmi Pelapor Lapangan</span>
+            </div>
+            <form id="userReplyForm" onsubmit="submitUserReply(event)" class="space-y-2.5">
+              <textarea id="userReplyIsi" rows="3" required placeholder="Tuliskan konfirmasi tindakan pengusiran lanjutan, amunisi tambahan yang digunakan, atau penjelasan klarifikasi..." class="w-full text-xs rounded-xl border border-slate-200 bg-white text-slate-800 p-2.5 focus:border-[#00A9C1] focus:ring-1 focus:ring-[#00A9C1] placeholder:text-slate-400 leading-relaxed"></textarea>
+              <div class="flex items-center justify-between pt-1">
+                <span class="text-[10px] text-slate-400 italic">Balasan akan otomatis tersimpan dalam Berita Acara resmi.</span>
+                <button type="submit" id="btnSubmitUserReply" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">send</span>
+                  <span>Kirim Balasan Dinas</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
       </div>
@@ -590,6 +610,8 @@
 
 @section('scripts')
 <script>
+  let currentActiveLaporanId = null;
+
   function applyPerPage(val) {
     const url = new URL(window.location.href);
     url.searchParams.set('per_page', val);
@@ -598,6 +620,7 @@
   }
 
   function openDetailModal(id) {
+    currentActiveLaporanId = id;
     const modal = document.getElementById('detailModal');
     const loading = document.getElementById('modalLoading');
     const body = document.getElementById('modalBody');
@@ -751,26 +774,67 @@
       extraSection.classList.add('hidden');
     }
 
-    // Render Tanggapan
+    // Render ICAO Risk Score Badge
+    const rLvl = (data.risk_level || 'rendah').toLowerCase();
+    const rScore = data.risk_score || 1;
+    const riskBadgeEl = document.getElementById('mRiskScoreBadge');
+    if (riskBadgeEl) {
+      if (rLvl === 'kritis') {
+        riskBadgeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shadow-xs ring-2 ring-rose-300 animate-pulse"><span class="material-symbols-outlined text-xs">warning</span> Kritis (${rScore}/12)</span>`;
+      } else if (rLvl === 'tinggi') {
+        riskBadgeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-600 text-white shadow-xs ring-1 ring-amber-300"><span class="material-symbols-outlined text-xs">priority_high</span> Tinggi (${rScore}/12)</span>`;
+      } else if (rLvl === 'sedang') {
+        riskBadgeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Sedang (${rScore}/12)</span>`;
+      } else {
+        riskBadgeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Rendah (${rScore}/12)</span>`;
+      }
+    }
+
+    // Render Tanggapan Thread
+    renderUserThread(data.tanggapan || []);
+
+    loading.classList.add('hidden');
+    body.classList.remove('hidden');
+  }
+
+  function renderUserThread(threadList) {
     const tanggapanBox = document.getElementById('mTanggapanContainer');
+    if (!tanggapanBox) return;
     tanggapanBox.innerHTML = '';
-    if (data.tanggapan && data.tanggapan.length > 0) {
-      data.tanggapan.forEach(t => {
-        const tDate = t.created_at ? new Date(t.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-        const author = t.user ? (t.user.namalengkap || t.user.username) : 'Safety Manager';
-        const role = t.user ? t.user.jabatan || 'Safety Unit' : 'Validator';
+
+    if (threadList && threadList.length > 0) {
+      threadList.forEach(t => {
+        const tDate = t.created_at_human || (t.created_at ? new Date(t.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB' : '-');
+        const author = t.author_name || (t.user ? (t.user.namalengkap || t.user.username) : 'Safety Officer');
+        const role = t.author_role || (t.user ? (t.user.jabatan || (t.user.role === 'admin' ? 'Safety Manager' : 'Petugas Lapangan')) : 'Validator');
+        const isAdmin = t.is_admin || (t.user ? t.user.role === 'admin' : false);
+        const kategori = t.kategori_tanggapan || 'instruksi';
+
+        let badgeHtml = '';
+        if (kategori === 'penutupan') {
+          badgeHtml = '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Penutupan Laporan</span>';
+        } else if (kategori === 'evaluasi') {
+          badgeHtml = '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Evaluasi Tindakan</span>';
+        } else if (kategori === 'klarifikasi') {
+          badgeHtml = '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Klarifikasi Lapangan</span>';
+        } else {
+          badgeHtml = '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-200">Instruksi Lanjutan</span>';
+        }
 
         const card = document.createElement('div');
-        card.className = 'p-3.5 rounded-2xl bg-cyan-50/60 border border-cyan-100/80 space-y-1.5';
+        card.className = `p-3.5 rounded-2xl border ${isAdmin ? 'bg-cyan-50/70 border-cyan-100/90 shadow-2xs' : 'bg-slate-50 border-slate-200'} space-y-1.5`;
         card.innerHTML = `
-          <div class="flex items-center justify-between text-[11px]">
-            <div class="flex items-center gap-1.5 font-bold text-[#007fa3]">
-              <span class="material-symbols-outlined text-base">support_agent</span>
+          <div class="flex items-center justify-between text-[11px] gap-2 flex-wrap">
+            <div class="flex items-center gap-1.5 font-bold ${isAdmin ? 'text-[#007fa3]' : 'text-slate-700'}">
+              <span class="material-symbols-outlined text-base">${isAdmin ? 'support_agent' : 'person'}</span>
               <span>${author} (${role})</span>
             </div>
-            <span class="text-slate-400 text-[10px]">${tDate} WIB</span>
+            <div class="flex items-center gap-2">
+              ${badgeHtml}
+              <span class="text-slate-400 text-[10px] font-mono">${tDate}</span>
+            </div>
           </div>
-          <p class="text-xs text-slate-700 leading-relaxed font-normal">${t.isi}</p>
+          <p class="text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-line">${t.isi}</p>
         `;
         tanggapanBox.appendChild(card);
       });
@@ -782,9 +846,63 @@
         </div>
       `;
     }
+  }
 
-    loading.classList.add('hidden');
-    body.classList.remove('hidden');
+  // Kirim Balasan Tanggapan dari Pegawai Lapangan via AJAX
+  function submitUserReply(e) {
+    e.preventDefault();
+    if (!currentActiveLaporanId) return;
+
+    const isiInput = document.getElementById('userReplyIsi');
+    const submitBtn = document.getElementById('btnSubmitUserReply');
+    const isi = isiInput.value.trim();
+
+    if (!isi) {
+      alert('Harap tuliskan balasan tindakan dinas.');
+      return;
+    }
+
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></span> <span>Mengirim...</span>';
+
+    fetch(`/laporan/${currentActiveLaporanId}/tanggapan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': token,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        kategori_tanggapan: 'klarifikasi',
+        isi: isi
+      })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Gagal mengirim balasan');
+      return res.json();
+    })
+    .then(data => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span> <span>Kirim Balasan Dinas</span>';
+
+      if (data.success) {
+        isiInput.value = '';
+        // Ambil ulang detail thread untuk me-refresh
+        fetch(`/laporan/${currentActiveLaporanId}/detail`)
+          .then(r => r.json())
+          .then(res => {
+            if (res.success && res.data) {
+              renderUserThread(res.data.tanggapan || []);
+            }
+          });
+      }
+    })
+    .catch(err => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span> <span>Kirim Balasan Dinas</span>';
+      alert(err.message || 'Terjadi kesalahan saat mengirim balasan.');
+    });
   }
 
   function closeDetailModal() {

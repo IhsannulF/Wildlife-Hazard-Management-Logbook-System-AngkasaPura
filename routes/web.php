@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\StatistikController as AdminStatistikController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\TanggapanController;
 use App\Http\Controllers\UserDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,7 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
 Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
     Route::get('/laporan/{id}/detail', [LaporanController::class, 'detail'])->name('laporan.detail.user');
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
+    Route::post('/laporan/{id}/tanggapan', [TanggapanController::class, 'store'])->name('laporan.tanggapan.store');
 });
 
 // Rute Pegawai

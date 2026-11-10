@@ -247,5 +247,36 @@ class UserDashboardTest extends TestCase
 
         $this->assertNotEmpty($laporan->no_laporan);
         $this->assertStringStartsWith('BA-WHMS/AP1/AMC/', $laporan->no_laporan);
+
+        $laporan->delete();
+    }
+
+    public function test_user_can_access_cetak_laporan_page(): void
+    {
+        $user = $this->getPegawaiUser('amc');
+
+        $laporan = Laporan::create([
+            'user_id' => $user->id,
+            'nama_petugas' => 'Petugas AMC',
+            'tanggal' => now()->toDateString(),
+            'kondisi_cuaca' => 'Cerah Berawan',
+            'unit_kerja' => 'Apron Movement Control (AMC)',
+            'area_inspeksi' => 'Runway 07L',
+            'grid_lokasi' => 'K-10',
+            'ciri_ukuran' => 'Burung besar di rumput',
+            'kondisi_apron' => 'Kering',
+            'aktivitas_satwa' => 'Mencari makan',
+            'tindak_lanjut' => 'Pengusiran',
+            'detail_pengusiran' => 'Sirene',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('laporan.cetak', $laporan->id));
+        $response->assertStatus(200);
+        $response->assertSee('Laporan Pengamatan Satwa Liar');
+        $response->assertSee('Pengamatan Lapangan & Tindak Lanjut Mitigasi', false);
+        $response->assertSee('Petugas Pelapor,');
+        $response->assertSee('Burung besar di rumput');
+
+        $laporan->delete();
     }
 }

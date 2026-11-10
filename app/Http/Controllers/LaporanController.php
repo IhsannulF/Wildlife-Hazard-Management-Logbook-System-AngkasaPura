@@ -7,6 +7,7 @@ use App\Models\FormField;
 use App\Models\FotoLaporan;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
+use App\Services\IcaoRiskMatrixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -246,6 +247,30 @@ class LaporanController extends Controller
             }
         }
 
+        // Kumpulkan data satwa untuk kalkulasi ICAO Risk Matrix
+        $satwaCalculationData = [];
+        foreach ($satwaInput as $s) {
+            $namaSatwa = $s['nama'] ?? '';
+            $totalJmlPerSatwa = 0;
+            foreach ($s['lokasi'] ?? [] as $lok) {
+                $totalJmlPerSatwa += (int) ($lok['jumlah'] ?? 0);
+            }
+            if ($totalJmlPerSatwa > 0 || ! empty($namaSatwa)) {
+                $satwaCalculationData[] = [
+                    'nama' => $namaSatwa,
+                    'jumlah' => $totalJmlPerSatwa,
+                ];
+            }
+        }
+
+        // Hitung Matriks Risiko ICAO Doc 9137 Otomatis
+        $riskService = app(IcaoRiskMatrixService::class);
+        $riskAssessment = $riskService->calculate(
+            $satwaCalculationData,
+            $request->input('area_inspeksi', ''),
+            $firstGrid
+        );
+
         $laporan = Laporan::create([
             'user_id' => $user->id,
             'nama_petugas' => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
@@ -258,6 +283,8 @@ class LaporanController extends Controller
             'grid_lokasi' => strtoupper($firstGrid ?: '-'),
             'gps_lat' => $request->input('gps_lat'),
             'gps_lng' => $request->input('gps_lng'),
+            'risk_score' => $riskAssessment['score'],
+            'risk_level' => $riskAssessment['level'],
             'ciri_ukuran' => $request->input('ciri_ukuran', '-'),
             'kondisi_apron' => $request->input('kondisi_apron', '-'),
             'aktivitas_satwa' => $request->input('aktivitas_satwa', '-'),
@@ -357,7 +384,9 @@ class LaporanController extends Controller
             'user',
             'detailSatwa.fotoLaporan',
             'fotoLaporan',
-            'tanggapan.user',
+            'tanggapan' => function ($q) {
+                $q->with('user')->orderBy('id', 'asc');
+            },
         ]);
 
         // Isolasi data: jika bukan admin, hanya izinkan pemilik laporan
@@ -367,9 +396,30 @@ class LaporanController extends Controller
 
         $laporan = $query->findOrFail($id);
 
+        $tanggapanList = [];
+        foreach ($laporan->tanggapan as $t) {
+            $author = $t->user ? ($t->user->namalengkap ?: $t->user->username) : 'Safety Officer';
+            $authorRole = $t->user ? ($t->user->jabatan ?: ($t->user->role === 'admin' ? 'Safety Manager' : 'Petugas Lapangan')) : 'Validator';
+            $tanggapanList[] = [
+                'id' => $t->id,
+                'laporan_id' => $t->laporan_id,
+                'user_id' => $t->user_id,
+                'kategori_tanggapan' => $t->kategori_tanggapan ?: 'instruksi',
+                'isi' => $t->isi,
+                'author_name' => $author,
+                'author_role' => $authorRole,
+                'is_admin' => $t->user ? $t->user->role === 'admin' : false,
+                'created_at' => $t->created_at?->format('Y-m-d H:i:s'),
+                'created_at_human' => $t->created_at ? $t->created_at->translatedFormat('d M Y, H:i').' WIB' : '-',
+            ];
+        }
+
+        $data = $laporan->toArray();
+        $data['tanggapan'] = $tanggapanList;
+
         return response()->json([
             'success' => true,
-            'data' => $laporan,
+            'data' => $data,
         ]);
     }
 }
