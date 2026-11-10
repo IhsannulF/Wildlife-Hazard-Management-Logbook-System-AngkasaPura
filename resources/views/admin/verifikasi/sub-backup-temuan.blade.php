@@ -38,7 +38,7 @@
   </div>
 
   <!-- Backup Table -->
-  <div class="overflow-x-auto rounded-lg border border-border-subtle">
+  <div class="logbook-table-wrapper overflow-x-auto rounded-lg border border-border-subtle">
     <table class="w-full text-left border-collapse text-xs font-mono">
       <thead>
         <tr class="bg-slate-900 text-slate-300 font-label-md uppercase tracking-wider border-b border-slate-800">

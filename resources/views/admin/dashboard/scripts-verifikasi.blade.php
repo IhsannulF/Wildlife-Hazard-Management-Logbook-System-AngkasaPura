@@ -203,7 +203,7 @@
       const dispersalCell = document.getElementById(`dispersal-cell-${activeModalLaporanId}`);
       if (dispersalCell) {
         dispersalCell.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
             <span class="material-symbols-outlined text-xs text-resolved-emerald">check_circle</span>
             Terkendali
           </span>
@@ -252,7 +252,7 @@
       const dispersalCell = document.getElementById(`dispersal-cell-${id}`);
       if (dispersalCell) {
         dispersalCell.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
             <span class="material-symbols-outlined text-xs text-resolved-emerald">check_circle</span>
             Terkendali
           </span>

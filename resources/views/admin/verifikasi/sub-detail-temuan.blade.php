@@ -29,7 +29,7 @@
   </div>
 
   <!-- Detail Temuan Table -->
-  <div class="overflow-x-auto rounded-lg border border-border-subtle">
+  <div class="logbook-table-wrapper overflow-x-auto rounded-lg border border-border-subtle">
     <table class="w-full text-left border-collapse text-xs">
       <thead>
         <tr class="bg-surface-container-low text-secondary font-label-md uppercase tracking-wider border-b border-border-subtle">

@@ -274,4 +274,31 @@ class VerifikasiBATest extends TestCase
         $resPreview->assertSee('id="perPagePreviewBottom"', false);
         $this->assertEquals(20, $resPreview->viewData('previewList')->perPage());
     }
+
+    public function test_admin_verifikasi_autocrat_table_unifies_dispersal_and_action_without_eye_icon(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $response = $this->actingAs($admin)->get('/admin/verifikasi/autocrat');
+        $response->assertStatus(200);
+
+        // Header must have unified Aksi & Dispersal column
+        $response->assertSee('Aksi &amp; Dispersal', false);
+        $response->assertDontSee('<th class="py-3 px-4 font-semibold text-center" scope="col">Dispersal</th>', false);
+        $response->assertDontSee('<th class="py-3 px-4 font-semibold text-center" scope="col">Aksi Terpadu</th>', false);
+
+        // Eye icon button inside table row must be removed
+        $response->assertDontSee('Lihat Detail Pratinjau &amp; Verifikasi BA', false);
+        $response->assertDontSee('Lihat Detail Pratinjau & Verifikasi BA', false);
+
+        // Dispersal cell and Cetak BA should exist in the unified action column
+        $response->assertSee('id="dispersal-cell-', false);
+        $response->assertSee('Cetak Berita Acara (BA)');
+
+        // Logbook table wrapper must be present for sidebar-responsive scrolling
+        $response->assertSee('logbook-table-wrapper', false);
+        $response->assertSee('html:not(.sidebar-pinned) .logbook-table-wrapper', false);
+        $response->assertSee('html.sidebar-pinned .logbook-table-wrapper', false);
+    }
 }

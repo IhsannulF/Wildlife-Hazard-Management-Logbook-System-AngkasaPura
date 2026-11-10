@@ -63,6 +63,34 @@
     }
   }
 
+  /* Table Responsiveness:
+     - Saat navbar hilang (auto-hide / unpinned): Data terkunci rapat & TIDAK BISA digeser ke kanan-kiri
+     - Saat navbar muncul terus (pinned): Data BISA digeser ke samping untuk melihat seluruh data secara utuh */
+  .logbook-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .logbook-table-wrapper table {
+    min-width: 1080px;
+  }
+
+  @media (min-width: 1024px) {
+    html:not(.sidebar-pinned) .logbook-table-wrapper {
+      overflow-x: hidden !important;
+    }
+    html:not(.sidebar-pinned) .logbook-table-wrapper table {
+      min-width: 100% !important;
+      width: 100% !important;
+    }
+
+    html.sidebar-pinned .logbook-table-wrapper {
+      overflow-x: auto !important;
+    }
+    html.sidebar-pinned .logbook-table-wrapper table {
+      min-width: 1160px !important;
+    }
+  }
+
   /* Ultra-smooth hardware-accelerated sliding transition for the sidebar */
   #mainSidebar {
     will-change: transform, translate;
