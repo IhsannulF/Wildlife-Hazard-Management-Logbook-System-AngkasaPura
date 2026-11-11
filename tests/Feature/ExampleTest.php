@@ -75,6 +75,60 @@ class ExampleTest extends TestCase
         $response->assertSee('selectJenisBurung');
         $response->assertSee('inputJumlahBurung');
         $response->assertSee('selectGridBurung');
+        // REQ-FIELD-003: GPS Auto-Detect ke Kode Grid Bandara
+        $response->assertSee('Deteksi Lokasi GPS');
+        $response->assertSee('btnGpsDetect');
+        $response->assertSee('formGpsLat');
+        $response->assertSee('formGpsLng');
+        $response->assertSee('formKodeGrid');
+        $response->assertSee('mapGpsToGridBoundingBox');
+    }
+
+    public function test_form_pengaduan_stores_gps_coordinates_and_grid_code(): void
+    {
+        $pegawai = User::where('role', 'pegawai')->first();
+        if (! $pegawai) {
+            $this->markTestSkipped('No pegawai user found in database');
+        }
+
+        $response = $this->actingAs($pegawai)->post('/laporan', [
+            'nama_petugas' => 'Test Officer GPS',
+            'tanggal' => now()->format('Y-m-d'),
+            'jam' => now()->format('H:i:s'),
+            'kondisi_cuaca' => 'Cerah',
+            'unit_kerja' => 'Apron Movement Control',
+            'area_inspeksi' => 'Runway',
+            'kode_grid' => 'K-10',
+            'grid_lokasi' => 'K-10',
+            'gps_lat' => -7.383750,
+            'gps_lng' => 112.784828,
+            'ciri_ukuran' => 'Burung kuntul sedang di rumput bahu landasan',
+            'kondisi_apron' => 'Hidup',
+            'aktivitas_satwa' => 'Mencari makan',
+            'tindak_lanjut' => 'Telah ditangani',
+            'detail_pengusiran' => 'Pengusiran menggunakan sirene mobil patroli',
+            'tanda_tangan' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            'satwa' => [
+                [
+                    'nama' => 'Kuntul Kerbau (Bubulcus ibis)',
+                    'lokasi' => [
+                        [
+                            'jumlah' => 2,
+                            'grid' => 'K-10',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect('/dashboard');
+
+        $laporan = Laporan::latest('id')->first();
+        $this->assertNotNull($laporan);
+        $this->assertEquals('K-10', $laporan->grid_lokasi);
+        $this->assertEquals('K-10', $laporan->kode_grid);
+        $this->assertEqualsWithDelta(-7.383750, (float) $laporan->gps_lat, 0.0001);
+        $this->assertEqualsWithDelta(112.784828, (float) $laporan->gps_lng, 0.0001);
     }
 
     public function test_admin_can_access_statistik(): void

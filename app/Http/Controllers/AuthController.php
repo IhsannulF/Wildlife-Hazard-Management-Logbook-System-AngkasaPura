@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -31,21 +32,43 @@ class AuthController extends Controller
 
         $inputUsername = strtolower(trim($request->input('username')));
 
-        // Pemetaan alias username ke 5 akun resmi departemen: admin, amc, pk, safety, security
-        $aliases = [
+        // Pemetaan alias fleksibel: mendukung username pendek maupun format divisi lama di database
+        $aliasMap = [
+            'admin' => 'admin.utama',
+            'amc' => 'amc.divisi',
+            'pk' => 'arff.divisi',
+            'arff' => 'arff.divisi',
+            'pk.divisi' => 'arff.divisi',
+            'safety' => 'smsohs.divisi',
+            'sms' => 'smsohs.divisi',
+            'smsohs' => 'smsohs.divisi',
+            'sms.divisi' => 'smsohs.divisi',
+            'security' => 'security.divisi',
+            'avsec' => 'security.divisi',
+            'avsec.divisi' => 'security.divisi',
+            // Pemetaan sebaliknya jika database menggunakan username pendek
             'admin.utama' => 'admin',
             'amc.divisi' => 'amc',
             'arff.divisi' => 'pk',
-            'arff' => 'pk',
-            'pk.divisi' => 'pk',
             'smsohs.divisi' => 'safety',
-            'sms.divisi' => 'safety',
-            'sms' => 'safety',
             'security.divisi' => 'security',
-            'avsec.divisi' => 'security',
-            'avsec' => 'security',
         ];
-        $targetUsername = $aliases[$inputUsername] ?? $inputUsername;
+
+        // 1. Cek langsung kecocokan username di database
+        $matchedUser = User::where('username', $inputUsername)->first();
+
+        // 2. Jika belum ditemukan, periksa melalui tabel alias
+        if (! $matchedUser && isset($aliasMap[$inputUsername])) {
+            $matchedUser = User::where('username', $aliasMap[$inputUsername])->first();
+        }
+
+        // 3. Fallback pencocokan awalan username (cth: amc -> amc.divisi)
+        if (! $matchedUser) {
+            $short = explode('.', $inputUsername)[0];
+            $matchedUser = User::where('username', 'LIKE', $short.'%')->first();
+        }
+
+        $targetUsername = $matchedUser ? $matchedUser->username : $inputUsername;
 
         $credentials = [
             'username' => $targetUsername,

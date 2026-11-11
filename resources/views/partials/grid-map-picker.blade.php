@@ -51,6 +51,13 @@
 
     {{-- Actions --}}
     <div class="flex items-center gap-2 shrink-0">
+      <button type="button" onclick="triggerGpsDetection()"
+              class="px-3.5 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#007fa3] border border-teal-200 hover:border-teal-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
+              title="Deteksi posisi GPS perangkat otomatis via HTML5 Geolocation API (REQ-FIELD-003)">
+        <span class="material-symbols-outlined text-base text-[#00A9C1]">my_location</span>
+        <span class="hidden sm:inline">Deteksi GPS</span>
+      </button>
+
       <button type="button" onclick="applyGridToSatwa()"
               class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
               title="Salin koordinat ke seluruh baris jenis satwa terpilih">
@@ -71,6 +78,9 @@
   <input type="hidden" name="grid_lokasi" id="inputGridLokasi" value="{{ $initialGrid }}" required>
   <input type="hidden" name="latitude"    id="inputLatitude"   value="{{ $initialLat }}">
   <input type="hidden" name="longitude"   id="inputLongitude"  value="{{ $initialLng }}">
+  <input type="hidden" name="kode_grid"   id="inputKodeGrid"   value="{{ $initialGrid }}">
+  <input type="hidden" name="gps_lat"     id="inputGpsLat"     value="{{ old('gps_lat', $initialLat) }}">
+  <input type="hidden" name="gps_lng"     id="inputGpsLng"     value="{{ old('gps_lng', $initialLng) }}">
 
   {{-- Manual Input Drawer (Hidden by default) --}}
   <div id="manualInputContainer" class="hidden p-3 bg-white rounded-xl border border-slate-200 flex items-center gap-3">
@@ -302,11 +312,112 @@
 // =============================================================================
 const JUANDA_BOUNDS = { minLat: -7.385000, maxLat: -7.375000, minLng: 112.775000, maxLng: 112.805000 };
 
+// =============================================================================
+// REQ-FIELD-003: STRUKTUR DATA JSON BOUNDING BOX SELURUH GRID JUANDA (A1 - L29)
+// =============================================================================
+const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+const TOTAL_ROWS = 12;
+const TOTAL_COLS = 29;
+
+function buildJuandaGridBoundsJson() {
+  const dLat = (JUANDA_BOUNDS.maxLat - JUANDA_BOUNDS.minLat) / TOTAL_ROWS;
+  const dLng = (JUANDA_BOUNDS.maxLng - JUANDA_BOUNDS.minLng) / TOTAL_COLS;
+  const bounds = {};
+
+  for (let r = 0; r < TOTAL_ROWS; r++) {
+    const rowChar = rowLetters[r];
+    const maxLatCell = parseFloat((JUANDA_BOUNDS.maxLat - r * dLat).toFixed(7));
+    const minLatCell = parseFloat((JUANDA_BOUNDS.maxLat - (r + 1) * dLat).toFixed(7));
+
+    for (let c = 1; c <= TOTAL_COLS; c++) {
+      const cIdx = c - 1;
+      const minLngCell = parseFloat((JUANDA_BOUNDS.minLng + cIdx * dLng).toFixed(7));
+      const maxLngCell = parseFloat((JUANDA_BOUNDS.minLng + (cIdx + 1) * dLng).toFixed(7));
+      const code = `${rowChar}-${c}`;
+      const centerLat = parseFloat(((maxLatCell + minLatCell) / 2).toFixed(6));
+      const centerLng = parseFloat(((minLngCell + maxLngCell) / 2).toFixed(6));
+
+      bounds[code] = {
+        code: code,
+        row: rowChar,
+        col: c,
+        minLat: minLatCell,
+        maxLat: maxLatCell,
+        minLng: minLngCell,
+        maxLng: maxLngCell,
+        centerLat: centerLat,
+        centerLng: centerLng
+      };
+    }
+  }
+  return bounds;
+}
+
+const JUANDA_GRID_BOUNDS = buildJuandaGridBoundsJson();
+window.JUANDA_GRID_BOUNDS = JUANDA_GRID_BOUNDS;
+
+/**
+ * Algoritma Bounding Box Geofencing (REQ-FIELD-003)
+ * Memetakan koordinat numerik latitude & longitude ke kode grid Bandara Juanda
+ */
+function mapGpsToGridBoundingBox(lat, lng) {
+  const nLat = parseFloat(lat);
+  const nLng = parseFloat(lng);
+
+  if (isNaN(nLat) || isNaN(nLng)) {
+    return { success: false, reason: 'INVALID_COORDINATES' };
+  }
+
+  // 1. Validasi apakah koordinat berada di dalam rentang batas wilayah bandara
+  if (nLat < JUANDA_BOUNDS.minLat || nLat > JUANDA_BOUNDS.maxLat ||
+      nLng < JUANDA_BOUNDS.minLng || nLng > JUANDA_BOUNDS.maxLng) {
+    return {
+      success: false,
+      reason: 'OUT_OF_BOUNDS',
+      lat: nLat,
+      lng: nLng
+    };
+  }
+
+  // 2. Periksa kecocokan pada struktur data JSON bounding box setiap grid
+  for (const [code, box] of Object.entries(JUANDA_GRID_BOUNDS)) {
+    if (nLat >= box.minLat && nLat <= box.maxLat &&
+        nLng >= box.minLng && nLng <= box.maxLng) {
+      return {
+        success: true,
+        code: box.code,
+        row: box.row,
+        col: box.col,
+        bounds: box,
+        lat: nLat,
+        lng: nLng
+      };
+    }
+  }
+
+  // 3. Fallback batas matematis (untuk nilai pembulatan di garis pembagi grid)
+  const latRatio = (JUANDA_BOUNDS.maxLat - nLat) / (JUANDA_BOUNDS.maxLat - JUANDA_BOUNDS.minLat);
+  const lngRatio = (nLng - JUANDA_BOUNDS.minLng) / (JUANDA_BOUNDS.maxLng - JUANDA_BOUNDS.minLng);
+  const rIdx = Math.min(Math.max(0, Math.floor(latRatio * TOTAL_ROWS)), TOTAL_ROWS - 1);
+  const cIdx = Math.min(Math.max(0, Math.floor(lngRatio * TOTAL_COLS)), TOTAL_COLS - 1);
+  const fallbackCode = `${rowLetters[rIdx]}-${cIdx + 1}`;
+
+  return {
+    success: true,
+    code: fallbackCode,
+    row: rowLetters[rIdx],
+    col: cIdx + 1,
+    bounds: JUANDA_GRID_BOUNDS[fallbackCode],
+    lat: nLat,
+    lng: nLng
+  };
+}
+window.mapGpsToGridBoundingBox = mapGpsToGridBoundingBox;
+
 let rawGridData = {};
 try { rawGridData = JSON.parse(document.getElementById('rawGridDataJson').textContent) || {}; } catch(e) {}
 
 const gridData = {};
-const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 const X0 = 41.0;
 const Y0 = 121.0;
 const CW = 941.0 / 29.0;
@@ -493,10 +604,26 @@ function selectGrid(code, updateActive = true) {
     const il  = document.getElementById('inputLatitude');
     const iln = document.getElementById('inputLongitude');
     const mi  = document.getElementById('manualGridInput');
+    const ikg = document.getElementById('inputKodeGrid');
+    const igl = document.getElementById('inputGpsLat');
+    const ign = document.getElementById('inputGpsLng');
+
+    const fkg = document.getElementById('formKodeGrid');
+    const fgl = document.getElementById('formGpsLat');
+    const fgn = document.getElementById('formGpsLng');
+
     if (ig)  ig.value  = standardCode;
     if (il)  il.value  = coords.lat;
     if (iln) iln.value = coords.lng;
     if (mi)  mi.value  = standardCode;
+    if (ikg) ikg.value = standardCode;
+    if (fkg) fkg.value = standardCode;
+
+    // Sinkronkan koordinat GPS fallback jika belum ada nilai real GPS
+    if (igl && !igl.value) igl.value = coords.lat;
+    if (ign && !ign.value) ign.value = coords.lng;
+    if (fgl && !fgl.value) fgl.value = coords.lat;
+    if (fgn && !fgn.value) fgn.value = coords.lng;
 
     const mb = document.getElementById('mainPreviewBadge');
     const mz = document.getElementById('mainPreviewZoneName');

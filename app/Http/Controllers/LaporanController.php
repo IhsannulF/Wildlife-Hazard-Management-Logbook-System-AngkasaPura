@@ -234,8 +234,8 @@ class LaporanController extends Controller
 
         $statusLaporan = (stripos($request->input('tindak_lanjut', ''), 'telah ditangani') !== false) ? 'sudah' : 'belum';
 
-        // Tentukan grid_lokasi utama
-        $firstGrid = $request->input('grid_lokasi', '');
+        // Tentukan grid_lokasi utama (mendukung kode_grid dari GPS auto-detect dan grid_lokasi manual)
+        $firstGrid = $request->input('kode_grid') ?: $request->input('grid_lokasi', '');
         if (empty($firstGrid)) {
             foreach ($satwaInput as $s) {
                 foreach ($s['lokasi'] ?? [] as $lok) {
@@ -271,6 +271,17 @@ class LaporanController extends Controller
             $firstGrid
         );
 
+        // Tangkap koordinat GPS numerik (mendukung gps_lat/gps_lng dan latitude/longitude)
+        $rawLat = $request->input('gps_lat') !== null && $request->input('gps_lat') !== ''
+            ? $request->input('gps_lat')
+            : $request->input('latitude');
+        $rawLng = $request->input('gps_lng') !== null && $request->input('gps_lng') !== ''
+            ? $request->input('gps_lng')
+            : $request->input('longitude');
+
+        $gpsLat = ($rawLat !== null && $rawLat !== '') ? (float) $rawLat : null;
+        $gpsLng = ($rawLng !== null && $rawLng !== '') ? (float) $rawLng : null;
+
         $laporan = Laporan::create([
             'user_id' => $user->id,
             'nama_petugas' => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
@@ -281,8 +292,8 @@ class LaporanController extends Controller
             'area_inspeksi' => $request->input('area_inspeksi', ''),
             'tanda_tangan' => $request->input('tanda_tangan'),
             'grid_lokasi' => strtoupper($firstGrid ?: '-'),
-            'gps_lat' => $request->input('gps_lat'),
-            'gps_lng' => $request->input('gps_lng'),
+            'gps_lat' => $gpsLat,
+            'gps_lng' => $gpsLng,
             'risk_score' => $riskAssessment['score'],
             'risk_level' => $riskAssessment['level'],
             'ciri_ukuran' => $request->input('ciri_ukuran', '-'),
@@ -295,12 +306,16 @@ class LaporanController extends Controller
 
         // Simpan field dinamis ke extra_data (JSON)
         $standardFields = [
-            'nama_petugas', 'tanggal', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
-            'tanda_tangan', 'grid_lokasi', 'satwa', 'ciri_ukuran', 'kondisi_apron',
-            'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran', '_token', 'foto_lainnya',
+            'nama_petugas', 'tanggal', 'jam', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
+            'tanda_tangan', 'grid_lokasi', 'kode_grid', 'gps_lat', 'gps_lng', 'latitude', 'longitude',
+            'satwa', 'ciri_ukuran', 'kondisi_apron', 'aktivitas_satwa', 'tindak_lanjut',
+            'detail_pengusiran', '_token', 'foto_lainnya',
         ];
 
         $extraData = [];
+        if (! empty($firstGrid)) {
+            $extraData['kode_grid'] = strtoupper($firstGrid);
+        }
         $extraFieldsDef = FormField::where('aktif', true)->whereNotIn('nama_field', $standardFields)->get();
         foreach ($extraFieldsDef as $ef) {
             if ($request->has($ef->nama_field)) {
