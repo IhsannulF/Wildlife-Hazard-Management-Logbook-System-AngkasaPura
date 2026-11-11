@@ -246,7 +246,8 @@ class UserDashboardTest extends TestCase
         ]);
 
         $this->assertNotEmpty($laporan->no_laporan);
-        $this->assertStringStartsWith('BA-WHMS/AP1/AMC/', $laporan->no_laporan);
+        $this->assertMatchesRegularExpression('/^BA-WHMS\/AMC\/\d{2}\/\d{4}\/\d{4,}$/', $laporan->no_laporan);
+        $this->assertStringNotContainsString('/AP1/', $laporan->no_laporan);
 
         $laporan->delete();
     }

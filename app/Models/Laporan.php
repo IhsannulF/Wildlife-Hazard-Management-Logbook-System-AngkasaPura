@@ -35,6 +35,9 @@ class Laporan extends Model
         'tindak_lanjut',
         'detail_pengusiran',
         'status',
+        'validated_by',
+        'validated_at',
+        'validator_signature',
         'extra_data',
         'offline_sync_id',
     ];
@@ -43,6 +46,7 @@ class Laporan extends Model
     {
         return [
             'tanggal' => 'date',
+            'validated_at' => 'datetime',
             'risk_score' => 'integer',
             'gps_lat' => 'float',
             'gps_lng' => 'float',
@@ -57,16 +61,22 @@ class Laporan extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Laporan $laporan) {
+        static::created(function (Laporan $laporan): void {
             if (empty($laporan->no_laporan)) {
                 $tanggalStr = null;
                 if (! empty($laporan->tanggal)) {
-                    $tanggalStr = is_string($laporan->tanggal) ? $laporan->tanggal : $laporan->tanggal->format('Y-m-d');
+                    $tanggalStr = $laporan->tanggal instanceof Carbon
+                        ? $laporan->tanggal->format('Y-m-d')
+                        : (string) $laporan->tanggal;
                 }
-                $laporan->no_laporan = static::generateNoLaporan(
+
+                $generatedNo = static::generateNoLaporan(
                     $laporan->unit_kerja ?? 'AMC',
-                    $tanggalStr
+                    $tanggalStr,
+                    $laporan->id
                 );
+
+                $laporan->forceFill(['no_laporan' => $generatedNo])->saveQuietly();
             }
         });
     }
@@ -95,12 +105,44 @@ class Laporan extends Model
             $lastId = $id;
         }
 
-        return sprintf('BA-WHMS/AP1/%s/%s/%s/%04d', $unitCode, $bulan, $tahun, $lastId);
+        return sprintf('BA-WHMS/%s/%s/%s/%04d', $unitCode, $bulan, $tahun, $lastId);
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function validator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    /**
+     * Tandai Berita Acara sebagai tervalidasi oleh Safety Manager / Admin
+     * dan simpan snapshot spesimen tanda tangan pada saat pengesahan.
+     */
+    public function markAsValidated(User $validator, ?string $signature = null): void
+    {
+        $resolvedSignature = ! empty($signature)
+            ? $signature
+            : (! empty($validator->tanda_tangan) ? $validator->tanda_tangan : $this->validator_signature);
+
+        $this->status = 'sudah';
+        $this->validated_by = $validator->id;
+        $this->validated_at = $this->validated_at ?? now();
+        $this->validator_signature = $resolvedSignature;
+    }
+
+    /**
+     * Kembalikan status Berita Acara ke belum ditangani dan bersihkan metadata validasi.
+     */
+    public function resetValidation(): void
+    {
+        $this->status = 'belum';
+        $this->validated_by = null;
+        $this->validated_at = null;
+        $this->validator_signature = null;
     }
 
     public function detailSatwa(): HasMany

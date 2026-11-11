@@ -24,6 +24,8 @@ class RoleMiddleware
 
         if (! $user->aktif) {
             Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors(['username' => 'Akun Anda dinonaktifkan. Silakan hubungi admin.']);
         }

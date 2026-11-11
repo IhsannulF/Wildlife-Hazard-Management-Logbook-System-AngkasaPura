@@ -267,50 +267,77 @@ class ManajemenController extends Controller
     // ── User Management ──
     public function storeUser(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'namalengkap' => 'required|string|max:100',
             'username' => 'required|string|max:50|unique:users,username',
             'password' => 'required|string|min:6',
             'role' => 'required|in:admin,pegawai',
-            'jabatan' => 'nullable|string|max:50',
+            'jabatan' => 'nullable|string|max:100',
+            'tanda_tangan' => User::signatureDataUriRules(),
+            'tanda_tangan_file' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:1024',
         ]);
 
         User::create([
-            'namalengkap' => trim($request->namalengkap),
-            'username' => trim($request->username),
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'jabatan' => $request->jabatan ?: ($request->role === 'admin' ? 'Administrator' : 'Pegawai Lapangan'),
+            'namalengkap' => trim($validated['namalengkap']),
+            'username' => trim($validated['username']),
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'jabatan' => ($validated['jabatan'] ?? null) ?: ($validated['role'] === 'admin' ? 'Administrator' : 'Pegawai Lapangan'),
+            'tanda_tangan' => $this->resolveUserSignature($request, null),
             'aktif' => true,
         ]);
 
-        return redirect()->route('admin.users', ['tab' => 'users'])->with('sukses', "User \"{$request->username}\" berhasil ditambahkan.");
+        return redirect()->route('admin.users', ['tab' => 'users'])->with('sukses', "User \"{$validated['username']}\" berhasil ditambahkan.");
     }
 
     public function updateUser(Request $request, int $id)
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'namalengkap' => 'required|string|max:100',
             'username' => 'required|string|max:50|unique:users,username,'.$id,
             'password' => 'nullable|string|min:6',
             'role' => 'required|in:admin,pegawai',
-            'jabatan' => 'nullable|string|max:50',
+            'jabatan' => 'nullable|string|max:100',
+            'tanda_tangan' => User::signatureDataUriRules(),
+            'tanda_tangan_file' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:1024',
+            'remove_tanda_tangan' => 'nullable|boolean',
         ]);
 
-        $user->namalengkap = trim($request->namalengkap);
-        $user->username = trim($request->username);
-        $user->role = $request->role;
-        $user->jabatan = $request->jabatan ?: ($request->role === 'admin' ? 'Administrator' : 'Pegawai Lapangan');
+        $user->namalengkap = trim($validated['namalengkap']);
+        $user->username = trim($validated['username']);
+        $user->role = $validated['role'];
+        $user->jabatan = ($validated['jabatan'] ?? null) ?: ($validated['role'] === 'admin' ? 'Administrator' : 'Pegawai Lapangan');
+        $user->tanda_tangan = $this->resolveUserSignature($request, $user->tanda_tangan);
 
-        if (! empty($request->password)) {
-            $user->password = Hash::make($request->password);
+        if (! empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
         }
 
         $user->save();
 
         return redirect()->route('admin.users', ['tab' => 'users'])->with('sukses', "User \"{$user->username}\" berhasil diperbarui.");
+    }
+
+    private function resolveUserSignature(Request $request, ?string $existingSignature): ?string
+    {
+        if ($request->hasFile('tanda_tangan_file')) {
+            $encoded = User::encodeUploadedSignature($request->file('tanda_tangan_file'));
+            if ($encoded !== null) {
+                return $encoded;
+            }
+        }
+
+        if ($request->filled('tanda_tangan')) {
+            return trim((string) $request->input('tanda_tangan'));
+        }
+
+        if ($request->boolean('remove_tanda_tangan')) {
+            return null;
+        }
+
+        return $existingSignature;
     }
 
     public function toggleUser(int $id)

@@ -82,7 +82,7 @@ class AuthController extends Controller
 
             return back()->withErrors([
                 'username' => "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam $seconds detik.",
-            ])->onlyInput('username');
+            ])->onlyInput('username', 'remember');
         }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -92,10 +92,12 @@ class AuthController extends Controller
             $user = Auth::user();
             if (! $user->aktif) {
                 Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
 
                 return back()->withErrors([
                     'username' => 'Akun Anda sedang dinonaktifkan. Hubungi admin.',
-                ]);
+                ])->onlyInput('username', 'remember');
             }
 
             if ($user->role === 'admin') {
@@ -109,7 +111,7 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'username' => 'Username atau password salah.',
-        ])->onlyInput('username');
+        ])->onlyInput('username', 'remember');
     }
 
     public function logout(Request $request)

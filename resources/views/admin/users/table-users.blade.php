@@ -60,7 +60,20 @@
               </div>
             </td>
             <td class="py-2.5 px-3 font-code-coordinate text-injourney-teal font-semibold user-username">{{ $u->username }}</td>
-            <td class="py-2.5 px-3 text-secondary user-jabatan">{{ $u->jabatan ?: '-' }}</td>
+            <td class="py-2.5 px-3 text-secondary user-jabatan">
+              <div>{{ $u->jabatan ?: '-' }}</div>
+              @if(!empty($u->tanda_tangan))
+                <span class="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded mt-0.5">
+                  <span class="material-symbols-outlined text-[10px]">draw</span>
+                  Spesimen TTD Tersimpan
+                </span>
+              @elseif($u->role === 'admin')
+                <span class="inline-flex items-center gap-0.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded mt-0.5">
+                  <span class="material-symbols-outlined text-[10px]">pending</span>
+                  Belum Ada Spesimen TTD
+                </span>
+              @endif
+            </td>
             <td class="py-2.5 px-3 whitespace-nowrap">
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $u->role === 'admin' ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-700' }}">
                 <span class="w-1.5 h-1.5 rounded-full {{ $u->role === 'admin' ? 'bg-injourney-teal' : 'bg-slate-400' }}"></span>

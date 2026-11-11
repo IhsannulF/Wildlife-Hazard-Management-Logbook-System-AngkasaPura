@@ -7,8 +7,10 @@ use App\Models\DetailSatwa;
 use App\Models\FormField;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -557,6 +559,7 @@ class DashboardController extends Controller
     {
         $laporan = Laporan::with([
             'user',
+            'validator:id,namalengkap,username,jabatan,role,tanda_tangan',
             'detailSatwa.fotoLaporan',
             'fotoLaporan',
             'tanggapan' => function ($q) {
@@ -613,6 +616,11 @@ class DashboardController extends Controller
 
         $data = $laporan->toArray();
         $data['nama_user'] = $laporan->user ? ($laporan->user->namalengkap ?: $laporan->user->username) : '-';
+        $data['validator_name'] = $laporan->validator ? ($laporan->validator->namalengkap ?: $laporan->validator->username) : null;
+        $data['validator_jabatan'] = $laporan->validator ? $laporan->validator->validator_display_title : null;
+        $data['validated_at_human'] = $laporan->validated_at
+            ? $laporan->validated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB'
+            : null;
         $data['satwa'] = $satwaData;
         $data['foto_extra'] = $fotoExtra;
         $data['tanggapan'] = $tanggapanList;
@@ -635,9 +643,22 @@ class DashboardController extends Controller
             'area_inspeksi' => 'nullable|string',
             'grid_lokasi' => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
+            'validator_signature' => User::signatureDataUriRules(),
         ]);
 
-        $laporan->status = $request->input('status_validasi', $laporan->status);
+        $nextStatus = $request->input('status_validasi', $laporan->status);
+        $validator = Auth::user();
+
+        if ($nextStatus === 'sudah') {
+            if ($validator instanceof User && ($laporan->status !== 'sudah' || $laporan->validated_by === null || $request->filled('validator_signature'))) {
+                $laporan->markAsValidated($validator, $validated['validator_signature'] ?? null);
+            } else {
+                $laporan->status = 'sudah';
+            }
+        } elseif ($nextStatus === 'belum') {
+            $laporan->resetValidation();
+        }
+
         if ($request->filled('nama_petugas')) {
             $laporan->nama_petugas = $request->nama_petugas;
         }
@@ -668,6 +689,11 @@ class DashboardController extends Controller
                 'message' => 'Data laporan berhasil diperbarui.',
                 'status' => $laporan->status,
                 'status_label' => $laporan->status === 'sudah' ? 'Sudah Ditangani' : 'Belum Ditangani',
+                'validated_by' => $laporan->validated_by,
+                'validated_at' => $laporan->validated_at?->toIso8601String(),
+                'validated_at_human' => $laporan->validated_at
+                    ? $laporan->validated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB'
+                    : null,
             ]);
         }
 

@@ -230,7 +230,7 @@
           <tbody class="divide-y divide-slate-100 font-medium">
             @forelse($laporans as $index => $lap)
               @php
-                $noReg = $lap->no_laporan ?: sprintf('BA-WHMS/AP1/%s/%s/%s/%04d', strtoupper(substr($lap->unit_kerja, 0, 3) ?: 'AMC'), $lap->tanggal->format('m'), $lap->tanggal->format('Y'), $lap->id);
+                $noReg = $lap->no_laporan ?: \App\Models\Laporan::generateNoLaporan($lap->unit_kerja ?? 'AMC', $lap->tanggal?->format('Y-m-d'), $lap->id);
                 $isResolved = ($lap->status === 'sudah');
                 $totalSatwaEkor = $lap->detailSatwa->sum('jumlah');
                 $spesiesList = $lap->detailSatwa->pluck('nama_satwa')->unique()->filter()->values();
@@ -282,7 +282,7 @@
                 <td class="py-3.5 px-4">
                   <div class="flex items-center gap-2.5">
                     @if($firstFoto && !empty($firstFoto->nama_file))
-                      <img src="{{ asset('storage/uploads/' . $firstFoto->nama_file) }}" 
+                      <img src="{{ $firstFoto->url }}" 
                            alt="Foto Bukti" 
                            class="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0 bg-slate-100"
                            onerror="this.onerror=null; this.src='{{ asset('images/logo_login.png') }}';">
@@ -643,7 +643,9 @@
     statusBadge.textContent = '';
     statusBadge.className = 'hidden';
 
-    printBtn.href = `/admin/laporan/${id}/cetak`;
+    if (printBtn) {
+      printBtn.href = `/laporan/${id}/cetak`;
+    }
 
     fetch(`/laporan/${id}/detail`)
       .then(res => {
@@ -672,7 +674,7 @@
     const title = document.getElementById('modalTitle');
     const statusBadge = document.getElementById('modalStatusBadge');
 
-    const noLaporan = data.no_laporan || `BA-WHMS/AP1/AMC/${data.id}`;
+    const noLaporan = data.no_laporan || `BA-WHMS/AMC/${String(data.id).padStart(4, '0')}`;
     title.textContent = noLaporan;
 
     if (data.status === 'sudah') {
@@ -711,8 +713,9 @@
           </div>
         `;
         if (item.foto_laporan && item.foto_laporan.length > 0 && item.foto_laporan[0].nama_file) {
+          const fotoDir = item.foto_laporan[0].tipe === 'extra' ? 'extra' : 'satwa';
           fotoHtml = `
-            <img src="/storage/uploads/${item.foto_laporan[0].nama_file}" alt="Satwa" class="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-100">
+            <img src="/storage/uploads/${fotoDir}/${item.foto_laporan[0].nama_file}" alt="Satwa" class="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-100" onerror="this.onerror=null; this.src='/images/logo_login.png';">
           `;
         }
 

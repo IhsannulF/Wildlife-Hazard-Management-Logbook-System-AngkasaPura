@@ -397,6 +397,7 @@ class LaporanController extends Controller
         $user = Auth::user();
         $query = Laporan::with([
             'user',
+            'validator:id,namalengkap,username,jabatan,role',
             'detailSatwa.fotoLaporan',
             'fotoLaporan',
             'tanggapan' => function ($q) {
@@ -431,6 +432,11 @@ class LaporanController extends Controller
 
         $data = $laporan->toArray();
         $data['tanggapan'] = $tanggapanList;
+        $data['validator_name'] = $laporan->validator ? ($laporan->validator->namalengkap ?: $laporan->validator->username) : null;
+        $data['validator_jabatan'] = $laporan->validator ? $laporan->validator->validator_display_title : null;
+        $data['validated_at_human'] = $laporan->validated_at
+            ? $laporan->validated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB'
+            : null;
 
         return response()->json([
             'success' => true,

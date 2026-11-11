@@ -49,9 +49,9 @@ class TanggapanController extends Controller
             'isi' => trim($validated['isi']),
         ]);
 
-        // Jika Admin memilih kategori penutupan, otomatis tandai status laporan selesai
+        // Jika Admin memilih kategori penutupan, otomatis tandai status laporan selesai beserta metadata validator
         if ($user->role === 'admin' && $kategori === 'penutupan') {
-            $laporan->status = 'sudah';
+            $laporan->markAsValidated($user);
             $laporan->save();
         }
 

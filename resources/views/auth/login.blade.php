@@ -50,6 +50,13 @@
         <input type="password" id="password" name="password" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/90 text-slate-800 transition-all placeholder:text-slate-400" placeholder="Masukkan password" required>
       </div>
 
+      <div class="flex items-center justify-between pt-0.5">
+        <label for="remember" class="inline-flex items-center gap-2.5 cursor-pointer select-none group">
+          <input type="checkbox" id="remember" name="remember" value="1" {{ old('remember') ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-[#00A9C1] focus:ring-2 focus:ring-teal-500 focus:ring-offset-0 cursor-pointer accent-[#00A9C1]">
+          <span class="text-xs sm:text-sm font-medium text-slate-600 group-hover:text-slate-800 transition-colors">Ingat saya</span>
+        </label>
+      </div>
+
       <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 mt-2 cursor-pointer">
         Masuk ke Sistem
       </button>

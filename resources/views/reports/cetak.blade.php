@@ -526,7 +526,7 @@
                   <span>AUTENTIKASI & VALIDASI DOKUMEN SISTEM</span>
                 </div>
                 <div class="auth-content">
-                  <p><strong>Nomor Registrasi:</strong> WHMS-AP1-{{ str_pad($lap->id, 5, '0', STR_PAD_LEFT) }}-{{ $lap->tanggal ? $lap->tanggal->format('ymd') : '260000' }}</p>
+                  <p><strong>Nomor Registrasi:</strong> {{ $lap->no_laporan ?: \App\Models\Laporan::generateNoLaporan($lap->unit_kerja ?? 'AMC', $lap->tanggal?->format('Y-m-d'), $lap->id) }}</p>
                   <p><strong>Waktu Terbit:</strong> {{ $lap->created_at ? $lap->created_at->format('d/m/Y H:i') : date('d/m/Y H:i') }} WIB</p>
                   <p><strong>Status Validasi:</strong> <span class="auth-status {{ $lap->status === 'sudah' ? 'auth-verified' : 'auth-pending' }}">{{ $lap->status === 'sudah' ? 'Terverifikasi (Selesai Ditangani)' : 'Tercatat (Menunggu Verifikasi)' }}</span></p>
                   <p><strong>Klasifikasi Risiko:</strong> ICAO Level {{ ucfirst($lap->risk_level ?: 'Rendah') }} (Skor {{ $lap->risk_score ?: 1 }}/12)</p>
