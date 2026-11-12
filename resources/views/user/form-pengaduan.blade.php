@@ -74,7 +74,7 @@
     'icon' => 'edit_note',
     'maxWidth' => 'max-w-5xl',
     'actions' => '
-      <a href="' . ((($user->role ?? (auth()->user()?->role ?? 'pegawai')) === 'admin') ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
+      <a href="' . (auth()->user()->role === 'admin' ? route('admin.dashboard') : route('user.dashboard')) . '" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs">
         <span class="material-symbols-outlined text-base">arrow_back</span>
         Kembali
       </a>
@@ -357,54 +357,23 @@
             </div>
           </div>
 
-          <!-- 4. Pilihan Grid & Deteksi Lokasi GPS (REQ-FIELD-003) -->
+          <!-- 4. Pilihan Grid (Kolom Input Teks Kosong) -->
           <div>
-            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-              <label for="selectGridBurung" class="block text-xs font-bold text-slate-700">
-                Pilihan Grid Bandara <span class="text-rose-500">*</span>
-              </label>
-
-              <div class="flex items-center gap-2">
-                <!-- Tombol Deteksi Lokasi GPS (REQ-FIELD-003) -->
-                <button type="button" 
-                        id="btnGpsDetect" 
-                        onclick="triggerGpsDetection()" 
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-[#007fa3] border border-teal-200 font-bold text-xs transition-all cursor-pointer shadow-2xs active:scale-95 select-none"
-                        title="Deteksi posisi GPS gawai secara otomatis via HTML5 Geolocation API dan petakan ke kode grid Juanda">
-                  <span class="material-symbols-outlined text-sm text-[#00A9C1]" id="iconGpsBtn">my_location</span>
-                  <span id="textGpsBtn">Deteksi Lokasi GPS</span>
-                </button>
-
-                <button type="button" onclick="scrollKePetaBagian3()" class="text-xs font-semibold text-[#00A9C1] hover:underline flex items-center gap-1 cursor-pointer">
-                  <span>🗺 Lihat di Peta</span>
-                </button>
-              </div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="selectGridBurung" class="block text-xs font-bold text-slate-700">Pilihan Grid <span class="text-rose-500">*</span></label>
+              <button type="button" onclick="scrollKePetaBagian3()" class="text-xs font-semibold text-[#00A9C1] hover:underline flex items-center gap-1 cursor-pointer">
+                <span>🗺 Lihat / Pilih di Peta</span>
+              </button>
             </div>
             
             <input type="text" 
                    name="satwa[0][lokasi][0][grid]" 
                    id="selectGridBurung" 
                    value="{{ old('satwa.0.lokasi.0.grid', '') }}" 
-                   placeholder="Ketik nomor grid (misal: K-10, D-9) atau tekan tombol Deteksi Lokasi GPS" 
+                   placeholder="Ketik nomor grid (misal: K-10, D-9) atau klik peta di bawah" 
                    class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#00A9C1] focus:border-[#00A9C1] transition-all uppercase" 
                    oninput="onGridTextInput(this.value)" 
                    required>
-
-            <!-- Hidden Inputs untuk Pengiriman GPS & Kode Grid Resmi ke Database Laravel (REQ-FIELD-003) -->
-            <input type="hidden" name="gps_lat" id="formGpsLat" value="{{ old('gps_lat', old('latitude', '')) }}">
-            <input type="hidden" name="gps_lng" id="formGpsLng" value="{{ old('gps_lng', old('longitude', '')) }}">
-            <input type="hidden" name="kode_grid" id="formKodeGrid" value="{{ old('kode_grid', old('grid_lokasi', '')) }}">
-
-            <!-- GPS Auto-Detect Status & Feedback Panel (REQ-FIELD-003) -->
-            <div id="gpsStatusContainer" class="mt-2 text-xs">
-              <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-600 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="material-symbols-outlined text-sm text-[#00A9C1] shrink-0">my_location</span>
-                  <span class="text-[11px] truncate">Tekan <strong>"Deteksi Lokasi GPS"</strong> untuk auto-detect koordinat perangkat dan pemetaan grid.</span>
-                </div>
-                <span class="text-[10px] font-mono font-semibold text-slate-400 shrink-0 uppercase">HTML5 GPS</span>
-              </div>
-            </div>
 
             <div id="gridPillSummary" class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
               <span>Grid Terpilih: <strong id="gridPillText" class="text-slate-800 font-semibold">{{ old('satwa.0.lokasi.0.grid') ? ('Grid ' . old('satwa.0.lokasi.0.grid')) : '-' }}</strong></span>
@@ -998,15 +967,9 @@
     const txt = document.getElementById('gridPillText');
     if (txt) txt.textContent = val ? `Grid ${val}` : '-';
 
-    // Sync input hidden grid_lokasi & kode_grid
+    // Sync input hidden grid_lokasi
     const inputLokasi = document.getElementById('inputGridLokasi');
     if (inputLokasi) inputLokasi.value = val;
-
-    const formKode = document.getElementById('formKodeGrid');
-    if (formKode) formKode.value = val;
-
-    const inputKode = document.getElementById('inputKodeGrid');
-    if (inputKode) inputKode.value = val;
 
     // Trigger select on Map in Bagian 3
     if (val && typeof selectGrid === 'function') {
@@ -1020,14 +983,6 @@
     if (inp) {
       inp.value = gridCode;
     }
-    const formKode = document.getElementById('formKodeGrid');
-    if (formKode) {
-      formKode.value = gridCode;
-    }
-    const inputKode = document.getElementById('inputKodeGrid');
-    if (inputKode) {
-      inputKode.value = gridCode;
-    }
     const fullText = `Grid ${gridCode}` + (zoneName ? ` — ${zoneName}` : '');
     const txt = document.getElementById('gridPillText');
     if (txt) {
@@ -1040,224 +995,6 @@
     if (sec) {
       sec.scrollIntoView({ behavior: 'smooth' });
     }
-  }
-
-  // =============================================================================
-  // REQ-FIELD-003: GPS AUTO-DETECT KE KODE GRID BANDARA (HTML5 GEOLOCATION API)
-  // =============================================================================
-  function triggerGpsDetection() {
-    const btn = document.getElementById('btnGpsDetect');
-    const icon = document.getElementById('iconGpsBtn');
-    const text = document.getElementById('textGpsBtn');
-
-    // 1. Validasi dukungan Geolocation API di browser
-    if (!navigator || !('geolocation' in navigator)) {
-      renderGpsStatus(
-        'error',
-        'Browser Tidak Mendukung Geolocation',
-        'Peramban (browser) yang Anda gunakan tidak mendukung HTML5 Geolocation API. Silakan masukkan kode grid secara manual atau pilih melalui peta.',
-        null
-      );
-      return;
-    }
-
-    // 2. Set UI ke status loading
-    if (btn) {
-      btn.disabled = true;
-      btn.classList.add('opacity-75', 'cursor-wait');
-    }
-    if (icon) {
-      icon.classList.add('animate-spin');
-      icon.textContent = 'progress_activity';
-    }
-    if (text) {
-      text.textContent = 'Mencari GPS...';
-    }
-
-    renderGpsStatus(
-      'loading',
-      'Mencari Sinyal Satelit GPS...',
-      'Mengaktifkan sensor GPS gawai Anda dengan mode presisi tinggi (enableHighAccuracy)... Mohon pastikan fitur Lokasi/GPS aktif.',
-      null
-    );
-
-    const geoOptions = {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      function(position) {
-        resetGpsButton();
-
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : null;
-
-        // Simpan nilai koordinat numerik ke form
-        setGpsFormCoordinates(lat, lng);
-
-        // Jalankan pemetaan Bounding Box Geofencing
-        const result = typeof mapGpsToGridBoundingBox === 'function'
-          ? mapGpsToGridBoundingBox(lat, lng)
-          : null;
-
-        if (!result || !result.success) {
-          if (result && result.reason === 'OUT_OF_BOUNDS') {
-            renderGpsStatus(
-              'warning',
-              'Koordinat di Luar Batas Grid Juanda',
-              `Koordinat GPS terdeteksi (Lintang: <strong>${lat.toFixed(6)}</strong>, Bujur: <strong>${lng.toFixed(6)}</strong>${accuracy ? ` • Akurasi: ±${accuracy}m` : ''}), namun berada di luar batas grid sisi udara Bandara Internasional Juanda. Anda dapat memilih nomor grid secara manual atau melalui peta.`,
-              { lat, lng, accuracy }
-            );
-          } else {
-            renderGpsStatus(
-              'error',
-              'Gagal Memetakan Grid',
-              `Koordinat GPS terdeteksi (${lat.toFixed(6)}, ${lng.toFixed(6)}), namun terjadi kendala saat pemetaan batas grid. Silakan tentukan nomor grid secara manual.`,
-              { lat, lng, accuracy }
-            );
-          }
-          return;
-        }
-
-        // Sukses memetakan ke grid bandara
-        const matchedGrid = result.code;
-        setGpsGridResult(matchedGrid);
-
-        renderGpsStatus(
-          'success',
-          `✓ GPS Terkunci — Grid ${matchedGrid}`,
-          `Lintang: <strong>${lat.toFixed(6)}</strong> • Bujur: <strong>${lng.toFixed(6)}</strong>${accuracy ? ` (Akurasi: ±${accuracy}m)` : ''}. Kode grid <strong>${matchedGrid}</strong> otomatis diterapkan ke form dan peta.`,
-          { lat, lng, accuracy, grid: matchedGrid }
-        );
-
-        // Sinkronkan input Bagian 2
-        const inputBurung = document.getElementById('selectGridBurung');
-        if (inputBurung) {
-          inputBurung.value = matchedGrid;
-          inputBurung.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        // Sinkronkan ke Peta Interaktif Bagian 3
-        if (typeof selectGrid === 'function') {
-          selectGrid(matchedGrid, true);
-        }
-      },
-      function(err) {
-        resetGpsButton();
-
-        let title = 'Gagal Mendeteksi GPS';
-        let message = 'Terjadi kendala saat mengakses sensor GPS perangkat.';
-
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            title = 'Izin Akses GPS Ditolak';
-            message = 'Pengguna menolak izin akses lokasi GPS pada peramban. Silakan aktifkan izin lokasi di pengaturan browser (ikon gembok/pengaturan situs di address bar) untuk mendeteksi posisi otomatis.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            title = 'Sinyal GPS Tidak Tersedia';
-            message = 'Perangkat tidak dapat menentukan posisi. Pastikan fitur GPS/Lokasi perangkat Anda aktif dan memiliki sinyal yang memadai.';
-            break;
-          case err.TIMEOUT:
-            title = 'Deteksi GPS Timeout (Waktu Habis)';
-            message = 'Waktu pencarian sinyal satelit GPS melebihi batas waktu (timeout). Pastikan Anda berada di ruang terbuka bebas hambatan dan coba tekan kembali tombol Deteksi Lokasi GPS.';
-            break;
-        }
-
-        renderGpsStatus('error', title, message, null);
-      },
-      geoOptions
-    );
-  }
-
-  function resetGpsButton() {
-    const btn = document.getElementById('btnGpsDetect');
-    const icon = document.getElementById('iconGpsBtn');
-    const text = document.getElementById('textGpsBtn');
-    if (btn) {
-      btn.disabled = false;
-      btn.classList.remove('opacity-75', 'cursor-wait');
-    }
-    if (icon) {
-      icon.classList.remove('animate-spin');
-      icon.textContent = 'my_location';
-    }
-    if (text) {
-      text.textContent = 'Deteksi Lokasi GPS';
-    }
-  }
-
-  function setGpsFormCoordinates(lat, lng) {
-    const fLat = parseFloat(lat).toFixed(6);
-    const fLng = parseFloat(lng).toFixed(6);
-
-    const formLat = document.getElementById('formGpsLat');
-    const formLng = document.getElementById('formGpsLng');
-    const pickerLat = document.getElementById('inputLatitude');
-    const pickerLng = document.getElementById('inputLongitude');
-    const inputGpsLat = document.getElementById('inputGpsLat');
-    const inputGpsLng = document.getElementById('inputGpsLng');
-
-    if (formLat) formLat.value = fLat;
-    if (formLng) formLng.value = fLng;
-    if (pickerLat) pickerLat.value = fLat;
-    if (pickerLng) pickerLng.value = fLng;
-    if (inputGpsLat) inputGpsLat.value = fLat;
-    if (inputGpsLng) inputGpsLng.value = fLng;
-  }
-
-  function setGpsGridResult(gridCode) {
-    const formKodeGrid = document.getElementById('formKodeGrid');
-    const inputKodeGrid = document.getElementById('inputKodeGrid');
-    const inputGridLokasi = document.getElementById('inputGridLokasi');
-    const selectGridBurung = document.getElementById('selectGridBurung');
-
-    if (formKodeGrid) formKodeGrid.value = gridCode;
-    if (inputKodeGrid) inputKodeGrid.value = gridCode;
-    if (inputGridLokasi) inputGridLokasi.value = gridCode;
-    if (selectGridBurung) selectGridBurung.value = gridCode;
-  }
-
-  function renderGpsStatus(type, title, message, details) {
-    const container = document.getElementById('gpsStatusContainer');
-    if (!container) return;
-
-    let bgClass = 'bg-slate-50 border-slate-200 text-slate-700';
-    let iconName = 'info';
-    let iconClass = 'text-slate-500';
-
-    if (type === 'loading') {
-      bgClass = 'bg-cyan-50/90 border-cyan-200 text-cyan-900';
-      iconName = 'progress_activity';
-      iconClass = 'text-[#00A9C1] animate-spin';
-    } else if (type === 'success') {
-      bgClass = 'bg-emerald-50 border-emerald-200 text-emerald-900';
-      iconName = 'check_circle';
-      iconClass = 'text-emerald-600';
-    } else if (type === 'warning') {
-      bgClass = 'bg-amber-50 border-amber-200 text-amber-900';
-      iconName = 'warning';
-      iconClass = 'text-amber-600';
-    } else if (type === 'error') {
-      bgClass = 'bg-rose-50 border-rose-200 text-rose-900';
-      iconName = 'error';
-      iconClass = 'text-rose-600';
-    }
-
-    container.innerHTML = `
-      <div class="p-3 rounded-xl border ${bgClass} transition-all duration-300 flex items-start gap-2.5 shadow-2xs">
-        <span class="material-symbols-outlined text-lg ${iconClass} shrink-0 mt-0.5">${iconName}</span>
-        <div class="min-w-0 flex-1">
-          <div class="font-bold text-xs flex items-center justify-between gap-2 flex-wrap">
-            <span>${title}</span>
-            ${details && details.grid ? `<span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold text-[11px]">GRID ${details.grid}</span>` : ''}
-          </div>
-          <div class="text-[11px] mt-0.5 leading-relaxed opacity-90">${message}</div>
-        </div>
-      </div>
-    `;
   }
 
   // ── Form Validation & Pre-submit Sync ──

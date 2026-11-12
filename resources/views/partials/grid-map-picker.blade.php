@@ -37,10 +37,10 @@
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 uppercase tracking-wider">Koordinat Terpilih</span>
-          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-[#007fa3]">Area Sisi Udara</span>
+          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Flocking Sedang</span>
         </div>
         <h4 id="mainPreviewZoneName" class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-          Zona {{ $initialGrid }} (Area Sisi Udara)
+          Kanal Drainase Perimeter Selatan Terminal 2
         </h4>
         <div id="mainPreviewGps" class="text-[11px] text-slate-500 font-mono mt-0.5 truncate flex items-center gap-1">
           <span class="material-symbols-outlined text-teal-600 text-xs">my_location</span>
@@ -51,13 +51,6 @@
 
     {{-- Actions --}}
     <div class="flex items-center gap-2 shrink-0">
-      <button type="button" onclick="triggerGpsDetection()"
-              class="px-3.5 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#007fa3] border border-teal-200 hover:border-teal-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
-              title="Deteksi posisi GPS perangkat otomatis via HTML5 Geolocation API (REQ-FIELD-003)">
-        <span class="material-symbols-outlined text-base text-[#00A9C1]">my_location</span>
-        <span class="hidden sm:inline">Deteksi GPS</span>
-      </button>
-
       <button type="button" onclick="applyGridToSatwa()"
               class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
               title="Salin koordinat ke seluruh baris jenis satwa terpilih">
@@ -78,9 +71,6 @@
   <input type="hidden" name="grid_lokasi" id="inputGridLokasi" value="{{ $initialGrid }}" required>
   <input type="hidden" name="latitude"    id="inputLatitude"   value="{{ $initialLat }}">
   <input type="hidden" name="longitude"   id="inputLongitude"  value="{{ $initialLng }}">
-  <input type="hidden" name="kode_grid"   id="inputKodeGrid"   value="{{ $initialGrid }}">
-  <input type="hidden" name="gps_lat"     id="inputGpsLat"     value="{{ old('gps_lat', $initialLat) }}">
-  <input type="hidden" name="gps_lng"     id="inputGpsLng"     value="{{ old('gps_lng', $initialLng) }}">
 
   {{-- Manual Input Drawer (Hidden by default) --}}
   <div id="manualInputContainer" class="hidden p-3 bg-white rounded-xl border border-slate-200 flex items-center gap-3">
@@ -247,8 +237,34 @@
               <circle cx="754.9" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
             </g>
 
-            {{-- SUB-LAYER C: HOTSPOT BAHAYA SATWA LIAR (Dikosongkan agar peta form input bersih & ringan) --}}
-            <g id="layerHotspots"></g>
+            {{-- SUB-LAYER C: HOTSPOT BAHAYA SATWA LIAR --}}
+            <g id="layerHotspots">
+              @foreach($rows as $rIdx => $rChar)
+                @for($cNum = 1; $cNum <= 29; $cNum++)
+                  @php
+                    $codeKey1 = $rChar . '-' . $cNum;
+                    $codeKey2 = $rChar . $cNum;
+                    $itemData = $normGrid[$codeKey1] ?? ($normGrid[$codeKey2] ?? null);
+                    $cellLeft = round($x0 + ($cNum - 1) * $cw, 2);
+                    $cellTop  = round($y0 + $rIdx * $rh, 2);
+                    $cellW    = round($cw, 2);
+                    $cellH    = round($rh, 2);
+                  @endphp
+                  @if($itemData)
+                    @php
+                      $cCount = $itemData['count'];
+                      $isKritis = $cCount >= 30;
+                      $isSedang = $cCount >= 15 && $cCount < 30;
+                      $fillColor = $isKritis ? 'rgba(239, 68, 68, 0.55)' : ($isSedang ? 'rgba(245, 158, 11, 0.50)' : 'rgba(0, 163, 180, 0.45)');
+                      $strokeColor = $isKritis ? '#EF4444' : ($isSedang ? '#F59E0B' : '#00A3B4');
+                    @endphp
+                    <rect x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}" fill="{{ $fillColor }}" stroke="{{ $strokeColor }}" stroke-width="1.8" rx="1.5" />
+                    <rect x="{{ round($cellLeft + ($cellW - 17)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="17" height="12" rx="3" fill="#0F172A" fill-opacity="0.88" stroke="#FFFFFF" stroke-width="0.8" />
+                    <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cCount }}</text>
+                  @endif
+                @endfor
+              @endforeach
+            </g>
 
             {{-- SUB-LAYER D: LABEL KODING GRID KOORDINAT A1 - L29 --}}
             <g id="layerGridLabels">
@@ -276,11 +292,13 @@
                   $cellTop  = round($y0 + $rIdx * $rh, 2);
                   $cellW    = round($cw, 2);
                   $cellH    = round($rh, 2);
+                  $hasData  = isset($normGrid[$codeKey1]) || isset($normGrid[$codeKey2]);
                 @endphp
                 <rect id="hitCell_{{ $rChar }}_{{ $cNum }}"
                       x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}"
                       fill="transparent" class="grid-hit-cell cursor-pointer transition-colors"
                       data-grid="{{ $codeKey1 }}" data-grid-compact="{{ $codeKey2 }}" data-row="{{ $rChar }}" data-col="{{ $cNum }}"
+                      data-has-data="{{ $hasData ? '1' : '0' }}"
                       onmouseenter="onHoverGrid('{{ $codeKey1 }}', '{{ $rChar }}', {{ $cNum }})"
                       onmouseleave="onLeaveGrid()"
                       onclick="selectGrid('{{ $codeKey1 }}')" />
@@ -312,112 +330,11 @@
 // =============================================================================
 const JUANDA_BOUNDS = { minLat: -7.385000, maxLat: -7.375000, minLng: 112.775000, maxLng: 112.805000 };
 
-// =============================================================================
-// REQ-FIELD-003: STRUKTUR DATA JSON BOUNDING BOX SELURUH GRID JUANDA (A1 - L29)
-// =============================================================================
-const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-const TOTAL_ROWS = 12;
-const TOTAL_COLS = 29;
-
-function buildJuandaGridBoundsJson() {
-  const dLat = (JUANDA_BOUNDS.maxLat - JUANDA_BOUNDS.minLat) / TOTAL_ROWS;
-  const dLng = (JUANDA_BOUNDS.maxLng - JUANDA_BOUNDS.minLng) / TOTAL_COLS;
-  const bounds = {};
-
-  for (let r = 0; r < TOTAL_ROWS; r++) {
-    const rowChar = rowLetters[r];
-    const maxLatCell = parseFloat((JUANDA_BOUNDS.maxLat - r * dLat).toFixed(7));
-    const minLatCell = parseFloat((JUANDA_BOUNDS.maxLat - (r + 1) * dLat).toFixed(7));
-
-    for (let c = 1; c <= TOTAL_COLS; c++) {
-      const cIdx = c - 1;
-      const minLngCell = parseFloat((JUANDA_BOUNDS.minLng + cIdx * dLng).toFixed(7));
-      const maxLngCell = parseFloat((JUANDA_BOUNDS.minLng + (cIdx + 1) * dLng).toFixed(7));
-      const code = `${rowChar}-${c}`;
-      const centerLat = parseFloat(((maxLatCell + minLatCell) / 2).toFixed(6));
-      const centerLng = parseFloat(((minLngCell + maxLngCell) / 2).toFixed(6));
-
-      bounds[code] = {
-        code: code,
-        row: rowChar,
-        col: c,
-        minLat: minLatCell,
-        maxLat: maxLatCell,
-        minLng: minLngCell,
-        maxLng: maxLngCell,
-        centerLat: centerLat,
-        centerLng: centerLng
-      };
-    }
-  }
-  return bounds;
-}
-
-const JUANDA_GRID_BOUNDS = buildJuandaGridBoundsJson();
-window.JUANDA_GRID_BOUNDS = JUANDA_GRID_BOUNDS;
-
-/**
- * Algoritma Bounding Box Geofencing (REQ-FIELD-003)
- * Memetakan koordinat numerik latitude & longitude ke kode grid Bandara Juanda
- */
-function mapGpsToGridBoundingBox(lat, lng) {
-  const nLat = parseFloat(lat);
-  const nLng = parseFloat(lng);
-
-  if (isNaN(nLat) || isNaN(nLng)) {
-    return { success: false, reason: 'INVALID_COORDINATES' };
-  }
-
-  // 1. Validasi apakah koordinat berada di dalam rentang batas wilayah bandara
-  if (nLat < JUANDA_BOUNDS.minLat || nLat > JUANDA_BOUNDS.maxLat ||
-      nLng < JUANDA_BOUNDS.minLng || nLng > JUANDA_BOUNDS.maxLng) {
-    return {
-      success: false,
-      reason: 'OUT_OF_BOUNDS',
-      lat: nLat,
-      lng: nLng
-    };
-  }
-
-  // 2. Periksa kecocokan pada struktur data JSON bounding box setiap grid
-  for (const [code, box] of Object.entries(JUANDA_GRID_BOUNDS)) {
-    if (nLat >= box.minLat && nLat <= box.maxLat &&
-        nLng >= box.minLng && nLng <= box.maxLng) {
-      return {
-        success: true,
-        code: box.code,
-        row: box.row,
-        col: box.col,
-        bounds: box,
-        lat: nLat,
-        lng: nLng
-      };
-    }
-  }
-
-  // 3. Fallback batas matematis (untuk nilai pembulatan di garis pembagi grid)
-  const latRatio = (JUANDA_BOUNDS.maxLat - nLat) / (JUANDA_BOUNDS.maxLat - JUANDA_BOUNDS.minLat);
-  const lngRatio = (nLng - JUANDA_BOUNDS.minLng) / (JUANDA_BOUNDS.maxLng - JUANDA_BOUNDS.minLng);
-  const rIdx = Math.min(Math.max(0, Math.floor(latRatio * TOTAL_ROWS)), TOTAL_ROWS - 1);
-  const cIdx = Math.min(Math.max(0, Math.floor(lngRatio * TOTAL_COLS)), TOTAL_COLS - 1);
-  const fallbackCode = `${rowLetters[rIdx]}-${cIdx + 1}`;
-
-  return {
-    success: true,
-    code: fallbackCode,
-    row: rowLetters[rIdx],
-    col: cIdx + 1,
-    bounds: JUANDA_GRID_BOUNDS[fallbackCode],
-    lat: nLat,
-    lng: nLng
-  };
-}
-window.mapGpsToGridBoundingBox = mapGpsToGridBoundingBox;
-
 let rawGridData = {};
 try { rawGridData = JSON.parse(document.getElementById('rawGridDataJson').textContent) || {}; } catch(e) {}
 
 const gridData = {};
+const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 const X0 = 41.0;
 const Y0 = 121.0;
 const CW = 941.0 / 29.0;
@@ -522,14 +439,20 @@ if (mapWrapper) {
 
 // Real-Time HUD Hover Handler
 function onHoverGrid(code, row, col) {
+  const clean = code.replace(/[-_ =]/g, '').toUpperCase();
   const compact = row + col;
+  const data = gridData[code] || gridData[compact];
 
   const hudCoord = document.getElementById('gisHudCoord');
   const hudInfo  = document.getElementById('gisHudInfo');
 
   if (hudCoord) hudCoord.innerText = `KOORDINAT: ${compact} (${row}-${col})`;
   if (hudInfo) {
-    hudInfo.innerText = `Area Sisi Udara Bandara Juanda • Baris ${row}, Kolom ${col}`;
+    if (data && data.count > 0) {
+      hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+    } else {
+      hudInfo.innerText = `Area Steril Sisi Udara • Sumbu Horisontal ${col}, Sumbu Vertikal ${row}`;
+    }
   }
 
   // Highlight hit cell
@@ -570,7 +493,12 @@ function selectGrid(code, updateActive = true) {
     standardCode = rowChar + '-' + colNum;
   }
 
-  const zoneName = 'Zona ' + compactCode + ' (Area Sisi Udara)';
+  const data = gridData[standardCode] || gridData[compactCode] || {
+    grid: standardCode,
+    zone_name: 'Zona ' + compactCode + ' (Area Sisi Udara)',
+    count: 0,
+    dominant_species: 'Tidak Ada'
+  };
   const coords = getGridCoordinates(rowChar, colNum);
 
   // Position Active Selection Box Reticle in SVG
@@ -596,7 +524,7 @@ function selectGrid(code, updateActive = true) {
   const hudCoord = document.getElementById('gisHudCoord');
   const hudInfo  = document.getElementById('gisHudInfo');
   if (hudCoord) hudCoord.innerText = `TERPILIH: ${compactCode} (${standardCode})`;
-  if (hudInfo) hudInfo.innerText = `${zoneName} • Lintang: ${coords.lat}, Bujur: ${coords.lng}`;
+  if (hudInfo) hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
 
   // Update Form inputs & Main Preview Bar
   if (updateActive) {
@@ -604,37 +532,24 @@ function selectGrid(code, updateActive = true) {
     const il  = document.getElementById('inputLatitude');
     const iln = document.getElementById('inputLongitude');
     const mi  = document.getElementById('manualGridInput');
-    const ikg = document.getElementById('inputKodeGrid');
-    const igl = document.getElementById('inputGpsLat');
-    const ign = document.getElementById('inputGpsLng');
-
-    const fkg = document.getElementById('formKodeGrid');
-    const fgl = document.getElementById('formGpsLat');
-    const fgn = document.getElementById('formGpsLng');
-
     if (ig)  ig.value  = standardCode;
     if (il)  il.value  = coords.lat;
     if (iln) iln.value = coords.lng;
     if (mi)  mi.value  = standardCode;
-    if (ikg) ikg.value = standardCode;
-    if (fkg) fkg.value = standardCode;
-
-    // Sinkronkan koordinat GPS fallback jika belum ada nilai real GPS
-    if (igl && !igl.value) igl.value = coords.lat;
-    if (ign && !ign.value) ign.value = coords.lng;
-    if (fgl && !fgl.value) fgl.value = coords.lat;
-    if (fgn && !fgn.value) fgn.value = coords.lng;
 
     const mb = document.getElementById('mainPreviewBadge');
     const mz = document.getElementById('mainPreviewZoneName');
     const mg = document.getElementById('mainPreviewGps');
     const mr = document.getElementById('mainPreviewRisk');
     if (mb) mb.innerText = standardCode;
-    if (mz) mz.innerText = zoneName;
+    if (mz) mz.innerText = data.zone_name || ('Zona ' + standardCode);
     if (mg) mg.innerHTML = `<span class="material-symbols-outlined text-teal-600 text-xs">my_location</span><span>Lintang: ${coords.lat} • Bujur: ${coords.lng}</span>`;
     if (mr) {
-      mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-[#007fa3]';
-      mr.innerText = 'Aktif';
+      const c = data.count || 0;
+      if      (c >= 30) { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800';   mr.innerText = 'Kritis (>30)'; }
+      else if (c >= 15) { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800'; mr.innerText = 'Sedang (15–30)'; }
+      else if (c >  0)  { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800';     mr.innerText = 'Rendah (<15)'; }
+      else              { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700'; mr.innerText = 'Steril'; }
     }
 
     if (activeTargetSatwaInput) {
@@ -644,7 +559,7 @@ function selectGrid(code, updateActive = true) {
     }
 
     if (typeof onMapGridSelected === 'function') {
-      onMapGridSelected(standardCode, zoneName);
+      onMapGridSelected(standardCode, data.zone_name);
     }
   }
 }
