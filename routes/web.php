@@ -34,6 +34,7 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
 Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
     Route::get('/laporan/{id}/detail', [LaporanController::class, 'detail'])->name('laporan.detail.user');
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
+    Route::get('/laporan/{id}/pdf', [AdminReportController::class, 'downloadPdf'])->name('laporan.pdf');
     Route::post('/laporan/{id}/tanggapan', [TanggapanController::class, 'store'])->name('laporan.tanggapan.store');
 });
 
@@ -81,7 +82,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Cetak & Export
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
+    Route::get('/laporan/{id}/pdf', [AdminReportController::class, 'downloadPdf'])->name('laporan.pdf');
     Route::get('/export-excel', [AdminReportController::class, 'index'])->name('export.excel');
     Route::match(['get', 'post'], '/export-excel/download', [AdminReportController::class, 'downloadExcel'])->name('export.excel.download');
     Route::get('/export-excel/count', [AdminReportController::class, 'countMatching'])->name('export.excel.count');
+    Route::match(['get', 'post'], '/export-bundle-pdf', [AdminReportController::class, 'downloadMonthlyBundlePdf'])->name('export.bundle.pdf');
+    Route::get('/export-bundle-pdf/count', [AdminReportController::class, 'countMonthlyBundle'])->name('export.bundle.count');
 });

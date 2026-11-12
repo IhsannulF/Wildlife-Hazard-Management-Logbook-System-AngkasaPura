@@ -37,10 +37,10 @@
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 uppercase tracking-wider">Koordinat Terpilih</span>
-          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Flocking Sedang</span>
+          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-[#007fa3]">Area Sisi Udara</span>
         </div>
         <h4 id="mainPreviewZoneName" class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-          Kanal Drainase Perimeter Selatan Terminal 2
+          Zona {{ $initialGrid }} (Area Sisi Udara)
         </h4>
         <div id="mainPreviewGps" class="text-[11px] text-slate-500 font-mono mt-0.5 truncate flex items-center gap-1">
           <span class="material-symbols-outlined text-teal-600 text-xs">my_location</span>
@@ -237,34 +237,8 @@
               <circle cx="754.9" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
             </g>
 
-            {{-- SUB-LAYER C: HOTSPOT BAHAYA SATWA LIAR --}}
-            <g id="layerHotspots">
-              @foreach($rows as $rIdx => $rChar)
-                @for($cNum = 1; $cNum <= 29; $cNum++)
-                  @php
-                    $codeKey1 = $rChar . '-' . $cNum;
-                    $codeKey2 = $rChar . $cNum;
-                    $itemData = $normGrid[$codeKey1] ?? ($normGrid[$codeKey2] ?? null);
-                    $cellLeft = round($x0 + ($cNum - 1) * $cw, 2);
-                    $cellTop  = round($y0 + $rIdx * $rh, 2);
-                    $cellW    = round($cw, 2);
-                    $cellH    = round($rh, 2);
-                  @endphp
-                  @if($itemData)
-                    @php
-                      $cCount = $itemData['count'];
-                      $isKritis = $cCount >= 30;
-                      $isSedang = $cCount >= 15 && $cCount < 30;
-                      $fillColor = $isKritis ? 'rgba(239, 68, 68, 0.55)' : ($isSedang ? 'rgba(245, 158, 11, 0.50)' : 'rgba(0, 163, 180, 0.45)');
-                      $strokeColor = $isKritis ? '#EF4444' : ($isSedang ? '#F59E0B' : '#00A3B4');
-                    @endphp
-                    <rect x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}" fill="{{ $fillColor }}" stroke="{{ $strokeColor }}" stroke-width="1.8" rx="1.5" />
-                    <rect x="{{ round($cellLeft + ($cellW - 17)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="17" height="12" rx="3" fill="#0F172A" fill-opacity="0.88" stroke="#FFFFFF" stroke-width="0.8" />
-                    <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cCount }}</text>
-                  @endif
-                @endfor
-              @endforeach
-            </g>
+            {{-- SUB-LAYER C: HOTSPOT BAHAYA SATWA LIAR (Dikosongkan agar peta form input bersih & ringan) --}}
+            <g id="layerHotspots"></g>
 
             {{-- SUB-LAYER D: LABEL KODING GRID KOORDINAT A1 - L29 --}}
             <g id="layerGridLabels">
@@ -292,13 +266,11 @@
                   $cellTop  = round($y0 + $rIdx * $rh, 2);
                   $cellW    = round($cw, 2);
                   $cellH    = round($rh, 2);
-                  $hasData  = isset($normGrid[$codeKey1]) || isset($normGrid[$codeKey2]);
                 @endphp
                 <rect id="hitCell_{{ $rChar }}_{{ $cNum }}"
                       x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}"
                       fill="transparent" class="grid-hit-cell cursor-pointer transition-colors"
                       data-grid="{{ $codeKey1 }}" data-grid-compact="{{ $codeKey2 }}" data-row="{{ $rChar }}" data-col="{{ $cNum }}"
-                      data-has-data="{{ $hasData ? '1' : '0' }}"
                       onmouseenter="onHoverGrid('{{ $codeKey1 }}', '{{ $rChar }}', {{ $cNum }})"
                       onmouseleave="onLeaveGrid()"
                       onclick="selectGrid('{{ $codeKey1 }}')" />
@@ -439,20 +411,14 @@ if (mapWrapper) {
 
 // Real-Time HUD Hover Handler
 function onHoverGrid(code, row, col) {
-  const clean = code.replace(/[-_ =]/g, '').toUpperCase();
   const compact = row + col;
-  const data = gridData[code] || gridData[compact];
 
   const hudCoord = document.getElementById('gisHudCoord');
   const hudInfo  = document.getElementById('gisHudInfo');
 
   if (hudCoord) hudCoord.innerText = `KOORDINAT: ${compact} (${row}-${col})`;
   if (hudInfo) {
-    if (data && data.count > 0) {
-      hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
-    } else {
-      hudInfo.innerText = `Area Steril Sisi Udara • Sumbu Horisontal ${col}, Sumbu Vertikal ${row}`;
-    }
+    hudInfo.innerText = `Area Sisi Udara Bandara Juanda • Baris ${row}, Kolom ${col}`;
   }
 
   // Highlight hit cell
@@ -493,12 +459,7 @@ function selectGrid(code, updateActive = true) {
     standardCode = rowChar + '-' + colNum;
   }
 
-  const data = gridData[standardCode] || gridData[compactCode] || {
-    grid: standardCode,
-    zone_name: 'Zona ' + compactCode + ' (Area Sisi Udara)',
-    count: 0,
-    dominant_species: 'Tidak Ada'
-  };
+  const zoneName = 'Zona ' + compactCode + ' (Area Sisi Udara)';
   const coords = getGridCoordinates(rowChar, colNum);
 
   // Position Active Selection Box Reticle in SVG
@@ -524,7 +485,7 @@ function selectGrid(code, updateActive = true) {
   const hudCoord = document.getElementById('gisHudCoord');
   const hudInfo  = document.getElementById('gisHudInfo');
   if (hudCoord) hudCoord.innerText = `TERPILIH: ${compactCode} (${standardCode})`;
-  if (hudInfo) hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+  if (hudInfo) hudInfo.innerText = `${zoneName} • Lintang: ${coords.lat}, Bujur: ${coords.lng}`;
 
   // Update Form inputs & Main Preview Bar
   if (updateActive) {
@@ -542,14 +503,11 @@ function selectGrid(code, updateActive = true) {
     const mg = document.getElementById('mainPreviewGps');
     const mr = document.getElementById('mainPreviewRisk');
     if (mb) mb.innerText = standardCode;
-    if (mz) mz.innerText = data.zone_name || ('Zona ' + standardCode);
+    if (mz) mz.innerText = zoneName;
     if (mg) mg.innerHTML = `<span class="material-symbols-outlined text-teal-600 text-xs">my_location</span><span>Lintang: ${coords.lat} • Bujur: ${coords.lng}</span>`;
     if (mr) {
-      const c = data.count || 0;
-      if      (c >= 30) { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800';   mr.innerText = 'Kritis (>30)'; }
-      else if (c >= 15) { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800'; mr.innerText = 'Sedang (15–30)'; }
-      else if (c >  0)  { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800';     mr.innerText = 'Rendah (<15)'; }
-      else              { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700'; mr.innerText = 'Steril'; }
+      mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-[#007fa3]';
+      mr.innerText = 'Aktif';
     }
 
     if (activeTargetSatwaInput) {
@@ -559,7 +517,7 @@ function selectGrid(code, updateActive = true) {
     }
 
     if (typeof onMapGridSelected === 'function') {
-      onMapGridSelected(standardCode, data.zone_name);
+      onMapGridSelected(standardCode, zoneName);
     }
   }
 }

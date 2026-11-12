@@ -212,6 +212,11 @@
                     <span class="material-symbols-outlined text-base">description</span>
                   </a>
                 @endif
+                @if(Route::has('admin.laporan.pdf'))
+                  <a href="{{ route('admin.laporan.pdf', $lap->id) }}" onclick="event.stopPropagation();" class="p-1 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 transition-colors" title="Unduh PDF Resmi (BA)">
+                    <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                  </a>
+                @endif
               </div>
             </td>
           </tr>

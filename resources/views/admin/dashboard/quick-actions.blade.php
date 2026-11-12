@@ -81,11 +81,17 @@
         </p>
       </div>
     </div>
-    <div class="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
-      <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-colors">
-        <span class="material-symbols-outlined text-xs">file_download</span>
-        <span>Export Excel</span>
-      </a>
+    <div class="mt-4 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <a href="{{ route('admin.export.excel') }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+          <span class="material-symbols-outlined text-xs">file_download</span>
+          <span>Export Excel</span>
+        </a>
+        <a href="{{ route('admin.export.excel') }}#monthlyBundleSection" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#007fa3] hover:text-[#005f80] transition-colors">
+          <span class="material-symbols-outlined text-xs">picture_as_pdf</span>
+          <span>Bundel PDF</span>
+        </a>
+      </div>
       <a href="{{ route('admin.manajemen') }}" class="inline-flex items-center gap-1 text-xs font-bold text-injourney-teal hover:underline group">
         <span>Katalog Master</span>
         <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-0.5">arrow_forward</span>
