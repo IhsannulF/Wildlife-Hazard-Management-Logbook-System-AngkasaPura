@@ -61,41 +61,33 @@ class JenisSatwa extends Model
         };
     }
 
+    public static function resolveNamaIlmiah(string $nama, string $fallback = '-'): string
+    {
+        $name = strtolower(trim($nama));
+
+        return match (true) {
+            str_contains($name, 'biawak') => 'Varanus salvator',
+            str_contains($name, 'blekok') => 'Ardeola speciosa',
+            str_contains($name, 'cangak abu') => 'Ardea cinerea',
+            str_contains($name, 'cangak merah') => 'Ardea purpurea',
+            str_contains($name, 'kuntul kecil') => 'Egretta garzetta',
+            str_contains($name, 'kuntul kerbau'), str_contains($name, 'kuntul') => 'Bubulcus ibis',
+            str_contains($name, 'pecuk') => 'Microcarbo niger',
+            str_contains($name, 'kera'), str_contains($name, 'monyet') => 'Macaca fascicularis',
+            str_contains($name, 'kucing') => 'Felis catus',
+            str_contains($name, 'anjing') => 'Canis lupus familiaris',
+            str_contains($name, 'sanca'), str_contains($name, 'ular') => 'Malayopython reticulatus',
+            str_contains($name, 'elang') => 'Elanus caeruleus',
+            str_contains($name, 'layang'), str_contains($name, 'walet') => 'Hirundo rustica',
+            str_contains($name, 'gereja') => 'Passer montanus',
+            str_contains($name, 'dara'), str_contains($name, 'merpati') => 'Columba livia',
+            default => $fallback,
+        };
+    }
+
     public function getNamaIlmiahAttribute(): string
     {
-        $name = strtolower($this->nama);
-        if (str_contains($name, 'biawak')) {
-            return 'Varanus salvator';
-        }
-        if (str_contains($name, 'blekok')) {
-            return 'Ardeola speciosa';
-        }
-        if (str_contains($name, 'kuntul kerbau')) {
-            return 'Bubulcus ibis';
-        }
-        if (str_contains($name, 'kuntul kecil')) {
-            return 'Egretta garzetta';
-        }
-        if (str_contains($name, 'cangak abu')) {
-            return 'Ardea cinerea';
-        }
-        if (str_contains($name, 'cangak merah')) {
-            return 'Ardea purpurea';
-        }
-        if (str_contains($name, 'pecuk')) {
-            return 'Microcarbo niger';
-        }
-        if (str_contains($name, 'kera') || str_contains($name, 'monyet')) {
-            return 'Macaca fascicularis';
-        }
-        if (str_contains($name, 'anjing') || str_contains($name, 'kucing')) {
-            return 'Canis lupus familiaris';
-        }
-        if (str_contains($name, 'ular')) {
-            return 'Malayopython reticulatus';
-        }
-
-        return 'Spesies liar';
+        return static::resolveNamaIlmiah((string) $this->nama, 'Spesies liar');
     }
 
     public function getTaksonPillAttribute(): string

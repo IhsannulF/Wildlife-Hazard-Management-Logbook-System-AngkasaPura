@@ -141,6 +141,11 @@
                 <a href="{{ route('admin.laporan.cetak', $lap->id) }}" target="_blank" class="p-1 rounded text-secondary hover:text-slate-800 hover:bg-slate-100 transition-colors" title="Cetak Berita Acara">
                   <span class="material-symbols-outlined text-base">print</span>
                 </a>
+                @if(Route::has('admin.laporan.pdf'))
+                  <a href="{{ route('admin.laporan.pdf', $lap->id) }}" class="p-1 rounded text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 transition-colors" title="Unduh PDF Resmi">
+                    <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                  </a>
+                @endif
               </div>
             </td>
           </tr>

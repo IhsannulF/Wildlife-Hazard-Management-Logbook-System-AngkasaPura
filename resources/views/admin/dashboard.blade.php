@@ -214,7 +214,7 @@
     'title' => $isVerifikasi ? 'Verifikasi Berita Acara (BA)' : 'Logbook Sisi Udara',
     'subtitle' => $isVerifikasi ? 'Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.' : 'Monitoring dan pengendalian bahaya satwa liar area sisi udara.',
     'icon' => $isVerifikasi ? 'fact_check' : 'space_dashboard',
-    'actions' => '<div class="flex items-center gap-2"><span class="text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
+    'actions' => '<div class="flex items-center gap-2">' . ($isVerifikasi ? '<a href="' . route('admin.export.excel') . '#monthlyBundleSection" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#003e56] hover:bg-[#005f80] text-white text-[11px] font-bold shadow-2xs transition-colors" title="Unduh Buku Log Bulanan (Bundle PDF)"><span class="material-symbols-outlined text-sm">picture_as_pdf</span><span class="hidden sm:inline">Bundel Bulanan (PDF)</span></a>' : '') . '<span class="hidden md:inline text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
   ])
 
   <!-- MAIN VIEWPORT CONTAINER -->

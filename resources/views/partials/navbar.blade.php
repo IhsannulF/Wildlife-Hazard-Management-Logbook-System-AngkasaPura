@@ -333,10 +333,10 @@
             <span class="flex-1">Manajemen User</span>
           </a>
 
-          <!-- Export Excel DKPPU -->
-          <a href="{{ route('admin.export.excel') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1] {{ ($currentPage === 'export_excel' || request()->routeIs('admin.export.excel*') || request()->routeIs('export.excel*')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}" title="Pusat Konfigurasi & Unduh Spreadsheet DKPPU">
-            <span class="material-symbols-outlined text-lg {{ ($currentPage === 'export_excel' || request()->routeIs('admin.export.excel*') || request()->routeIs('export.excel*')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">file_download</span>
-            <span class="flex-1">Export Excel</span>
+          <!-- Unduh Buku Log Bulanan (Bundle PDF) & Pusat Export -->
+          <a href="{{ route('admin.export.excel') }}#monthlyBundleSection" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1] {{ ($currentPage === 'export_excel' || request()->routeIs('admin.export.excel*') || request()->routeIs('export.excel*')) ? 'font-bold bg-cyan-50/90 text-[#007fa3] border-l-4 border-[#00A9C1] shadow-2xs' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}" title="Unduh Buku Log Bulanan (PDF) &amp; Export Excel">
+            <span class="material-symbols-outlined text-lg {{ ($currentPage === 'export_excel' || request()->routeIs('admin.export.excel*') || request()->routeIs('export.excel*')) ? 'text-[#00A9C1]' : 'text-slate-400' }}">picture_as_pdf</span>
+            <span class="flex-1">Buku Log Bulanan (PDF)</span>
           </a>
         </div>
       </div>

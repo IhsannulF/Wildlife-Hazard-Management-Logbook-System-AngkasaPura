@@ -343,15 +343,23 @@
                   @endif
                 </td>
 
-                <!-- Aksi Tombol: Hanya Cetak Berita Acara -->
+                <!-- Aksi Tombol: Pratinjau BA & Unduh PDF Resmi -->
                 <td class="py-3.5 px-4 text-center whitespace-nowrap" onclick="event.stopPropagation()">
-                  <a href="{{ route('laporan.cetak', $lap->id) }}" 
-                     target="_blank" 
-                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-cyan-50 text-slate-600 hover:text-[#007fa3] border border-slate-200/90 hover:border-cyan-200 text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
-                     title="Cetak Berita Acara Resmi (PDF)">
-                    <span class="material-symbols-outlined text-sm text-[#00A9C1]">print</span>
-                    <span>Cetak BA</span>
-                  </a>
+                  <div class="inline-flex items-center justify-center gap-1.5">
+                    <a href="{{ route('laporan.cetak', $lap->id) }}" 
+                       target="_blank" 
+                       class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-cyan-50 text-slate-600 hover:text-[#007fa3] border border-slate-200/90 hover:border-cyan-200 text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
+                       title="Pratinjau Cetak Berita Acara">
+                      <span class="material-symbols-outlined text-sm text-[#00A9C1]">print</span>
+                      <span>Cetak BA</span>
+                    </a>
+                    <a href="{{ route('laporan.pdf', $lap->id) }}" 
+                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer" 
+                       title="Unduh PDF Resmi">
+                      <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                      <span>PDF</span>
+                    </a>
+                  </div>
                 </td>
               </tr>
             @empty
@@ -435,6 +443,10 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <a id="modalDownloadPdfBtn" href="#" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bold transition-colors" title="Unduh PDF Resmi">
+          <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+          <span>Unduh PDF</span>
+        </a>
         <a id="modalPrintBtn" href="#" target="_blank" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors" title="Cetak Berita Acara">
           <span class="material-symbols-outlined text-lg">print</span>
         </a>
@@ -627,6 +639,7 @@
     const title = document.getElementById('modalTitle');
     const statusBadge = document.getElementById('modalStatusBadge');
     const printBtn = document.getElementById('modalPrintBtn');
+    const pdfBtn = document.getElementById('modalDownloadPdfBtn');
 
     if (!modal) return;
 
@@ -645,6 +658,9 @@
 
     if (printBtn) {
       printBtn.href = `/laporan/${id}/cetak`;
+    }
+    if (pdfBtn) {
+      pdfBtn.href = `/laporan/${id}/pdf`;
     }
 
     fetch(`/laporan/${id}/detail`)

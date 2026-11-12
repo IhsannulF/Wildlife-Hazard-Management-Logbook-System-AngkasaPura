@@ -131,7 +131,7 @@ class ExampleTest extends TestCase
 
         $downloadResponse = $this->actingAs($admin)->get(route('admin.export.excel.download'));
         $downloadResponse->assertStatus(200);
-        $downloadResponse->assertHeader('content-type', 'application/vnd.ms-excel; charset=utf-8');
+        $downloadResponse->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     public function test_admin_can_view_report_print(): void

@@ -93,6 +93,76 @@
       <span class="text-slate-800 font-semibold">Pusat Ekspor Spreadsheet</span>
     </nav>
 
+    <!-- 1.5 BUNDEL LOGBOOK BULANAN PDF (REQ-REP-002) -->
+    <section id="monthlyBundleSection" class="bg-gradient-to-br from-slate-900 via-[#003e56] to-[#005f80] text-white rounded-2xl border border-cyan-800/60 shadow-md p-5 sm:p-6 space-y-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/15 pb-3.5">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-400/20 border border-cyan-300/30 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+            <span class="material-symbols-outlined text-xs">menu_book</span>
+            Standar Audit Kelaikudaraan A4 (REQ-REP-002)
+          </div>
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-cyan-300 text-xl">picture_as_pdf</span>
+            Unduh Buku Log Bulanan (Bundle PDF)
+          </h2>
+          <p class="text-xs text-cyan-100/80 max-w-3xl">
+            Kompilasi satu berkas PDF A4 resmi berisi Halaman Cover, Kata Pengantar &amp; Indeks Kronologis, Statistik Temporal Bulanan, dan seluruh lembar Berita Acara dengan penomoran halaman berkelanjutan.
+          </p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-xs border border-white/15 rounded-xl px-3.5 py-2.5 text-left lg:text-right shrink-0">
+          <div id="bundleCounterText" class="text-xs sm:text-sm font-bold text-white">Memeriksa arsip bulan terpilih...</div>
+          <div id="bundleCounterSub" class="text-[11px] text-cyan-200 mt-0.5">Menyiapkan jumlah BA &amp; populasi satwa</div>
+        </div>
+      </div>
+
+      <form id="monthlyBundleForm" action="{{ route('admin.export.bundle.pdf') }}" method="GET" target="_blank" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+        <input type="hidden" name="inline" value="1">
+        <div class="space-y-1">
+          <label for="bundleBulan" class="block text-[11px] font-bold text-cyan-100">Bulan Arsip</label>
+          <select name="bulan" id="bundleBulan" class="bundle-filter-trigger w-full h-[36px] py-0 text-xs rounded-xl border-white/20 bg-white text-slate-900 font-semibold focus:border-cyan-400 focus:ring-cyan-400">
+            @foreach($availableMonths as $mNum => $mName)
+              <option value="{{ $mNum }}" {{ (int) $preSelectedBulan === (int) $mNum ? 'selected' : '' }}>{{ $mName }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label for="bundleTahun" class="block text-[11px] font-bold text-cyan-100">Tahun</label>
+          <select name="tahun" id="bundleTahun" class="bundle-filter-trigger w-full h-[36px] py-0 text-xs rounded-xl border-white/20 bg-white text-slate-900 font-semibold focus:border-cyan-400 focus:ring-cyan-400">
+            @foreach($availableYears as $yr)
+              <option value="{{ $yr }}" {{ (int) $preSelectedTahun === (int) $yr ? 'selected' : '' }}>{{ $yr }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label for="bundleStatus" class="block text-[11px] font-bold text-cyan-100">Status Validasi</label>
+          <select name="status" id="bundleStatus" class="bundle-filter-trigger w-full h-[36px] py-0 text-xs rounded-xl border-white/20 bg-white text-slate-900 font-semibold focus:border-cyan-400 focus:ring-cyan-400">
+            <option value="all">Semua Status BA</option>
+            <option value="sudah">Hanya Tervalidasi</option>
+            <option value="belum">Menunggu Validasi</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label for="bundleUnit" class="block text-[11px] font-bold text-cyan-100">Unit Kerja</label>
+          <select name="unit_kerja" id="bundleUnit" class="bundle-filter-trigger w-full h-[36px] py-0 text-xs rounded-xl border-white/20 bg-white text-slate-900 font-semibold focus:border-cyan-400 focus:ring-cyan-400">
+            <option value="all">Semua Unit Kerja</option>
+            @foreach($availableUnits as $unit)
+              <option value="{{ $unit }}">{{ $unit }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="sm:col-span-2 lg:col-span-1 flex items-center">
+          <a id="btnPreviewBundlePdf" href="{{ route('admin.export.bundle.pdf', ['bulan' => $preSelectedBulan, 'tahun' => $preSelectedTahun, 'inline' => 1]) }}" target="_blank" rel="noopener noreferrer" class="w-full h-[36px] inline-flex items-center justify-center gap-1.5 px-4 rounded-xl border border-transparent bg-[#00A9C1] hover:bg-[#008ba0] text-white text-xs font-bold shadow-md shadow-cyan-950/40 transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-base leading-none">visibility</span>
+            <span>Lihat Laporan</span>
+          </a>
+        </div>
+      </form>
+    </section>
+
     <!-- FORM UTAMA EKSPOR -->
     <form id="exportForm" action="{{ route('admin.export.excel.download') }}" method="POST" class="space-y-6">
       @csrf
@@ -441,10 +511,10 @@
             <label class="block text-xs font-bold text-slate-800">Tipe Berkas Unduhan</label>
             <div class="space-y-2 text-xs">
               <label class="flex items-start gap-2 cursor-pointer">
-                <input type="radio" name="file_format" value="xls" class="mt-0.5 text-primary focus:ring-primary" checked>
+                <input type="radio" name="file_format" value="xlsx" class="mt-0.5 text-primary focus:ring-primary" checked>
                 <div>
-                  <span class="font-bold text-slate-800">Microsoft Excel (.xls)</span>
-                  <p class="text-[10px] text-slate-500">Lengkap dengan warna kop dinas, styling sel, dan border rapi.</p>
+                  <span class="font-bold text-slate-800">Microsoft Excel (.xlsx)</span>
+                  <p class="text-[10px] text-slate-500">Format Excel asli lengkap dengan warna kop dinas, lebar kolom otomatis, dan bebas peringatan.</p>
                 </div>
               </label>
               <label class="flex items-start gap-2 cursor-pointer">
@@ -460,8 +530,8 @@
         </div>
       </div>
 
-      <!-- 6. BOTTOM ACTION BAR (STICKY PREVIEW & DOWNLOAD BUTTON) -->
-      <div class="sticky bottom-4 z-20 bg-slate-900/90 backdrop-blur-md text-white rounded-2xl p-4 sm:p-5 shadow-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <!-- 6. FLOATING BOTTOM ACTION BAR -->
+      <div class="sticky bottom-5 z-40 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl p-4 sm:p-5 shadow-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         
         <!-- Live Counter Telemetry -->
         <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -701,6 +771,67 @@
       // Inisialisasi awal saat halaman dibuka
       applyPreset('{{ $preSelectedPreset ?: "dkppu" }}');
       fetchLiveCount();
+
+      // 5. Panel Bundel Logbook Bulanan PDF (REQ-REP-002)
+      const bundleBulan = document.getElementById('bundleBulan');
+      const bundleTahun = document.getElementById('bundleTahun');
+      const bundleStatus = document.getElementById('bundleStatus');
+      const bundleUnit = document.getElementById('bundleUnit');
+      const bundleCounterText = document.getElementById('bundleCounterText');
+      const bundleCounterSub = document.getElementById('bundleCounterSub');
+      const btnPreviewBundlePdf = document.getElementById('btnPreviewBundlePdf');
+      const bundleTriggers = document.querySelectorAll('.bundle-filter-trigger');
+
+      function buildBundleParams(includeInline = false) {
+        const params = new URLSearchParams();
+        params.append('bulan', bundleBulan?.value || '{{ $preSelectedBulan }}');
+        params.append('tahun', bundleTahun?.value || '{{ $preSelectedTahun }}');
+        params.append('status', bundleStatus?.value || 'all');
+        params.append('unit_kerja', bundleUnit?.value || 'all');
+        if (includeInline) {
+          params.append('inline', '1');
+        }
+        return params;
+      }
+
+      function syncBundlePreviewLink() {
+        if (!btnPreviewBundlePdf) return;
+        const params = buildBundleParams(true);
+        btnPreviewBundlePdf.href = `{{ route('admin.export.bundle.pdf') }}?${params.toString()}`;
+      }
+
+      let bundleCountTimer = null;
+      function fetchBundleLiveCount() {
+        syncBundlePreviewLink();
+        if (!bundleCounterText || !bundleCounterSub) return;
+
+        clearTimeout(bundleCountTimer);
+        bundleCountTimer = setTimeout(() => {
+          const params = buildBundleParams(false);
+          fetch(`{{ route('admin.export.bundle.count') }}?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'success') {
+                if (data.total_laporan > 0) {
+                  bundleCounterText.textContent = `${data.total_laporan} Berita Acara (${data.periode_label})`;
+                  bundleCounterSub.textContent = `${data.total_tervalidasi} tervalidasi • ${data.total_ekor} ekor satwa`;
+                } else {
+                  bundleCounterText.textContent = `0 Berita Acara (${data.periode_label})`;
+                  bundleCounterSub.textContent = `Akan diterbitkan Buku Log Nihil Resmi (Cover, Pengantar & Statistik)`;
+                }
+              }
+            })
+            .catch(() => {
+              bundleCounterText.textContent = `Siap dikompilasi ke PDF A4`;
+              bundleCounterSub.textContent = `Menyesuaikan bulan dan tahun arsip terpilih`;
+            });
+        }, 200);
+      }
+
+      bundleTriggers.forEach(el => {
+        el.addEventListener('change', fetchBundleLiveCount);
+      });
+      fetchBundleLiveCount();
     });
   </script>
 

@@ -387,7 +387,8 @@
   </div>
   <div class="btn-group">
     <a href="{{ auth()->check() && auth()->user()->role === 'pegawai' ? route('user.dashboard') : route('admin.dashboard') }}" class="btn-print btn-back">&larr; Kembali</a>
-    <button class="btn-print btn-blue" onclick="window.print()">&#128424; Cetak / Unduh PDF</button>
+    <a href="{{ auth()->check() && auth()->user()->role === 'admin' ? route('admin.laporan.pdf', $lap->id) : route('laporan.pdf', $lap->id) }}" class="btn-print btn-blue" style="background: linear-gradient(135deg, #059669, #047857);">Unduh PDF Resmi</a>
+    <button class="btn-print btn-blue" onclick="window.print()">&#128424; Cetak / Pratinjau</button>
   </div>
 </div>
 
