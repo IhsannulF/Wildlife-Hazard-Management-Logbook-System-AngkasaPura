@@ -54,6 +54,30 @@
       </div>
     @endif
 
+    <!-- PWA Offline Drafts Sync Banner (Visible when offline drafts exist) -->
+    <div id="dashboardOfflineSyncBanner" class="hidden p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">cloud_off</span>
+        </div>
+        <div>
+          <div class="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-2">
+            <span>Draf Laporan Offline Tersedia</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider">Antrean</span>
+          </div>
+          <p class="text-xs text-amber-700 mt-0.5">
+            Terdapat <span class="whms-draft-count font-bold text-amber-900">0</span> laporan di perangkat ini yang belum tersinkronisasi ke server bandara.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button type="button" onclick="WHMS_OFFLINE.syncAllDrafts()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.98] cursor-pointer">
+          <span class="material-symbols-outlined text-base">cloud_sync</span>
+          <span>Sinkronkan Sekarang</span>
+        </button>
+      </div>
+    </div>
+
     <!-- 1. HERO BENTO STAT METRIC CARDS (3 PERSONAL METRICS) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-5">
       <!-- Card 1: Total Laporan Saya -->

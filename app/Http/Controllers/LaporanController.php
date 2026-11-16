@@ -7,8 +7,11 @@ use App\Models\FormField;
 use App\Models\FotoLaporan;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
+use App\Services\IcaoRiskMatrixService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class LaporanController extends Controller
 {
@@ -345,6 +348,253 @@ class LaporanController extends Controller
         }
 
         return redirect()->route('user.dashboard')->with('sukses', 'Laporan berhasil dikirim dan tersimpan di sistem.');
+    }
+
+    /**
+     * Endpoint API sinkronisasi antrean draf PWA offline ke server.
+     * Menerapkan mekanisme idempotensi berbasis offline_sync_id (TEST-SYNC-01).
+     */
+    public function syncOffline(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $offlineSyncId = (string) $request->input('offline_sync_id', '');
+        if (empty($offlineSyncId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter offline_sync_id wajib disertakan.',
+            ], 422);
+        }
+
+        // 1. Idempotency check: jika offline_sync_id sudah ada, tolak duplikasi data (TEST-SYNC-01)
+        $existing = Laporan::where('offline_sync_id', $offlineSyncId)->first();
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Draf offline sudah pernah disinkronkan sebelumnya (idempotent).',
+                'offline_sync_id' => $offlineSyncId,
+                'already_synced' => true,
+                'laporan_id' => $existing->id,
+                'no_laporan' => $existing->no_laporan,
+            ], 200);
+        }
+
+        // Ekstrak data payload (mendukung format payload terbungkus maupun root request)
+        $payload = $request->input('payload');
+        if (! is_array($payload)) {
+            $payload = $request->all();
+        }
+
+        $tanggal = $payload['tanggal'] ?? now()->format('Y-m-d');
+        $jam = $payload['jam'] ?? now()->format('H:i:s');
+        $namaPetugas = $payload['nama_petugas'] ?? ($user->namalengkap ?: $user->username);
+        $kondisiCuaca = $payload['kondisi_cuaca'] ?? '';
+        $unitKerja = $payload['unit_kerja'] ?? '';
+        $areaInspeksi = $payload['area_inspeksi'] ?? '';
+        $ciriUkuran = $payload['ciri_ukuran'] ?? '-';
+        $kondisiApron = $payload['kondisi_apron'] ?? '-';
+        $aktivitasSatwa = $payload['aktivitas_satwa'] ?? '-';
+        $tindakLanjut = $payload['tindak_lanjut'] ?? 'Belum ditangani';
+        $detailPengusiran = $payload['detail_pengusiran'] ?? '-';
+        $signature = $request->input('signature') ?: ($payload['tanda_tangan'] ?? null);
+
+        $statusLaporan = (stripos($tindakLanjut, 'telah ditangani') !== false) ? 'sudah' : 'belum';
+
+        $satwaInput = $payload['satwa'] ?? $request->input('satwa', []);
+        if (is_string($satwaInput)) {
+            $decoded = json_decode($satwaInput, true);
+            if (is_array($decoded)) {
+                $satwaInput = $decoded;
+            }
+        }
+
+        // Tentukan grid_lokasi utama
+        $firstGrid = $payload['grid_lokasi'] ?? ($payload['lokasi_grid'] ?? '');
+        if (empty($firstGrid) && is_array($satwaInput)) {
+            foreach ($satwaInput as $s) {
+                foreach ($s['lokasi'] ?? [] as $lok) {
+                    if (! empty($lok['grid'])) {
+                        $firstGrid = $lok['grid'];
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        // Hitung Matriks Risiko ICAO Doc 9137 Otomatis
+        $satwaCalculationData = [];
+        if (is_array($satwaInput)) {
+            foreach ($satwaInput as $s) {
+                $namaSatwa = $s['nama'] ?? '';
+                $totalJmlPerSatwa = 0;
+                foreach ($s['lokasi'] ?? [] as $lok) {
+                    $totalJmlPerSatwa += (int) ($lok['jumlah'] ?? 0);
+                }
+                if ($totalJmlPerSatwa > 0 || ! empty($namaSatwa)) {
+                    $satwaCalculationData[] = [
+                        'nama' => $namaSatwa,
+                        'jumlah' => $totalJmlPerSatwa,
+                    ];
+                }
+            }
+        }
+
+        $riskAssessment = ['score' => 1, 'level' => 'rendah'];
+        if (class_exists(IcaoRiskMatrixService::class)) {
+            $riskService = app(IcaoRiskMatrixService::class);
+            $riskAssessment = $riskService->calculate(
+                $satwaCalculationData,
+                $areaInspeksi,
+                $firstGrid
+            );
+        }
+
+        $gpsLat = isset($payload['gps_lat']) && $payload['gps_lat'] !== '' ? (float) $payload['gps_lat'] : null;
+        $gpsLng = isset($payload['gps_lng']) && $payload['gps_lng'] !== '' ? (float) $payload['gps_lng'] : null;
+
+        $laporan = Laporan::create([
+            'user_id' => $user->id,
+            'offline_sync_id' => $offlineSyncId,
+            'nama_petugas' => $namaPetugas,
+            'tanggal' => $tanggal,
+            'jam' => $jam,
+            'kondisi_cuaca' => $kondisiCuaca,
+            'unit_kerja' => $unitKerja,
+            'area_inspeksi' => $areaInspeksi,
+            'tanda_tangan' => $signature,
+            'grid_lokasi' => strtoupper($firstGrid ?: '-'),
+            'gps_lat' => $gpsLat,
+            'gps_lng' => $gpsLng,
+            'risk_score' => $riskAssessment['score'] ?? 1,
+            'risk_level' => $riskAssessment['level'] ?? 'rendah',
+            'ciri_ukuran' => $ciriUkuran,
+            'kondisi_apron' => $kondisiApron,
+            'aktivitas_satwa' => $aktivitasSatwa,
+            'tindak_lanjut' => $tindakLanjut,
+            'detail_pengusiran' => $detailPengusiran,
+            'status' => $statusLaporan,
+        ]);
+
+        // Simpan field dinamis ke extra_data (JSON)
+        $standardFields = [
+            'nama_petugas', 'tanggal', 'jam', 'kondisi_cuaca', 'unit_kerja', 'area_inspeksi',
+            'tanda_tangan', 'grid_lokasi', 'satwa', 'ciri_ukuran', 'kondisi_apron',
+            'aktivitas_satwa', 'tindak_lanjut', 'detail_pengusiran', '_token', 'foto_lainnya',
+            'offline_sync_id', 'payload', 'photos', 'signature', 'created_at',
+        ];
+
+        $extraData = [];
+        $extraFieldsDef = FormField::where('aktif', true)->whereNotIn('nama_field', $standardFields)->get();
+        foreach ($extraFieldsDef as $ef) {
+            if (isset($payload[$ef->nama_field])) {
+                $extraData[$ef->nama_field] = $payload[$ef->nama_field];
+            }
+        }
+        if (! empty($extraData)) {
+            $laporan->update(['extra_data' => $extraData]);
+        }
+
+        // Simpan Detail Satwa
+        $createdDetails = [];
+        if (is_array($satwaInput)) {
+            foreach ($satwaInput as $idx => $s) {
+                $namaSatwa = $s['nama'] ?? '';
+                $locations = $s['lokasi'] ?? [];
+
+                foreach ($locations as $lokIdx => $lok) {
+                    $jumlah = (int) ($lok['jumlah'] ?? 0);
+                    if ($jumlah > 0) {
+                        $grid = strtoupper($lok['grid'] ?? '');
+
+                        $detail = DetailSatwa::create([
+                            'laporan_id' => $laporan->id,
+                            'nama_satwa' => $namaSatwa,
+                            'jumlah' => $jumlah,
+                            'grid' => $grid,
+                        ]);
+
+                        $createdDetails[$idx] = $detail;
+                    }
+                }
+            }
+        }
+
+        // Simpan Foto dari payload JSON (Base64)
+        $photos = $request->input('photos', []);
+        if (is_array($photos)) {
+            foreach ($photos as $pIdx => $p) {
+                $dataStr = $p['data'] ?? '';
+                $fieldName = $p['field_name'] ?? '';
+                $rawExt = pathinfo($p['name'] ?? 'photo.jpg', PATHINFO_EXTENSION) ?: 'jpg';
+
+                if (empty($dataStr)) {
+                    continue;
+                }
+
+                if (str_contains($dataStr, ';base64,')) {
+                    [, $dataStr] = explode(';base64,', $dataStr);
+                }
+                $binary = base64_decode($dataStr);
+                if ($binary === false) {
+                    continue;
+                }
+
+                $detailId = null;
+                $tipe = 'extra';
+                $subFolder = 'extra';
+
+                if (preg_match('/satwa\[(\d+)\]/', $fieldName, $matches)) {
+                    $satwaIdx = (int) $matches[1];
+                    if (isset($createdDetails[$satwaIdx])) {
+                        $detailId = $createdDetails[$satwaIdx]->id;
+                        $tipe = 'satwa';
+                        $subFolder = 'satwa';
+                    }
+                }
+
+                $filename = 'offline_'.$laporan->id.'_'.$pIdx.'_'.time().'.'.$rawExt;
+                Storage::disk('public')->put('uploads/'.$subFolder.'/'.$filename, $binary);
+
+                FotoLaporan::create([
+                    'laporan_id' => $laporan->id,
+                    'detail_satwa_id' => $detailId,
+                    'nama_file' => $filename,
+                    'tipe' => $tipe,
+                    'foto_path' => 'uploads/'.$subFolder.'/'.$filename,
+                ]);
+            }
+        }
+
+        // Dukungan simpan Foto multipart jika request dikirim sebagai multipart/form-data
+        if ($request->hasFile('foto_lainnya')) {
+            $extraFiles = $request->file('foto_lainnya');
+            if (! is_array($extraFiles)) {
+                $extraFiles = [$extraFiles];
+            }
+
+            foreach ($extraFiles as $eIdx => $efile) {
+                if ($efile && $efile->isValid()) {
+                    $extFilename = 'offline_extra_'.$laporan->id.'_'.$eIdx.'_'.time().'.'.$efile->getClientOriginalExtension();
+                    $efile->storeAs('uploads/extra', $extFilename, 'public');
+
+                    FotoLaporan::create([
+                        'laporan_id' => $laporan->id,
+                        'detail_satwa_id' => null,
+                        'nama_file' => $extFilename,
+                        'tipe' => 'extra',
+                        'foto_path' => 'uploads/extra/'.$extFilename,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Laporan offline berhasil disinkronkan ke server.',
+            'offline_sync_id' => $offlineSyncId,
+            'laporan_id' => $laporan->id,
+            'no_laporan' => $laporan->no_laporan,
+        ], 200);
     }
 
     /**

@@ -122,6 +122,18 @@
   </div>
 
   <div class="flex items-center gap-2">
+    <!-- PWA Connection Status Badge -->
+    <div class="whms-connection-status inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-[10px] sm:text-xs font-semibold text-emerald-700">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      <span>Online</span>
+    </div>
+
+    <!-- PWA Offline Drafts Sync Button (Auto shows when count > 0) -->
+    <button type="button" onclick="WHMS_OFFLINE.syncAllDrafts()" class="whms-draft-count hidden px-2 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer" title="Draf Belum Terkirim - Klik untuk Sinkronisasi">
+      <span class="material-symbols-outlined text-xs">cloud_upload</span>
+      <span class="whms-draft-count">0</span>
+    </button>
+
     @if(!$isAdmin)
       <a href="{{ route('laporan.create') }}" class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-[#00A9C1] hover:bg-[#007fa3] text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1]">
         <span class="material-symbols-outlined text-sm">add</span>
@@ -198,6 +210,18 @@
         <div class="font-bold text-xs text-slate-800 truncate" title="{{ $userName }}">{{ $userName }}</div>
         <div class="text-[10px] text-slate-500 font-medium truncate mt-0.5" title="{{ $userRole }}">{{ $userRole }}</div>
       </div>
+    </div>
+
+    <!-- PWA Connection & Offline Sync Status in Sidebar -->
+    <div class="mt-2.5 flex items-center justify-between px-1">
+      <div class="whms-connection-status inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Online</span>
+      </div>
+      <button type="button" onclick="WHMS_OFFLINE.syncAllDrafts()" class="whms-draft-count hidden px-2.5 py-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer" title="Draf Belum Terkirim - Klik untuk Sinkronisasi">
+        <span class="material-symbols-outlined text-xs">cloud_upload</span>
+        <span>Sync (<span class="whms-draft-count">0</span>)</span>
+      </button>
     </div>
     
     @if(!$isAdmin)

@@ -24,10 +24,14 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Rute Offline Fallback Page (PWA)
+Route::view('/offline', 'errors.offline')->name('offline');
+
 // Rute Input Pelaporan Khusus Pegawai (Admin tidak melakukan inspeksi lapangan)
 Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/laporan/create', [LaporanController::class, 'create'])->name('laporan.create');
     Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
+    Route::post('/laporan/sync-offline', [LaporanController::class, 'syncOffline'])->name('laporan.syncOffline');
 });
 
 // Rute Detail & Cetak Laporan (Pegawai & Admin)
