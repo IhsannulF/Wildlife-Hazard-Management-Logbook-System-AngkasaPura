@@ -31,6 +31,10 @@ class RoleMiddleware
         }
 
         if (! empty($roles) && ! in_array($user->role, $roles)) {
+            if ($request->expectsJson()) {
+                abort(403, 'Akses tidak diizinkan untuk peran akun Anda.');
+            }
+
             if ($user->role === 'admin') {
                 return redirect()->route('admin.dashboard');
             }

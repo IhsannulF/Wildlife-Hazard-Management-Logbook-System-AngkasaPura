@@ -503,9 +503,17 @@
         </div>
       </div>
 
-      <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-base rounded-2xl shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 cursor-pointer">
-        Kirim Laporan Logbook
-      </button>
+      <div class="flex flex-col sm:flex-row items-center gap-3 mt-6">
+        <button type="button" id="btnManualSaveOffline" onclick="simpanKeDrafOffline(event)" class="w-full sm:w-auto px-5 py-4 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-sm rounded-2xl shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">save</span>
+          <span>Simpan Draf Offline</span>
+        </button>
+
+        <button type="submit" id="btnSubmitLaporan" class="w-full flex-1 py-4 px-6 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-base rounded-2xl shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-xl">send</span>
+          <span>Kirim Laporan Logbook</span>
+        </button>
+      </div>
     </form>
   </div>
 
@@ -997,8 +1005,113 @@
     }
   }
 
+  // ── Mekanisme Simpan Draf Offline (IndexedDB) ──
+  async function simpanKeDrafOffline(e) {
+    if (e) e.preventDefault();
+
+    const jenisBurung = document.getElementById('selectJenisBurung');
+    if (jenisBurung && !jenisBurung.value.trim()) {
+      alert('Silakan pilih jenis burung terlebih dahulu.');
+      const btn = document.getElementById('btnTriggerBurung');
+      if (btn) {
+        btn.focus();
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const gridBurung = document.getElementById('selectGridBurung');
+    if (gridBurung && !gridBurung.value.trim()) {
+      alert('Silakan tentukan Grid lokasi pengamatan.');
+      gridBurung.focus();
+      gridBurung.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (signaturePad.isEmpty()) {
+      alert('Mohon bubuhkan tanda tangan digital Anda terlebih dahulu.');
+      document.getElementById('signature-pad').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const signatureData = signaturePad.toDataURL('image/png');
+    document.getElementById('tanda_tangan').value = signatureData;
+
+    const photos = [];
+    const fotoPreviewImg = document.getElementById('fotoPreviewImg');
+    if (fotoPreviewImg && fotoPreviewImg.src && fotoPreviewImg.src.startsWith('data:')) {
+      photos.push({
+        field_name: 'satwa[0][foto]',
+        name: 'foto_satwa.jpg',
+        type: 'image/jpeg',
+        data: fotoPreviewImg.src
+      });
+    } else {
+      const fileInput = document.getElementById('inputKameraBelakang') || document.getElementById('inputGaleriFoto');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const base64 = await new Promise((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(file);
+        });
+        photos.push({
+          field_name: 'satwa[0][foto]',
+          name: file.name,
+          type: file.type || 'image/jpeg',
+          data: base64
+        });
+      }
+    }
+
+    const form = document.getElementById('mainForm');
+    const formData = new FormData(form);
+    const payload = {};
+    for (const [key, val] of formData.entries()) {
+      if (!(val instanceof File)) {
+        payload[key] = val;
+      }
+    }
+
+    // Default ciri morfologi jika kosong
+    if (!payload['ciri_ukuran'] && jenisBurung && jenisBurung.value) {
+      payload['ciri_ukuran'] = 'Pengamatan burung ' + jenisBurung.value + ' di ' + (gridBurung ? ('Grid ' + gridBurung.value) : 'area sisi udara.');
+    }
+
+    const tgl = payload['tanggal'] || new Date().toISOString().split('T')[0];
+    const summary = `Pelaporan Offline (${tgl}) — ${jenisBurung ? jenisBurung.value : 'Satwa'} di Grid ${gridBurung ? gridBurung.value : '-'}`;
+
+    try {
+      if (window.WHMS_OFFLINE && typeof window.WHMS_OFFLINE.saveDraft === 'function') {
+        await window.WHMS_OFFLINE.saveDraft({
+          summary: summary,
+          payload: payload,
+          photos: photos,
+          signature: signatureData
+        });
+      }
+
+      alert('Draf offline berhasil disimpan di IndexedDB!\nSaat Anda kembali terhubung dengan jaringan internet bandara, Anda dapat menekan tombol "Sinkronkan Sekarang" di navbar/dashboard.');
+
+      // Reset form & signature
+      form.reset();
+      signaturePad.clear();
+      document.getElementById('tanda_tangan').value = '';
+      if (typeof hapusFotoBurung === 'function') hapusFotoBurung();
+    } catch (err) {
+      console.error('Gagal menyimpan draf offline:', err);
+      alert('Gagal menyimpan draf: ' + err.message);
+    }
+  }
+
   // ── Form Validation & Pre-submit Sync ──
   document.getElementById('mainForm').addEventListener('submit', function(e) {
+    if (!navigator.onLine) {
+      e.preventDefault();
+      simpanKeDrafOffline(e);
+      return;
+    }
+
     const jenisBurung = document.getElementById('selectJenisBurung');
     if (jenisBurung && !jenisBurung.value.trim()) {
       e.preventDefault();

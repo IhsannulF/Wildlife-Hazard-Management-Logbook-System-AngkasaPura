@@ -11,6 +11,13 @@
   <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
   <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+  <!-- PWA Manifest & Meta Tags -->
+  <link rel="manifest" href="{{ asset('manifest.json') }}">
+  <meta name="theme-color" content="#00A9C1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="WHMS InJourney">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +53,24 @@
 </head>
 <body>
   @yield('content')
+  <!-- Floating PWA Offline Sync Widget -->
+  <div id="whms-offline-sync-widget" class="hidden fixed bottom-6 left-6 z-50">
+    <div class="bg-white/95 backdrop-blur-md border border-amber-200 shadow-xl rounded-2xl p-4 flex items-center gap-3.5 max-w-sm">
+      <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-2xl">cloud_off</span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="text-xs font-bold text-slate-800">Draf Offline Tersimpan</div>
+        <div class="text-[11px] text-slate-500 truncate"><span class="whms-draft-count font-bold text-amber-600">0</span> laporan menunggu sinkronisasi</div>
+      </div>
+      <button type="button" id="whms-sync-btn" onclick="WHMS_OFFLINE.syncAllDrafts()" class="px-3 py-2 rounded-xl bg-injourney-teal hover:bg-injourney-dark text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer">
+        <span class="material-symbols-outlined text-sm">cloud_sync</span>
+        Sinkronkan
+      </button>
+    </div>
+  </div>
+
+  <script src="{{ asset('js/whms-offline.js') }}"></script>
   @yield('scripts')
 </body>
 </html>
