@@ -33,6 +33,17 @@ class RememberMeTest extends TestCase
         $response->assertSee('Ingat saya');
     }
 
+    public function test_login_page_displays_password_visibility_toggle(): void
+    {
+        $response = $this->get(route('login'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="togglePassword"', false);
+        $response->assertSee('id="eyeOpenIcon"', false);
+        $response->assertSee('id="eyeSlashIcon"', false);
+        $response->assertSee('aria-label="Lihat password"', false);
+    }
+
     public function test_user_can_login_with_remember_me_and_receive_recaller_cookie(): void
     {
         $user = $this->createTemporaryPegawai();
@@ -126,6 +137,23 @@ class RememberMeTest extends TestCase
             $this->assertGuest();
             $logoutResponse->assertCookieExpired($recallerName);
             $this->assertNotSame($oldToken, $user->fresh()->remember_token);
+        } finally {
+            $user->delete();
+        }
+    }
+
+    public function test_authenticated_dashboard_displays_logout_confirmation_modal(): void
+    {
+        $user = $this->createTemporaryPegawai();
+
+        try {
+            $response = $this->actingAs($user)->get(route('user.dashboard'));
+
+            $response->assertStatus(200);
+            $response->assertSee('openLogoutModal()', false);
+            $response->assertSee('id="modalLogoutConfirm"', false);
+            $response->assertSee('Konfirmasi Keluar');
+            $response->assertSee('id="logoutFormModal"', false);
         } finally {
             $user->delete();
         }

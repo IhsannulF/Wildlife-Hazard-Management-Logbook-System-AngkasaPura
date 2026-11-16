@@ -345,16 +345,54 @@
 
   <!-- 4. Sidebar Bottom / Footer Actions -->
   <div class="p-3 border-t border-slate-100 bg-slate-50/50">
-    <!-- Logout Form -->
-    <form action="{{ route('logout') }}" method="POST" class="m-0">
-      @csrf
-      <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" title="Keluar dari sesi akun saat ini">
-        <span class="material-symbols-outlined text-base">logout</span>
-        <span>Keluar / Logout</span>
-      </button>
-    </form>
+    <!-- Logout Trigger Button (Menampilkan modal konfirmasi) -->
+    <button type="button" 
+            onclick="openLogoutModal()" 
+            class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" 
+            title="Keluar dari sesi akun saat ini">
+      <span class="material-symbols-outlined text-base">logout</span>
+      <span>Keluar / Logout</span>
+    </button>
   </div>
 </aside>
+
+<!-- ================= MODAL KONFIRMASI LOGOUT ================= -->
+<div id="modalLogoutConfirm" 
+     class="fixed inset-0 z-[70] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200" 
+     role="dialog" 
+     aria-modal="true" 
+     aria-labelledby="logoutModalTitle"
+     onclick="if (event.target === this) closeLogoutModal()">
+  <div class="bg-white border border-slate-200/90 rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center transform transition-all animate-in fade-in zoom-in-95 duration-150">
+    <!-- Icon Warning / Logout -->
+    <div class="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 shadow-2xs">
+      <span class="material-symbols-outlined text-3xl">logout</span>
+    </div>
+
+    <!-- Title & Description -->
+    <h3 id="logoutModalTitle" class="text-base font-bold text-slate-800 mb-1.5">Konfirmasi Keluar</h3>
+    <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+      Apakah Anda yakin ingin keluar dari sistem? Anda harus masuk kembali dengan username dan password dinas untuk mengakses logbook satwa liar.
+    </p>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-3">
+      <button type="button" 
+              onclick="closeLogoutModal()" 
+              class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+        Batal
+      </button>
+
+      <form id="logoutFormModal" action="{{ route('logout') }}" method="POST" class="flex-1 m-0">
+        @csrf
+        <button type="submit" 
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm shadow-rose-600/30 transition-all active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
+          Ya, Keluar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- ================= SIDEBAR AUTO-HIDE CONTROLLER SCRIPT ================= -->
 <script>
@@ -517,6 +555,29 @@
     }
   }
 
+  // --- LOGOUT CONFIRMATION MODAL ---
+  function openLogoutModal() {
+    const modal = document.getElementById('modalLogoutConfirm');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeLogoutModal() {
+    const modal = document.getElementById('modalLogoutConfirm');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    const mobileBackdrop = document.getElementById('sidebarBackdrop');
+    if (!mobileBackdrop || mobileBackdrop.classList.contains('hidden')) {
+      document.body.classList.remove('overflow-hidden');
+    }
+  }
+
+  window.openLogoutModal = openLogoutModal;
+  window.closeLogoutModal = closeLogoutModal;
+
   // --- INITIALIZE EVENT LISTENERS ---
   document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('mainSidebar');
@@ -652,6 +713,8 @@
     document.addEventListener('click', function(e) {
       if (!isDesktop() || isPinned()) return;
       if (!sidebar) return;
+      const logoutModal = document.getElementById('modalLogoutConfirm');
+      if (logoutModal && (logoutModal === e.target || logoutModal.contains(e.target))) return;
       if (!sidebar.contains(e.target) && 
           (!triggerTab || !triggerTab.contains(e.target)) && 
           (!triggerZone || !triggerZone.contains(e.target))) {
@@ -662,6 +725,11 @@
     // Close on Escape key
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
+        const logoutModal = document.getElementById('modalLogoutConfirm');
+        if (logoutModal && !logoutModal.classList.contains('hidden')) {
+          closeLogoutModal();
+          return;
+        }
         if (window.innerWidth < 1024) {
           toggleSidebar(false);
         } else if (!isPinned()) {
