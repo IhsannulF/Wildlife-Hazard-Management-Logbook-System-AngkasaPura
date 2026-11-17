@@ -230,11 +230,11 @@
               </label>
             </div>
 
-            <!-- Hidden File Inputs (Tersembunyi total tanpa teks inline default browser) -->
-            <input type="file" id="inputKameraBelakang" name="satwa[0][foto]" accept="image/*" capture="environment" style="display: none !important;" class="hidden" onchange="handleFileSelected(this)">
-            <input type="file" id="inputGaleriFoto" accept="image/*" style="display: none !important;" class="hidden" onchange="handleFileSelected(this)">
-            <input type="file" name="satwa[0][foto]" id="formSatwaFotoInput" style="display: none !important;" class="hidden" accept="image/*">
-            <input type="file" name="foto_lainnya[]" id="formFotoLainnyaInput" style="display: none !important;" class="hidden" accept="image/*">
+            <!-- Hidden File Inputs (Tersembunyi secara aman tanpa display:none agar kompatibel di iOS/Android & Desktop) -->
+            <input type="file" id="inputKameraBelakang" name="satwa[0][foto]" accept="image/*" capture="environment" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" onchange="handleFileSelected(this)">
+            <input type="file" id="inputGaleriFoto" accept="image/*" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" onchange="handleFileSelected(this)">
+            <input type="file" name="satwa[0][foto]" id="formSatwaFotoInput" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" accept="image/*">
+            <input type="file" name="foto_lainnya[]" id="formFotoLainnyaInput" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" accept="image/*">
 
           </div>
 
@@ -383,39 +383,69 @@
       </div>
 
       <!-- Live Camera Viewfinder Modal -->
-      <div id="liveCameraModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+      <div id="liveCameraModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
           <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-              <span class="font-bold text-xs sm:text-sm">Kamera Langsung di Layar</span>
+              <span class="font-bold text-xs sm:text-sm">Kamera Pengamatan Burung</span>
             </div>
             <button type="button" onclick="tutupLiveKameraModal()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
           
-          <div class="relative bg-black flex items-center justify-center min-h-[300px] max-h-[65vh] overflow-hidden">
-            <video id="liveCameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+          <div class="relative bg-black flex items-center justify-center min-h-[300px] sm:min-h-[360px] max-h-[65vh] overflow-hidden">
+            <video id="liveCameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
             <canvas id="liveCameraCanvas" class="hidden"></canvas>
+            
+            <!-- Loading Indicator -->
             <div id="cameraLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 gap-2">
               <svg class="w-8 h-8 animate-spin text-teal-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              <span>Mengaktifkan kamera...</span>
+              <span>Mengaktifkan kamera live...</span>
+            </div>
+
+            <!-- Error / Permission Denied Fallback State -->
+            <div id="cameraErrorHint" class="hidden absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 p-6 text-center gap-3">
+              <span class="material-symbols-outlined text-rose-400 text-3xl">videocam_off</span>
+              <div class="font-bold text-sm text-slate-100">Kamera Live Tidak Dapat Diakses</div>
+              <p class="text-xs text-slate-400 max-w-xs leading-relaxed">Izin kamera belum aktif atau browser membatasi WebRTC. Anda tetap bisa langsung membuka kamera bawaan perangkat.</p>
+              <div class="flex items-center gap-2 mt-2">
+                <button type="button" onclick="bukaKameraBawaan()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md">
+                  <span class="material-symbols-outlined text-sm">photo_camera</span>
+                  <span>Buka Kamera HP / Perangkat</span>
+                </button>
+                <button type="button" onclick="tutupLiveKameraModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs cursor-pointer">
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-around">
-            <button type="button" onclick="switchKameraLive()" id="btnSwitchCamera" class="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center cursor-pointer" title="Putar Kamera Depan / Belakang">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            </button>
+          <div class="p-4 bg-slate-900 border-t border-slate-800 flex flex-col gap-3">
+            <div class="flex items-center justify-around w-full">
+              <!-- Switch Front/Back Camera -->
+              <button type="button" onclick="switchKameraLive()" id="btnSwitchCamera" class="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center cursor-pointer transition-colors" title="Putar Kamera Depan / Belakang">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </button>
 
-            <button type="button" onclick="ambilFotoDariLiveVideo()" class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 shadow-lg active:scale-90 transition-transform flex items-center justify-center text-teal-600 cursor-pointer" title="Jepret Foto">
-              <div class="w-12 h-12 rounded-full bg-teal-500"></div>
-            </button>
+              <!-- Capture Button -->
+              <button type="button" onclick="ambilFotoDariLiveVideo()" class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 shadow-xl active:scale-90 transition-transform flex items-center justify-center text-teal-600 cursor-pointer" title="Jepret Foto">
+                <div class="w-12 h-12 rounded-full bg-teal-500 hover:bg-teal-600 transition-colors"></div>
+              </button>
 
-            <button type="button" onclick="tutupLiveKameraModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
-              Tutup
-            </button>
+              <!-- Close Button -->
+              <button type="button" onclick="tutupLiveKameraModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
+                Tutup
+              </button>
+            </div>
+
+            <!-- Alternate link for Mobile: Use native phone camera app directly -->
+            <div class="text-center pt-1 border-t border-slate-800/80">
+              <button type="button" onclick="bukaKameraBawaan()" class="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-medium cursor-pointer">
+                Atau gunakan aplikasi kamera bawaan HP ›
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -545,14 +575,22 @@
   let activeFacingMode = "environment"; // Prioritaskan kamera belakang
 
   function klikAmbilFoto() {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      // Pada HP/Mobile: buka langsung kamera HP
-      const camInput = document.getElementById('inputKameraBelakang');
-      if (camInput) camInput.click();
-    } else {
-      // Pada Laptop/Desktop: buka webcam kamera laptop langsung di layar
+    // Cek ketersediaan WebRTC mediaDevices di browser
+    const hasMediaDevices = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
+
+    if (hasMediaDevices) {
       bukaLiveKameraModal();
+    } else {
+      bukaKameraBawaan();
+    }
+  }
+
+  function bukaKameraBawaan() {
+    tutupLiveKameraModal();
+    const camInput = document.getElementById('inputKameraBelakang');
+    if (camInput) {
+      camInput.value = '';
+      camInput.click();
     }
   }
 
@@ -638,42 +676,74 @@
     if (satwaFoto) satwaFoto.value = '';
   }
 
-  // ── Live Camera Modal (WebRTC) ──
+  // ── Live Camera Modal (WebRTC Kompatibel HP & Desktop) ──
   async function bukaLiveKameraModal() {
     const modal = document.getElementById('liveCameraModal');
     const video = document.getElementById('liveCameraVideo');
     const loading = document.getElementById('cameraLoadingHint');
+    const errorHint = document.getElementById('cameraErrorHint');
     if (!modal || !video) return;
 
     modal.classList.remove('hidden');
     if (loading) loading.classList.remove('hidden');
+    if (errorHint) errorHint.classList.add('hidden');
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Peramban tidak mendukung live video stream. Menggunakan kamera HP bawaan.');
-      tutupLiveKameraModal();
-      document.getElementById('inputKameraBelakang').click();
+      bukaKameraBawaan();
       return;
     }
 
-    try {
-      if (liveCameraStream) {
+    if (liveCameraStream) {
+      try {
         liveCameraStream.getTracks().forEach(t => t.stop());
-      }
-      liveCameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: activeFacingMode } },
+      } catch (e) {}
+      liveCameraStream = null;
+    }
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let stream = null;
+
+    // 1. Percobaan Pertama: Spesifikasi resolusi & orientasi ideal
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: isMobile ? { ideal: activeFacingMode } : { ideal: 'user' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: false
       });
-      video.srcObject = liveCameraStream;
+    } catch (err1) {
+      console.warn('Percobaan kamera tingkat 1 gagal, mencoba fallback standar:', err1);
+    }
+
+    // 2. Percobaan Kedua: Fallback ke video: true murni (bekerja di semua webcam laptop & PC)
+    if (!stream) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      } catch (err2) {
+        console.warn('Percobaan kamera tingkat 2 gagal:', err2);
+      }
+    }
+
+    if (stream) {
+      liveCameraStream = stream;
+      video.srcObject = stream;
+      video.muted = true;
       video.onloadedmetadata = () => {
-        video.play();
+        video.play().catch(e => console.warn('Autoplay video dicegah:', e));
         if (loading) loading.classList.add('hidden');
       };
-    } catch (err) {
-      console.warn('Live camera error:', err);
+    } else {
       if (loading) loading.classList.add('hidden');
-      tutupLiveKameraModal();
-      // Fallback langsung ke input kamera bawaan
-      document.getElementById('inputKameraBelakang').click();
+      if (errorHint) {
+        errorHint.classList.remove('hidden');
+      } else {
+        bukaKameraBawaan();
+      }
     }
   }
 
@@ -681,14 +751,16 @@
     const modal = document.getElementById('liveCameraModal');
     if (modal) modal.classList.add('hidden');
     if (liveCameraStream) {
-      liveCameraStream.getTracks().forEach(t => t.stop());
+      try {
+        liveCameraStream.getTracks().forEach(t => t.stop());
+      } catch (e) {}
       liveCameraStream = null;
     }
   }
 
   async function switchKameraLive() {
     activeFacingMode = (activeFacingMode === "environment") ? "user" : "environment";
-    bukaLiveKameraModal();
+    await bukaLiveKameraModal();
   }
 
   function ambilFotoDariLiveVideo() {
