@@ -18,9 +18,9 @@
       }
   }
 
-  $initialGrid = old('grid_lokasi', 'K-10');
-  $initialLat  = old('latitude', '-7.383750');
-  $initialLng  = old('longitude', '112.784828');
+  $initialGrid = old('grid_lokasi', '');
+  $initialLat  = old('latitude', '');
+  $initialLng  = old('longitude', '');
 @endphp
 
 <div class="w-full flex flex-col gap-3 select-none">
@@ -31,20 +31,22 @@
     {{-- Coordinate Preview --}}
     <div class="flex items-center gap-3 min-w-0 flex-1">
       <div id="mainPreviewBadge"
-           class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-[#00A9C1] to-[#007fa3] text-white font-mono font-black text-base sm:text-lg flex items-center justify-center shadow-md shadow-cyan-500/20 shrink-0 border border-teal-300/30">
-        {{ $initialGrid }}
+           class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl {{ $initialGrid ? 'bg-gradient-to-br from-[#00A9C1] to-[#007fa3] text-white shadow-md shadow-cyan-500/20 border-teal-300/30' : 'bg-slate-200 text-slate-500 border-slate-300' }} font-mono font-black text-base sm:text-lg flex items-center justify-center shrink-0 border">
+        {{ $initialGrid ?: '-' }}
       </div>
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 uppercase tracking-wider">Koordinat Terpilih</span>
-          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Flocking Sedang</span>
+          <span id="mainPreviewRisk" class="text-[9px] font-bold px-1.5 py-0.5 rounded {{ $initialGrid ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500' }}">
+            {{ $initialGrid ? 'Flocking Sedang' : 'Belum Dipilih' }}
+          </span>
         </div>
         <h4 id="mainPreviewZoneName" class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-          Kanal Drainase Perimeter Selatan Terminal 2
+          {{ $initialGrid ? 'Kanal Drainase Perimeter Selatan Terminal 2' : 'Silakan Sentuh Sel Grid Pada Peta' }}
         </h4>
         <div id="mainPreviewGps" class="text-[11px] text-slate-500 font-mono mt-0.5 truncate flex items-center gap-1">
           <span class="material-symbols-outlined text-teal-600 text-xs">my_location</span>
-          <span>Lintang: {{ $initialLat }} • Bujur: {{ $initialLng }}</span>
+          <span>{{ $initialGrid ? "Lintang: {$initialLat} • Bujur: {$initialLng}" : 'Koordinat GPS: -' }}</span>
         </div>
       </div>
     </div>
@@ -68,7 +70,7 @@
   </div>
 
   {{-- Hidden inputs --}}
-  <input type="hidden" name="grid_lokasi" id="inputGridLokasi" value="{{ $initialGrid }}" required>
+  <input type="hidden" name="grid_lokasi" id="inputGridLokasi" value="{{ $initialGrid }}">
   <input type="hidden" name="latitude"    id="inputLatitude"   value="{{ $initialLat }}">
   <input type="hidden" name="longitude"   id="inputLongitude"  value="{{ $initialLng }}">
 
@@ -470,11 +472,27 @@ function onLeaveGrid() {
     el.setAttribute('fill', 'transparent');
   });
 
-  selectGrid(activeSelectedCode, false);
+  if (activeSelectedCode) {
+    selectGrid(activeSelectedCode, false);
+  } else {
+    const selBox = document.getElementById('activeSelectionBox');
+    if (selBox) selBox.classList.add('hidden');
+    const hudCoord = document.getElementById('gisHudCoord');
+    const hudInfo  = document.getElementById('gisHudInfo');
+    if (hudCoord) hudCoord.innerText = 'KOORDINAT: BELUM DIPILIH';
+    if (hudInfo) hudInfo.innerText = 'Sentuh salah satu sel grid pada peta di atas untuk memilih lokasi';
+  }
 }
 
 // Dynamic Grid Selection on Click
 function selectGrid(code, updateActive = true, triggerCallback = true) {
+  if (!code) {
+    activeSelectedCode = '';
+    const selBox = document.getElementById('activeSelectionBox');
+    if (selBox) selBox.classList.add('hidden');
+    return;
+  }
+
   if (updateActive) {
     activeSelectedCode = code;
   }
@@ -546,7 +564,10 @@ function selectGrid(code, updateActive = true, triggerCallback = true) {
     const mz = document.getElementById('mainPreviewZoneName');
     const mg = document.getElementById('mainPreviewGps');
     const mr = document.getElementById('mainPreviewRisk');
-    if (mb) mb.innerText = standardCode;
+    if (mb) {
+      mb.innerText = standardCode;
+      mb.className = "w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-[#00A9C1] to-[#007fa3] text-white font-mono font-black text-base sm:text-lg flex items-center justify-center shadow-md shadow-cyan-500/20 shrink-0 border border-teal-300/30";
+    }
     if (mz) mz.innerText = data.zone_name || ('Zona ' + standardCode);
     if (mg) mg.innerHTML = `<span class="material-symbols-outlined text-teal-600 text-xs">my_location</span><span>Lintang: ${coords.lat} • Bujur: ${coords.lng}</span>`;
     if (mr) {
@@ -592,7 +613,11 @@ function onManualGridInput(val) {
 }
 
 function applyGridToSatwa() {
-  const code = activeSelectedCode || document.getElementById('inputGridLokasi').value || 'K-10';
+  const code = activeSelectedCode || document.getElementById('inputGridLokasi')?.value;
+  if (!code) {
+    alert('Silakan sentuh salah satu sel grid pada peta terlebih dahulu sebelum menyalin.');
+    return;
+  }
   let n = 0;
   const selBurung = document.getElementById('selectGridBurung');
   if (selBurung) {
@@ -617,12 +642,18 @@ document.addEventListener('focusin', (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   const oldSatwaGrid = '{{ old("satwa.0.lokasi.0.grid", "") }}';
-  if (oldSatwaGrid) {
-    selectGrid(oldSatwaGrid, true, true);
+  const oldMainGrid  = '{{ old("grid_lokasi", "") }}';
+  const activeGrid = oldSatwaGrid || oldMainGrid;
+  if (activeGrid) {
+    selectGrid(activeGrid, true, true);
   } else {
-    // Inisialisasi peta interaktif Bagian 3 tanpa mengisi pilihan grid Bagian 2
-    const g = '{{ $initialGrid }}';
-    selectGrid(g, true, false);
+    // Bagian 3 selalu dalam keadaan bersih / kosong sebelum dipilih pengguna
+    const selBox = document.getElementById('activeSelectionBox');
+    if (selBox) selBox.classList.add('hidden');
+    const hudCoord = document.getElementById('gisHudCoord');
+    const hudInfo  = document.getElementById('gisHudInfo');
+    if (hudCoord) hudCoord.innerText = 'KOORDINAT: BELUM DIPILIH';
+    if (hudInfo) hudInfo.innerText = 'Sentuh salah satu sel grid pada peta di atas untuk memilih lokasi';
   }
 });
 </script>
