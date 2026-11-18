@@ -221,7 +221,7 @@
                     </div>
                   </div>
 
-                  <!-- Ringkasan Stempel Dinas Terverifikasi -->
+                  <!-- Ringkasan Stempel Dinas Terverifikasi (Waktu, GPS, Unit) -->
                   <div id="fotoWatermarkSummaryPill" class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 text-[11px] text-slate-600 grid grid-cols-1 sm:grid-cols-3 gap-1.5 font-medium">
                     <div class="flex items-center gap-1 truncate">
                       <span class="text-slate-400">🕒</span>
@@ -229,7 +229,7 @@
                     </div>
                     <div class="flex items-center gap-1 truncate">
                       <span class="text-teal-600 font-bold">📍</span>
-                      <span id="fotoSummaryGridGps" class="truncate">-</span>
+                      <span id="fotoSummaryGps" class="truncate font-mono">GPS: -</span>
                     </div>
                     <div class="flex items-center gap-1 truncate">
                       <span class="text-slate-400">🏢</span>
@@ -538,18 +538,14 @@
                   <span class="text-slate-400">Format & Resolusi:</span>
                   <span id="reviewResolutionBadge" class="font-mono text-slate-200 text-[11px]">- px • JPEG</span>
                 </div>
-                <div class="pt-2 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-[11px]">
+                <div class="pt-2 border-t border-slate-700/60 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
                   <div>
                     <span class="text-slate-400 block text-[10px]">Waktu Pengambilan:</span>
                     <span id="reviewWaktuText" class="text-slate-200 font-semibold truncate block">-</span>
                   </div>
                   <div>
-                    <span class="text-slate-400 block text-[10px]">Kode Grid Lokasi:</span>
-                    <span id="reviewGridText" class="text-teal-400 font-bold block">-</span>
-                  </div>
-                  <div>
                     <span class="text-slate-400 block text-[10px]">Koordinat GPS:</span>
-                    <span id="reviewGpsText" class="text-slate-200 font-mono block truncate">-</span>
+                    <span id="reviewGpsText" class="text-teal-400 font-mono font-semibold block truncate">-</span>
                   </div>
                   <div>
                     <span class="text-slate-400 block text-[10px]">Unit Pelapor:</span>
@@ -781,7 +777,7 @@
       dot.className = 'w-2 h-2 rounded-full bg-teal-400 shrink-0';
     }
     if (txt) {
-      txt.textContent = `Grid GPS: ${fLat}, ${fLng}`;
+      txt.textContent = `GPS: ${fLat}, ${fLng}`;
     }
   }
 
@@ -810,53 +806,52 @@
     return `${tgl} ${bln} ${thn} | ${jam}:${mnt}:${dtk} WIB`;
   }
 
-  // 3. Mengambil Data Metadata Lengkap untuk Stempel Dinas
+  // 3. Mengambil Data Metadata Lengkap untuk Stempel Dinas (Hanya Waktu, GPS Aktual, dan Unit Pelapor - TANPA KODE GRID)
   function getWatermarkMetadata(customDate = new Date()) {
-    // Grid: Ambil dari Bagian 2 (selectGridBurung) atau Bagian 3 (inputGridLokasi)
-    const gridInput = document.getElementById('selectGridBurung')?.value || document.getElementById('inputGridLokasi')?.value || 'K-10';
-    const cleanGrid = gridInput.trim().toUpperCase() || 'K-10';
+    // GPS: Ambil Latitude dan Longitude aktual (format 6 angka di belakang koma)
+    let lat = currentGpsData.lat || document.getElementById('formGpsLat')?.value || '-7.383750';
+    let lng = currentGpsData.lng || document.getElementById('formGpsLng')?.value || '112.784828';
 
-    // GPS: Ambil dari state GPS aktif atau hidden form
-    const lat = currentGpsData.lat || document.getElementById('formGpsLat')?.value || '-7.383750';
-    const lng = currentGpsData.lng || document.getElementById('formGpsLng')?.value || '112.784828';
+    if (!isNaN(parseFloat(lat))) lat = parseFloat(lat).toFixed(6);
+    if (!isNaN(parseFloat(lng))) lng = parseFloat(lng).toFixed(6);
 
-    // Unit Pelapor: Ambil dari profil akun login / select unit kerja
+    const gpsDisplay = `${lat}, ${lng}`;
+
+    // Unit Pelapor: Diambil otomatis dari profil pengguna yang login / unit kerja
     const unitSelect = document.querySelector('select[name="unit_kerja"]');
     const unit = (unitSelect && unitSelect.value) ? unitSelect.value : AUTH_UNIT_PELAPOR;
 
     return {
       waktu: getWibTimestamp(customDate),
-      grid: cleanGrid,
-      gps: `${lat}, ${lng}`,
+      gps: gpsDisplay,
       lat: lat,
       lng: lng,
       unit: unit
     };
   }
 
-  // 4. Render Stempel Watermark Dinas Resmi ke HTML5 Canvas (Permanen & Proporsional)
+  // 4. Render Stempel Watermark Dinas Resmi ke HTML5 Canvas (Waktu, GPS, Unit - TANPA KODE GRID)
   function drawDinasWatermark(canvas, ctx, width, height, meta) {
     // Hitung skala teks proporsional sesuai resolusi gambar foto
     const scale = Math.max(0.65, Math.min(2.5, width / 1200));
     const titleSize = Math.max(15, Math.round(20 * scale));
     const textSize = Math.max(12, Math.round(16 * scale));
-    const lineSpacing = Math.round(textSize * 1.48);
+    const lineSpacing = Math.round(textSize * 1.50);
     const padX = Math.round(26 * scale);
     const padY = Math.round(20 * scale);
 
     const titleText = "DOKUMENTASI LAPORAN DINAS";
-    const lineWaktu = `Waktu  : ${meta.waktu}`;
-    const lineGrid  = `Grid   : ${meta.grid}`;
-    const lineGps   = `GPS    : ${meta.gps}`;
-    const lineUnit  = `Unit   : ${meta.unit}`;
+    const lineWaktu = `Waktu : ${meta.waktu}`;
+    const lineGps   = `GPS   : ${meta.gps}`;
+    const lineUnit  = `Unit  : ${meta.unit}`;
 
-    // Total tinggi banner watermark hitam transparan
-    const bannerH = padY * 2 + titleSize + (lineSpacing * 4) + Math.round(10 * scale);
+    // Total tinggi banner watermark hitam transparan (3 baris informasi dinas: Waktu, GPS, Unit)
+    const bannerH = padY * 2 + titleSize + (lineSpacing * 3) + Math.round(10 * scale);
     const bannerTop = height - bannerH;
 
     ctx.save();
 
-    // Background hitam transparan (65–75% opacity per REQ-FIELD-004)
+    // Background hitam transparan (65–75% opacity)
     ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
     ctx.fillRect(0, bannerTop, width, bannerH);
 
@@ -883,16 +878,13 @@
     ctx.lineTo(Math.min(width - padX, padX + Math.round(360 * scale)), curY);
     ctx.stroke();
 
-    // Rincian 4 Butir Wajib: Waktu, Grid, GPS, Unit
+    // Rincian 3 Butir Wajib: Waktu, GPS, Unit (TANPA GRID)
     ctx.font = `500 ${textSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, monospace, sans-serif`;
     ctx.fillStyle = '#F8FAFC'; // Putih terang (Slate-50)
     ctx.shadowBlur = 3;
 
     curY += lineSpacing - Math.round(2 * scale);
     ctx.fillText(lineWaktu, padX, curY);
-
-    curY += lineSpacing;
-    ctx.fillText(lineGrid, padX, curY);
 
     curY += lineSpacing;
     ctx.fillText(lineGps, padX, curY);
@@ -1116,7 +1108,6 @@
     const sizeBadge = document.getElementById('reviewFileSizeBadge');
     const resBadge  = document.getElementById('reviewResolutionBadge');
     const waktuTxt  = document.getElementById('reviewWaktuText');
-    const gridTxt   = document.getElementById('reviewGridText');
     const gpsTxt    = document.getElementById('reviewGpsText');
     const unitTxt   = document.getElementById('reviewUnitText');
 
@@ -1131,7 +1122,6 @@
       resBadge.textContent = `${processed.width} × ${processed.height} px • JPEG`;
     }
     if (waktuTxt) waktuTxt.textContent = meta.waktu;
-    if (gridTxt)  gridTxt.textContent  = `Grid ${meta.grid}`;
     if (gpsTxt)   gpsTxt.textContent   = meta.gps;
     if (unitTxt)  unitTxt.textContent  = meta.unit;
 
@@ -1175,9 +1165,9 @@
     const dimTxt = document.getElementById('fotoDimensiText');
     const badge  = document.getElementById('fotoStatusBadge');
 
-    const sumWaktu   = document.getElementById('fotoSummaryWaktu');
-    const sumGridGps = document.getElementById('fotoSummaryGridGps');
-    const sumUnit    = document.getElementById('fotoSummaryUnit');
+    const sumWaktu = document.getElementById('fotoSummaryWaktu');
+    const sumGps   = document.getElementById('fotoSummaryGps') || document.getElementById('fotoSummaryGridGps');
+    const sumUnit  = document.getElementById('fotoSummaryUnit');
 
     if (img) img.src = photoData.previewUrl;
     if (ph)  ph.classList.add('hidden');
@@ -1193,9 +1183,9 @@
       badge.innerHTML = '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Dinas Terverifikasi</span>';
     }
 
-    if (sumWaktu)   sumWaktu.textContent = photoData.meta.waktu;
-    if (sumGridGps) sumGridGps.textContent = `Grid ${photoData.meta.grid} • ${photoData.meta.gps}`;
-    if (sumUnit)    sumUnit.textContent = photoData.meta.unit;
+    if (sumWaktu) sumWaktu.textContent = photoData.meta.waktu;
+    if (sumGps)   sumGps.textContent   = `GPS: ${photoData.meta.gps}`;
+    if (sumUnit)  sumUnit.textContent  = photoData.meta.unit;
 
     // Masukkan file JPEG ke input form satwa[0][foto] via DataTransfer
     const satwaFotoInput = document.getElementById('formSatwaFotoInput');
