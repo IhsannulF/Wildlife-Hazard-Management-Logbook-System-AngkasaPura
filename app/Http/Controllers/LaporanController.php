@@ -200,6 +200,8 @@ class LaporanController extends Controller
 
         $rules = [
             'tanggal' => 'required|date',
+            'satwa.*.foto' => 'nullable|file|image|mimes:jpeg,jpg,png|max:1024',
+            'foto_lainnya.*' => 'nullable|file|image|mimes:jpeg,jpg,png|max:1024',
         ];
 
         foreach ($requiredFields as $rf) {
@@ -256,8 +258,8 @@ class LaporanController extends Controller
             'area_inspeksi' => $request->input('area_inspeksi', ''),
             'tanda_tangan' => $request->input('tanda_tangan'),
             'grid_lokasi' => strtoupper($firstGrid ?: '-'),
-            'gps_lat' => $request->input('gps_lat'),
-            'gps_lng' => $request->input('gps_lng'),
+            'gps_lat' => $request->input('gps_lat', $request->input('latitude')),
+            'gps_lng' => $request->input('gps_lng', $request->input('longitude')),
             'ciri_ukuran' => $request->input('ciri_ukuran', '-'),
             'kondisi_apron' => $request->input('kondisi_apron', '-'),
             'aktivitas_satwa' => $request->input('aktivitas_satwa', '-'),

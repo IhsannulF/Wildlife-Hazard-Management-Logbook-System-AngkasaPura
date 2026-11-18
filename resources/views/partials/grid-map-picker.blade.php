@@ -537,6 +537,11 @@ function selectGrid(code, updateActive = true) {
     if (iln) iln.value = coords.lng;
     if (mi)  mi.value  = standardCode;
 
+    const fLat = document.getElementById('formGpsLat');
+    const fLng = document.getElementById('formGpsLng');
+    if (fLat) fLat.value = coords.lat;
+    if (fLng) fLng.value = coords.lng;
+
     const mb = document.getElementById('mainPreviewBadge');
     const mz = document.getElementById('mainPreviewZoneName');
     const mg = document.getElementById('mainPreviewGps');

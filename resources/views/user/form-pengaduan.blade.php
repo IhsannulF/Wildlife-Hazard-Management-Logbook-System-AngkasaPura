@@ -100,6 +100,8 @@
     <form id="mainForm" action="{{ route('laporan.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
       @csrf
       <input type="hidden" name="tanda_tangan" id="tanda_tangan">
+      <input type="hidden" name="gps_lat" id="formGpsLat" value="{{ old('gps_lat', old('latitude', '-7.383750')) }}">
+      <input type="hidden" name="gps_lng" id="formGpsLng" value="{{ old('gps_lng', old('longitude', '112.784828')) }}">
 
       <!-- SECTION 1: Identitas -->
       <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
@@ -189,21 +191,50 @@
 
               <!-- Filled State -->
               <div id="fotoPreviewFilled" class="hidden w-full flex-col items-center">
-                <div class="w-full max-h-[320px] rounded-lg overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
-                  <img id="fotoPreviewImg" src="" alt="Preview Foto" class="w-full max-h-[320px] object-contain">
-                </div>
-                <div class="w-full mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap text-left">
-                  <div class="min-w-0">
-                    <div id="fotoNamaFile" class="font-bold text-xs text-slate-800 truncate">foto_burung.jpg</div>
-                    <div id="fotoUkuranFile" class="text-[11px] text-slate-500">Ukuran: -</div>
+                <div class="w-full max-h-[340px] rounded-xl overflow-hidden bg-slate-950 border border-slate-200 flex items-center justify-center shadow-inner relative group">
+                  <img id="fotoPreviewImg" src="" alt="Preview Foto Watermark Dinas" class="w-full max-h-[340px] object-contain">
+                  <div class="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-teal-500/40 text-[10px] font-bold text-teal-300 flex items-center gap-1 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                    <span>Watermark Dinas Permanen</span>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <button type="button" onclick="klikAmbilFoto()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors">
-                      Ganti Foto
-                    </button>
-                    <button type="button" onclick="hapusFotoBurung()" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer">
-                      Hapus
-                    </button>
+                </div>
+                
+                <!-- Metadata Card Bawah Foto -->
+                <div class="w-full mt-3 pt-2.5 border-t border-slate-200 flex flex-col gap-2 text-left">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="min-w-0 flex-1">
+                      <div id="fotoNamaFile" class="font-bold text-xs text-slate-800 truncate">foto_dinas.jpg</div>
+                      <div id="fotoUkuranFile" class="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span id="fotoUkuranText" class="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Ukuran: - KB (&lt; 1 MB)</span>
+                        <span id="fotoDimensiText" class="font-mono text-slate-500">Resolusi: -</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button type="button" onclick="klikAmbilFoto()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">photo_camera</span>
+                        <span>Ulangi / Ganti Foto</span>
+                      </button>
+                      <button type="button" onclick="hapusFotoBurung()" class="px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                        <span>Hapus</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Ringkasan Stempel Dinas Terverifikasi -->
+                  <div id="fotoWatermarkSummaryPill" class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 text-[11px] text-slate-600 grid grid-cols-1 sm:grid-cols-3 gap-1.5 font-medium">
+                    <div class="flex items-center gap-1 truncate">
+                      <span class="text-slate-400">🕒</span>
+                      <span id="fotoSummaryWaktu" class="truncate">-</span>
+                    </div>
+                    <div class="flex items-center gap-1 truncate">
+                      <span class="text-teal-600 font-bold">📍</span>
+                      <span id="fotoSummaryGridGps" class="truncate">-</span>
+                    </div>
+                    <div class="flex items-center gap-1 truncate">
+                      <span class="text-slate-400">🏢</span>
+                      <span id="fotoSummaryUnit" class="truncate">{{ $unitKerjaUser ?: ($user->namalengkap ?: $user->username) }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -382,71 +413,165 @@
         </div>
       </div>
 
-      <!-- Live Camera Viewfinder Modal -->
+      <!-- Live Camera Viewfinder & Watermark Modal (REQ-FIELD-004) -->
       <div id="liveCameraModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
-          <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-              <span class="font-bold text-xs sm:text-sm">Kamera Pengamatan Burung</span>
-            </div>
-            <button type="button" onclick="tutupLiveKameraModal()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
           
-          <div class="relative bg-black flex items-center justify-center min-h-[300px] sm:min-h-[360px] max-h-[65vh] overflow-hidden">
-            <video id="liveCameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
-            <canvas id="liveCameraCanvas" class="hidden"></canvas>
+          <!-- STATE 1: VIEWFINDER (Live Streaming Kamera & Pengambilan Foto) -->
+          <div id="cameraViewfinderState" class="flex flex-col w-full">
+            <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                <span class="font-bold text-xs sm:text-sm">Kamera Pengamatan Dinas - Sisi Udara</span>
+              </div>
+              <button type="button" onclick="tutupLiveKameraModal()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer" title="Tutup Kamera">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
             
-            <!-- Loading Indicator -->
-            <div id="cameraLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 gap-2">
-              <svg class="w-8 h-8 animate-spin text-teal-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              <span>Mengaktifkan kamera live...</span>
+            <div class="relative bg-black flex items-center justify-center min-h-[300px] sm:min-h-[360px] max-h-[65vh] overflow-hidden">
+              <video id="liveCameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+              
+              <!-- Reticle Target Viewfinder (Panduan Bidik Tengah) -->
+              <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div class="w-48 h-48 border border-white/30 rounded-2xl relative flex items-center justify-center">
+                  <div class="w-2.5 h-2.5 rounded-full bg-teal-400/80"></div>
+                  <!-- Corner ticks -->
+                  <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-teal-400"></div>
+                  <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-teal-400"></div>
+                  <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-teal-400"></div>
+                  <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-teal-400"></div>
+                </div>
+              </div>
+
+              <!-- Top Floating Badges (GPS & Unit Info Live) -->
+              <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2 pointer-events-none">
+                <div class="pointer-events-auto flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-teal-500/40 text-[10px] sm:text-xs text-white">
+                  <span id="cameraGpsDot" class="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse"></span>
+                  <span id="cameraGpsText" class="font-mono truncate max-w-[170px] sm:max-w-xs">GPS: Mengambil lokasi...</span>
+                  <button type="button" onclick="requestGpsLocation(true)" class="p-0.5 hover:text-teal-300 cursor-pointer" title="Perbarui Koordinat GPS">
+                    <span class="material-symbols-outlined text-xs">autorenew</span>
+                  </button>
+                </div>
+                <div class="bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 text-[10px] sm:text-xs text-slate-300 font-semibold truncate max-w-[140px]">
+                  {{ $unitKerjaUser ?: ($user->namalengkap ?: $user->username) }}
+                </div>
+              </div>
+
+              <!-- Loading Indicator -->
+              <div id="cameraLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 gap-2">
+                <svg class="w-8 h-8 animate-spin text-teal-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                <span>Mengaktifkan kamera live...</span>
+              </div>
+
+              <!-- Error / Permission Denied Fallback State -->
+              <div id="cameraErrorHint" class="hidden absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 p-6 text-center gap-3">
+                <span class="material-symbols-outlined text-rose-400 text-3xl">videocam_off</span>
+                <div class="font-bold text-sm text-slate-100">Kamera Live Tidak Dapat Diakses</div>
+                <p class="text-xs text-slate-400 max-w-xs leading-relaxed">Izin kamera belum aktif atau browser membatasi WebRTC. Anda tetap bisa langsung membuka kamera bawaan perangkat.</p>
+                <div class="flex items-center gap-2 mt-2">
+                  <button type="button" onclick="bukaKameraBawaan()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md">
+                    <span class="material-symbols-outlined text-sm">photo_camera</span>
+                    <span>Buka Kamera HP / Perangkat</span>
+                  </button>
+                  <button type="button" onclick="tutupLiveKameraModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs cursor-pointer">
+                    Tutup
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- Error / Permission Denied Fallback State -->
-            <div id="cameraErrorHint" class="hidden absolute inset-0 flex flex-col items-center justify-center text-white text-xs bg-slate-900 p-6 text-center gap-3">
-              <span class="material-symbols-outlined text-rose-400 text-3xl">videocam_off</span>
-              <div class="font-bold text-sm text-slate-100">Kamera Live Tidak Dapat Diakses</div>
-              <p class="text-xs text-slate-400 max-w-xs leading-relaxed">Izin kamera belum aktif atau browser membatasi WebRTC. Anda tetap bisa langsung membuka kamera bawaan perangkat.</p>
-              <div class="flex items-center gap-2 mt-2">
-                <button type="button" onclick="bukaKameraBawaan()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md">
-                  <span class="material-symbols-outlined text-sm">photo_camera</span>
-                  <span>Buka Kamera HP / Perangkat</span>
+            <div class="p-4 bg-slate-900 border-t border-slate-800 flex flex-col gap-3">
+              <div class="flex items-center justify-around w-full">
+                <!-- Switch Front/Back Camera -->
+                <button type="button" onclick="switchKameraLive()" id="btnSwitchCamera" class="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center cursor-pointer transition-colors" title="Putar Kamera Depan / Belakang">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </button>
-                <button type="button" onclick="tutupLiveKameraModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs cursor-pointer">
+
+                <!-- Capture Shutter Button -->
+                <button type="button" onclick="ambilFotoDariLiveVideo()" class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 shadow-xl active:scale-90 transition-transform flex items-center justify-center text-teal-600 cursor-pointer" title="Ambil Foto">
+                  <div class="w-12 h-12 rounded-full bg-teal-500 hover:bg-teal-600 transition-colors flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined text-2xl">photo_camera</span>
+                  </div>
+                </button>
+
+                <!-- Close Button -->
+                <button type="button" onclick="tutupLiveKameraModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
                   Tutup
+                </button>
+              </div>
+
+              <!-- Alternate link for Mobile: Use native phone camera app directly -->
+              <div class="text-center pt-1 border-t border-slate-800/80">
+                <button type="button" onclick="bukaKameraBawaan()" class="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-medium cursor-pointer">
+                  Atau gunakan aplikasi kamera bawaan HP ›
                 </button>
               </div>
             </div>
           </div>
 
-          <div class="p-4 bg-slate-900 border-t border-slate-800 flex flex-col gap-3">
-            <div class="flex items-center justify-around w-full">
-              <!-- Switch Front/Back Camera -->
-              <button type="button" onclick="switchKameraLive()" id="btnSwitchCamera" class="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center cursor-pointer transition-colors" title="Putar Kamera Depan / Belakang">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              </button>
-
-              <!-- Capture Button -->
-              <button type="button" onclick="ambilFotoDariLiveVideo()" class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 shadow-xl active:scale-90 transition-transform flex items-center justify-center text-teal-600 cursor-pointer" title="Jepret Foto">
-                <div class="w-12 h-12 rounded-full bg-teal-500 hover:bg-teal-600 transition-colors"></div>
-              </button>
-
-              <!-- Close Button -->
-              <button type="button" onclick="tutupLiveKameraModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
-                Tutup
+          <!-- STATE 2: REVIEW (Preview Watermark Dinas Permanen & Kompresi < 1 MB) -->
+          <div id="cameraReviewState" class="hidden flex flex-col w-full">
+            <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-400 text-lg">verified</span>
+                <span class="font-bold text-xs sm:text-sm">Preview Foto Dinas & Watermark</span>
+              </div>
+              <button type="button" onclick="tutupLiveKameraModal()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer" title="Tutup">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
 
-            <!-- Alternate link for Mobile: Use native phone camera app directly -->
-            <div class="text-center pt-1 border-t border-slate-800/80">
-              <button type="button" onclick="bukaKameraBawaan()" class="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-medium cursor-pointer">
-                Atau gunakan aplikasi kamera bawaan HP ›
-              </button>
+            <!-- Preview Image with Burned-in Watermark -->
+            <div class="relative bg-slate-950 flex items-center justify-center min-h-[260px] sm:min-h-[320px] max-h-[55vh] p-2 overflow-hidden">
+              <img id="cameraReviewImg" src="" alt="Hasil Foto Dinas" class="max-h-[50vh] w-auto max-w-full object-contain rounded-lg shadow-2xl border border-slate-800">
+            </div>
+
+            <!-- Inspection & Verification Card -->
+            <div class="p-3.5 bg-slate-900 border-t border-slate-800 flex flex-col gap-2.5">
+              <div class="bg-slate-800/90 rounded-xl p-3 border border-slate-700/80 text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400">Ukuran Akhir:</span>
+                  <span id="reviewFileSizeBadge" class="font-bold text-emerald-400 bg-emerald-950/70 border border-emerald-500/40 px-2 py-0.5 rounded-md">- KB (&lt; 1 MB OK)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400">Format & Resolusi:</span>
+                  <span id="reviewResolutionBadge" class="font-mono text-slate-200 text-[11px]">- px • JPEG</span>
+                </div>
+                <div class="pt-2 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Waktu Pengambilan:</span>
+                    <span id="reviewWaktuText" class="text-slate-200 font-semibold truncate block">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Kode Grid Lokasi:</span>
+                    <span id="reviewGridText" class="text-teal-400 font-bold block">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Koordinat GPS:</span>
+                    <span id="reviewGpsText" class="text-slate-200 font-mono block truncate">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Unit Pelapor:</span>
+                    <span id="reviewUnitText" class="text-slate-200 font-medium block truncate">{{ $unitKerjaUser ?: ($user->namalengkap ?: $user->username) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-between gap-3 pt-1">
+                <button type="button" onclick="ulangiFotoKamera()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors border border-slate-700">
+                  <span class="material-symbols-outlined text-base">refresh</span>
+                  <span>Ulangi Foto</span>
+                </button>
+                <button type="button" onclick="gunakanFotoKamera()" style="background: linear-gradient(135deg, #00A9C1 0%, #007fa3 100%) !important; color: #ffffff !important;" class="flex-1 py-3 px-4 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg active:scale-[0.98] transition-all">
+                  <span class="material-symbols-outlined text-base" style="color: #ffffff !important;">check_circle</span>
+                  <span style="color: #ffffff !important;">Gunakan Foto</span>
+                </button>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -569,15 +694,281 @@
     signaturePad.clear();
   });
 
-  // ── Bagian 2: Kamera & Upload Foto Burung ──
+  // ── Bagian 2: FITUR KAMERA WATERMARK DINAS OTOMATIS (REQ-FIELD-004) ──
+  const AUTH_UNIT_PELAPOR = @json($unitKerjaUser ?: ($user->namalengkap ?: $user->username));
   let hasBirdPhoto = false;
   let liveCameraStream = null;
-  let activeFacingMode = "environment"; // Prioritaskan kamera belakang
+  let activeFacingMode = "environment"; // Prioritaskan kamera belakang di smartphone
+  let currentGpsData = {
+    lat: '-7.383750',
+    lng: '112.784828',
+    isRealDevice: false,
+    statusText: 'Standar Juanda'
+  };
+  let pendingProcessedPhoto = null; // Menyimpan { blob, file, metadata, width, height }
 
+  // 1. Geolocation Integration (Mengambil koordinat nyata gawai dengan akurasi tinggi)
+  function requestGpsLocation(force = false) {
+    const dot = document.getElementById('cameraGpsDot');
+    const txt = document.getElementById('cameraGpsText');
+
+    if (!navigator.geolocation) {
+      syncWithFormCoordinates('GPS tidak didukung browser');
+      return;
+    }
+
+    if (dot) {
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse';
+    }
+    if (txt) {
+      txt.textContent = 'GPS: Mendeteksi sinyal satelit...';
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        currentGpsData = {
+          lat: lat,
+          lng: lng,
+          isRealDevice: true,
+          statusText: 'GPS Aktif'
+        };
+
+        // Sinkronisasi ke hidden form
+        const fLat = document.getElementById('formGpsLat');
+        const fLng = document.getElementById('formGpsLng');
+        if (fLat) fLat.value = lat;
+        if (fLng) fLng.value = lng;
+
+        const iLat = document.getElementById('inputLatitude');
+        const iLng = document.getElementById('inputLongitude');
+        if (iLat) iLat.value = lat;
+        if (iLng) iLng.value = lng;
+
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0';
+        }
+        if (txt) {
+          txt.textContent = `GPS: ${lat}, ${lng}`;
+        }
+      },
+      (error) => {
+        console.warn('Geolocation gawai belum tersedia / izin ditolak:', error.message);
+        syncWithFormCoordinates('Menggunakan Koordinat Grid');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 15000
+      }
+    );
+  }
+
+  function syncWithFormCoordinates(statusNote) {
+    const fLat = document.getElementById('formGpsLat')?.value || document.getElementById('inputLatitude')?.value || '-7.383750';
+    const fLng = document.getElementById('formGpsLng')?.value || document.getElementById('inputLongitude')?.value || '112.784828';
+    currentGpsData = {
+      lat: fLat,
+      lng: fLng,
+      isRealDevice: false,
+      statusText: statusNote || 'Koordinat Grid'
+    };
+
+    const dot = document.getElementById('cameraGpsDot');
+    const txt = document.getElementById('cameraGpsText');
+    if (dot) {
+      dot.className = 'w-2 h-2 rounded-full bg-teal-400 shrink-0';
+    }
+    if (txt) {
+      txt.textContent = `Grid GPS: ${fLat}, ${fLng}`;
+    }
+  }
+
+  // Panggil deteksi lokasi saat halaman dimuat
+  document.addEventListener('DOMContentLoaded', () => {
+    requestGpsLocation(false);
+  });
+
+  // 2. Format Timestamp Resmi WIB (Asia/Jakarta)
+  function getWibTimestamp(date = new Date()) {
+    const bulanIndo = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    // Menghitung waktu zona WIB (UTC+7)
+    const utcMs = date.getTime() + (date.getTimezoneOffset() * 60000);
+    const wibDate = new Date(utcMs + (3600000 * 7));
+
+    const tgl = wibDate.getDate();
+    const bln = bulanIndo[wibDate.getMonth()];
+    const thn = wibDate.getFullYear();
+    const jam = String(wibDate.getHours()).padStart(2, '0');
+    const mnt = String(wibDate.getMinutes()).padStart(2, '0');
+    const dtk = String(wibDate.getSeconds()).padStart(2, '0');
+
+    return `${tgl} ${bln} ${thn} | ${jam}:${mnt}:${dtk} WIB`;
+  }
+
+  // 3. Mengambil Data Metadata Lengkap untuk Stempel Dinas
+  function getWatermarkMetadata(customDate = new Date()) {
+    // Grid: Ambil dari Bagian 2 (selectGridBurung) atau Bagian 3 (inputGridLokasi)
+    const gridInput = document.getElementById('selectGridBurung')?.value || document.getElementById('inputGridLokasi')?.value || 'K-10';
+    const cleanGrid = gridInput.trim().toUpperCase() || 'K-10';
+
+    // GPS: Ambil dari state GPS aktif atau hidden form
+    const lat = currentGpsData.lat || document.getElementById('formGpsLat')?.value || '-7.383750';
+    const lng = currentGpsData.lng || document.getElementById('formGpsLng')?.value || '112.784828';
+
+    // Unit Pelapor: Ambil dari profil akun login / select unit kerja
+    const unitSelect = document.querySelector('select[name="unit_kerja"]');
+    const unit = (unitSelect && unitSelect.value) ? unitSelect.value : AUTH_UNIT_PELAPOR;
+
+    return {
+      waktu: getWibTimestamp(customDate),
+      grid: cleanGrid,
+      gps: `${lat}, ${lng}`,
+      lat: lat,
+      lng: lng,
+      unit: unit
+    };
+  }
+
+  // 4. Render Stempel Watermark Dinas Resmi ke HTML5 Canvas (Permanen & Proporsional)
+  function drawDinasWatermark(canvas, ctx, width, height, meta) {
+    // Hitung skala teks proporsional sesuai resolusi gambar foto
+    const scale = Math.max(0.65, Math.min(2.5, width / 1200));
+    const titleSize = Math.max(15, Math.round(20 * scale));
+    const textSize = Math.max(12, Math.round(16 * scale));
+    const lineSpacing = Math.round(textSize * 1.48);
+    const padX = Math.round(26 * scale);
+    const padY = Math.round(20 * scale);
+
+    const titleText = "DOKUMENTASI LAPORAN DINAS";
+    const lineWaktu = `Waktu  : ${meta.waktu}`;
+    const lineGrid  = `Grid   : ${meta.grid}`;
+    const lineGps   = `GPS    : ${meta.gps}`;
+    const lineUnit  = `Unit   : ${meta.unit}`;
+
+    // Total tinggi banner watermark hitam transparan
+    const bannerH = padY * 2 + titleSize + (lineSpacing * 4) + Math.round(10 * scale);
+    const bannerTop = height - bannerH;
+
+    ctx.save();
+
+    // Background hitam transparan (65–75% opacity per REQ-FIELD-004)
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+    ctx.fillRect(0, bannerTop, width, bannerH);
+
+    // Garis aksen cyan InJourney di tepi atas banner watermark
+    ctx.fillStyle = '#00A9C1';
+    ctx.fillRect(0, bannerTop, width, Math.max(2, Math.round(3.5 * scale)));
+
+    // Judul Dokumentasi Dinas (Bold)
+    let curY = bannerTop + padY + titleSize;
+    ctx.font = `bold ${titleSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+    ctx.fillText(titleText, padX, curY);
+
+    // Garis pemisah visual tipis di bawah judul
+    curY += Math.round(8 * scale);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = Math.max(1, Math.round(1.2 * scale));
+    ctx.beginPath();
+    ctx.moveTo(padX, curY);
+    ctx.lineTo(Math.min(width - padX, padX + Math.round(360 * scale)), curY);
+    ctx.stroke();
+
+    // Rincian 4 Butir Wajib: Waktu, Grid, GPS, Unit
+    ctx.font = `500 ${textSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, monospace, sans-serif`;
+    ctx.fillStyle = '#F8FAFC'; // Putih terang (Slate-50)
+    ctx.shadowBlur = 3;
+
+    curY += lineSpacing - Math.round(2 * scale);
+    ctx.fillText(lineWaktu, padX, curY);
+
+    curY += lineSpacing;
+    ctx.fillText(lineGrid, padX, curY);
+
+    curY += lineSpacing;
+    ctx.fillText(lineGps, padX, curY);
+
+    curY += lineSpacing;
+    ctx.fillText(lineUnit, padX, curY);
+
+    ctx.restore();
+  }
+
+  // 5. Kompresi Bertahap HTML5 Canvas (< 1 MB / < 1.000.000 byte)
+  async function processAndCompressWatermark(sourceMedia, meta) {
+    const origW = sourceMedia.videoWidth || sourceMedia.naturalWidth || sourceMedia.width;
+    const origH = sourceMedia.videoHeight || sourceMedia.naturalHeight || sourceMedia.height;
+
+    let scale = 1.0;
+    let quality = 0.85; // Mulai dari 0.85 sesuai ketentuan REQ-FIELD-004
+    const TARGET_MAX_BYTES = 1000000; // < 1 MB
+    let resultBlob = null;
+    let finalCanvas = null;
+
+    const offscreenCanvas = document.createElement('canvas');
+    const ctx = offscreenCanvas.getContext('2d');
+
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const curW = Math.round(origW * scale);
+      const curH = Math.round(origH * scale);
+
+      offscreenCanvas.width = curW;
+      offscreenCanvas.height = curH;
+
+      // Render citra sumber (video atau image)
+      ctx.drawImage(sourceMedia, 0, 0, curW, curH);
+
+      // Bubuhkan watermark dinas resmi permanen
+      drawDinasWatermark(offscreenCanvas, ctx, curW, curH, meta);
+
+      // Konversi Canvas menjadi Blob JPEG
+      resultBlob = await new Promise((resolve) => {
+        offscreenCanvas.toBlob(resolve, 'image/jpeg', quality);
+      });
+
+      finalCanvas = offscreenCanvas;
+
+      if (resultBlob && resultBlob.size < TARGET_MAX_BYTES) {
+        // Berhasil di bawah 1 MB!
+        break;
+      }
+
+      // Jika masih >= 1 MB, turunkan kualitas bertahap
+      if (quality > 0.65) {
+        quality -= 0.08;
+      } else {
+        // Jika kualitas sudah 0.65 masih > 1 MB, kurangi resolusi bertahap
+        scale *= 0.85;
+        quality = 0.80; // Reset kualitas sedikit saat resolusi diturunkan
+      }
+    }
+
+    if (!resultBlob || resultBlob.size >= TARGET_MAX_BYTES) {
+      alert('Peringatan: Foto melebihi batas 1 MB setelah kompresi. Silakan ambil foto ulang.');
+      return null;
+    }
+
+    return {
+      blob: resultBlob,
+      width: finalCanvas.width,
+      height: finalCanvas.height,
+      size: resultBlob.size,
+      quality: quality
+    };
+  }
+
+  // 6. Alur Buka & Kontrol Kamera
   function klikAmbilFoto() {
-    // Cek ketersediaan WebRTC mediaDevices di browser
     const hasMediaDevices = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
-
     if (hasMediaDevices) {
       bukaLiveKameraModal();
     } else {
@@ -594,89 +985,6 @@
     }
   }
 
-  function handleFileSelected(input) {
-    if (!input.files || !input.files[0]) return;
-    applyPhotoFile(input.files[0], input);
-  }
-
-  function applyPhotoFile(file, sourceInput = null) {
-    hasBirdPhoto = true;
-
-    // Create object URL for instant high-quality preview
-    const previewUrl = URL.createObjectURL(file);
-    const img = document.getElementById('fotoPreviewImg');
-    const ph = document.getElementById('fotoPlaceholder');
-    const filled = document.getElementById('fotoPreviewFilled');
-    const nama = document.getElementById('fotoNamaFile');
-    const ukuran = document.getElementById('fotoUkuranFile');
-    const badge = document.getElementById('fotoStatusBadge');
-
-    if (img) img.src = previewUrl;
-    if (ph) ph.classList.add('hidden');
-    if (filled) {
-      filled.classList.remove('hidden');
-      filled.classList.add('flex');
-    }
-
-    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-    if (nama) nama.textContent = file.name;
-    if (ukuran) ukuran.textContent = `Ukuran: ${sizeMb} MB • Format: ${file.type || 'image/jpeg'}`;
-    if (badge) {
-      badge.innerHTML = '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Terlampir</span>';
-    }
-
-    // Assign file to form input
-    const cam = document.getElementById('inputKameraBelakang');
-    const gal = document.getElementById('inputGaleriFoto');
-    const satwaFoto = document.getElementById('formSatwaFotoInput');
-
-    if (sourceInput === cam) {
-      cam.name = 'satwa[0][foto]';
-      if (gal) gal.removeAttribute('name');
-    } else if (sourceInput === gal) {
-      gal.name = 'satwa[0][foto]';
-      if (cam) cam.removeAttribute('name');
-    } else {
-      // From live camera or canvas snapshot
-      if (satwaFoto && window.DataTransfer) {
-        try {
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          satwaFoto.files = dt.files;
-          satwaFoto.name = 'satwa[0][foto]';
-          if (cam) cam.removeAttribute('name');
-          if (gal) gal.removeAttribute('name');
-        } catch (e) {}
-      }
-    }
-  }
-
-  function hapusFotoBurung() {
-    hasBirdPhoto = false;
-    const img = document.getElementById('fotoPreviewImg');
-    const ph = document.getElementById('fotoPlaceholder');
-    const filled = document.getElementById('fotoPreviewFilled');
-    const badge = document.getElementById('fotoStatusBadge');
-    const cam = document.getElementById('inputKameraBelakang');
-    const gal = document.getElementById('inputGaleriFoto');
-    const satwaFoto = document.getElementById('formSatwaFotoInput');
-
-    if (img) img.src = '';
-    if (ph) ph.classList.remove('hidden');
-    if (filled) {
-      filled.classList.add('hidden');
-      filled.classList.remove('flex');
-    }
-    if (badge) {
-      badge.innerHTML = '<span class="text-slate-400 font-medium">Wajib terlampir</span>';
-    }
-
-    if (cam) { cam.value = ''; cam.removeAttribute('name'); }
-    if (gal) { gal.value = ''; gal.removeAttribute('name'); }
-    if (satwaFoto) satwaFoto.value = '';
-  }
-
-  // ── Live Camera Modal (WebRTC Kompatibel HP & Desktop) ──
   async function bukaLiveKameraModal() {
     const modal = document.getElementById('liveCameraModal');
     const video = document.getElementById('liveCameraVideo');
@@ -684,9 +992,15 @@
     const errorHint = document.getElementById('cameraErrorHint');
     if (!modal || !video) return;
 
+    // Reset view states: Tampilkan Viewfinder, sembunyikan Review
+    setCameraModalState('viewfinder');
+
     modal.classList.remove('hidden');
     if (loading) loading.classList.remove('hidden');
     if (errorHint) errorHint.classList.add('hidden');
+
+    // Update GPS live
+    requestGpsLocation(false);
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       bukaKameraBawaan();
@@ -694,30 +1008,28 @@
     }
 
     if (liveCameraStream) {
-      try {
-        liveCameraStream.getTracks().forEach(t => t.stop());
-      } catch (e) {}
+      try { liveCameraStream.getTracks().forEach(t => t.stop()); } catch (e) {}
       liveCameraStream = null;
     }
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     let stream = null;
 
-    // 1. Percobaan Pertama: Spesifikasi resolusi & orientasi ideal
+    // 1. Percobaan Pertama: Resolusi ideal & orientasi kamera belakang (environment)
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: isMobile ? { ideal: activeFacingMode } : { ideal: 'user' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 }
         },
         audio: false
       });
     } catch (err1) {
-      console.warn('Percobaan kamera tingkat 1 gagal, mencoba fallback standar:', err1);
+      console.warn('Percobaan kamera HD gagal, mencoba fallback standar:', err1);
     }
 
-    // 2. Percobaan Kedua: Fallback ke video: true murni (bekerja di semua webcam laptop & PC)
+    // 2. Percobaan Kedua: Fallback ke video: true murni
     if (!stream) {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -725,7 +1037,7 @@
           audio: false
         });
       } catch (err2) {
-        console.warn('Percobaan kamera tingkat 2 gagal:', err2);
+        console.warn('Percobaan kamera standar gagal:', err2);
       }
     }
 
@@ -751,11 +1063,10 @@
     const modal = document.getElementById('liveCameraModal');
     if (modal) modal.classList.add('hidden');
     if (liveCameraStream) {
-      try {
-        liveCameraStream.getTracks().forEach(t => t.stop());
-      } catch (e) {}
+      try { liveCameraStream.getTracks().forEach(t => t.stop()); } catch (e) {}
       liveCameraStream = null;
     }
+    pendingProcessedPhoto = null;
   }
 
   async function switchKameraLive() {
@@ -763,22 +1074,207 @@
     await bukaLiveKameraModal();
   }
 
-  function ambilFotoDariLiveVideo() {
+  function setCameraModalState(state) {
+    const viewState = document.getElementById('cameraViewfinderState');
+    const reviewState = document.getElementById('cameraReviewState');
+    if (state === 'review') {
+      if (viewState) viewState.classList.add('hidden');
+      if (reviewState) reviewState.classList.remove('hidden');
+    } else {
+      if (viewState) viewState.classList.remove('hidden');
+      if (reviewState) reviewState.classList.add('hidden');
+    }
+  }
+
+  // 7. Ambil Foto dari Live Video, Buat Watermark & Kompresi
+  async function ambilFotoDariLiveVideo() {
     const video = document.getElementById('liveCameraVideo');
-    const canvas = document.getElementById('liveCameraCanvas');
-    if (!video || !canvas) return;
+    if (!video || !video.videoWidth) {
+      alert('Kamera sedang memuat frame video, silakan tunggu sesaat.');
+      return;
+    }
 
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Waktu pengambilan foto (timestamp seketika jepret)
+    const meta = getWatermarkMetadata(new Date());
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], 'foto_kamera_' + Date.now() + '.jpg', { type: 'image/jpeg' });
-      applyPhotoFile(file);
-      tutupLiveKameraModal();
-    }, 'image/jpeg', 0.92);
+    // Proses watermark & kompresi < 1 MB
+    const processed = await processAndCompressWatermark(video, meta);
+    if (!processed) return;
+
+    // Hentikan stream video kamera untuk hemat baterai
+    if (liveCameraStream) {
+      try { liveCameraStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      liveCameraStream = null;
+    }
+
+    // Tampilkan di Mode Review Modal
+    showPhotoInReviewModal(processed, meta);
+  }
+
+  function showPhotoInReviewModal(processed, meta) {
+    const reviewImg = document.getElementById('cameraReviewImg');
+    const sizeBadge = document.getElementById('reviewFileSizeBadge');
+    const resBadge  = document.getElementById('reviewResolutionBadge');
+    const waktuTxt  = document.getElementById('reviewWaktuText');
+    const gridTxt   = document.getElementById('reviewGridText');
+    const gpsTxt    = document.getElementById('reviewGpsText');
+    const unitTxt   = document.getElementById('reviewUnitText');
+
+    const previewUrl = URL.createObjectURL(processed.blob);
+    if (reviewImg) reviewImg.src = previewUrl;
+
+    const sizeKb = (processed.size / 1024).toFixed(1);
+    if (sizeBadge) {
+      sizeBadge.textContent = `${sizeKb} KB (< 1 MB OK)`;
+    }
+    if (resBadge) {
+      resBadge.textContent = `${processed.width} × ${processed.height} px • JPEG`;
+    }
+    if (waktuTxt) waktuTxt.textContent = meta.waktu;
+    if (gridTxt)  gridTxt.textContent  = `Grid ${meta.grid}`;
+    if (gpsTxt)   gpsTxt.textContent   = meta.gps;
+    if (unitTxt)  unitTxt.textContent  = meta.unit;
+
+    // Simpan data foto yang menunggu konfirmasi "Gunakan Foto"
+    const finalFile = new File([processed.blob], `foto_dinas_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    pendingProcessedPhoto = {
+      blob: processed.blob,
+      file: finalFile,
+      previewUrl: previewUrl,
+      meta: meta,
+      sizeKb: sizeKb,
+      width: processed.width,
+      height: processed.height
+    };
+
+    setCameraModalState('review');
+  }
+
+  function ulangiFotoKamera() {
+    pendingProcessedPhoto = null;
+    bukaLiveKameraModal();
+  }
+
+  function gunakanFotoKamera() {
+    if (!pendingProcessedPhoto) return;
+
+    applyWatermarkedPhotoToForm(pendingProcessedPhoto);
+    tutupLiveKameraModal();
+  }
+
+  // 8. Terapkan Foto Terwatermark ke Input Form & Tampilan Bagian 2
+  function applyWatermarkedPhotoToForm(photoData) {
+    hasBirdPhoto = true;
+
+    // Update Tampilan Preview di Bagian 2
+    const img    = document.getElementById('fotoPreviewImg');
+    const ph     = document.getElementById('fotoPlaceholder');
+    const filled = document.getElementById('fotoPreviewFilled');
+    const nama   = document.getElementById('fotoNamaFile');
+    const ukText = document.getElementById('fotoUkuranText');
+    const dimTxt = document.getElementById('fotoDimensiText');
+    const badge  = document.getElementById('fotoStatusBadge');
+
+    const sumWaktu   = document.getElementById('fotoSummaryWaktu');
+    const sumGridGps = document.getElementById('fotoSummaryGridGps');
+    const sumUnit    = document.getElementById('fotoSummaryUnit');
+
+    if (img) img.src = photoData.previewUrl;
+    if (ph)  ph.classList.add('hidden');
+    if (filled) {
+      filled.classList.remove('hidden');
+      filled.classList.add('flex');
+    }
+
+    if (nama)   nama.textContent = photoData.file.name;
+    if (ukText) ukText.textContent = `Ukuran: ${photoData.sizeKb} KB (< 1 MB)`;
+    if (dimTxt) dimTxt.textContent = `Resolusi: ${photoData.width} × ${photoData.height} px`;
+    if (badge) {
+      badge.innerHTML = '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Dinas Terverifikasi</span>';
+    }
+
+    if (sumWaktu)   sumWaktu.textContent = photoData.meta.waktu;
+    if (sumGridGps) sumGridGps.textContent = `Grid ${photoData.meta.grid} • ${photoData.meta.gps}`;
+    if (sumUnit)    sumUnit.textContent = photoData.meta.unit;
+
+    // Masukkan file JPEG ke input form satwa[0][foto] via DataTransfer
+    const satwaFotoInput = document.getElementById('formSatwaFotoInput');
+    const camInput = document.getElementById('inputKameraBelakang');
+    const galInput = document.getElementById('inputGaleriFoto');
+
+    if (satwaFotoInput && window.DataTransfer) {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(photoData.file);
+        satwaFotoInput.files = dt.files;
+        satwaFotoInput.name = 'satwa[0][foto]';
+      } catch (e) {
+        console.warn('DataTransfer error:', e);
+      }
+    }
+
+    // Pastikan input cadangan tidak menimpa name
+    if (camInput) camInput.removeAttribute('name');
+    if (galInput) galInput.removeAttribute('name');
+  }
+
+  // 9. Penanganan jika Foto Dipilih dari Galeri atau Kamera Bawaan (Tetap diberi Watermark & Kompresi)
+  async function handleFileSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    const rawFile = input.files[0];
+
+    const imgEl = new Image();
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      imgEl.src = e.target.result;
+      imgEl.onload = async function() {
+        const meta = getWatermarkMetadata(new Date());
+        const processed = await processAndCompressWatermark(imgEl, meta);
+        if (!processed) return;
+
+        const finalFile = new File([processed.blob], `foto_dinas_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const previewUrl = URL.createObjectURL(processed.blob);
+
+        applyWatermarkedPhotoToForm({
+          blob: processed.blob,
+          file: finalFile,
+          previewUrl: previewUrl,
+          meta: meta,
+          sizeKb: (processed.size / 1024).toFixed(1),
+          width: processed.width,
+          height: processed.height
+        });
+      };
+    };
+    reader.readAsDataURL(rawFile);
+  }
+
+  function hapusFotoBurung() {
+    hasBirdPhoto = false;
+    pendingProcessedPhoto = null;
+
+    const img    = document.getElementById('fotoPreviewImg');
+    const ph     = document.getElementById('fotoPlaceholder');
+    const filled = document.getElementById('fotoPreviewFilled');
+    const badge  = document.getElementById('fotoStatusBadge');
+    const cam    = document.getElementById('inputKameraBelakang');
+    const gal    = document.getElementById('inputGaleriFoto');
+    const satwa  = document.getElementById('formSatwaFotoInput');
+
+    if (img) img.src = '';
+    if (ph)  ph.classList.remove('hidden');
+    if (filled) {
+      filled.classList.add('hidden');
+      filled.classList.remove('flex');
+    }
+    if (badge) {
+      badge.innerHTML = '<span class="text-slate-400 font-medium">Wajib terlampir</span>';
+    }
+
+    if (cam)   { cam.value = ''; cam.removeAttribute('name'); }
+    if (gal)   { gal.value = ''; gal.removeAttribute('name'); }
+    if (satwa) { satwa.value = ''; }
   }
 
   // ── Bagian 2: Data & Logika Dropdown Jenis Burung (Search Realtime & Pagination 8 Item) ──
