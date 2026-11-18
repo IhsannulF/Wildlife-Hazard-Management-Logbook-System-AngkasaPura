@@ -1534,13 +1534,13 @@
     const inputLokasi = document.getElementById('inputGridLokasi');
     if (inputLokasi) inputLokasi.value = val;
 
-    // Trigger select on Map in Bagian 3
+    // Trigger select on Map in Bagian 3 tanpa callback loop
     if (val && typeof selectGrid === 'function') {
-      selectGrid(val, true);
+      selectGrid(val, true, false);
     }
   }
 
-  // Callback saat peta di Bagian 3 disentuh
+  // Callback saat peta di Bagian 3 disentuh / dipilih interaktif
   function onMapGridSelected(gridCode, zoneName) {
     const inp = document.getElementById('selectGridBurung');
     if (inp) {
@@ -1552,6 +1552,17 @@
       txt.textContent = fullText;
     }
   }
+
+  // Pastikan input Pilihan Grid Bagian 2 selalu kosong sebelum diisi pengguna
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('selectGridBurung');
+    const oldVal = @json(old('satwa.0.lokasi.0.grid', ''));
+    if (inp && !oldVal) {
+      inp.value = '';
+      const txt = document.getElementById('gridPillText');
+      if (txt) txt.textContent = '-';
+    }
+  });
 
   function scrollKePetaBagian3() {
     const sec = document.getElementById('petaKoordinatSection');

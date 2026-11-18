@@ -474,7 +474,7 @@ function onLeaveGrid() {
 }
 
 // Dynamic Grid Selection on Click
-function selectGrid(code, updateActive = true) {
+function selectGrid(code, updateActive = true, triggerCallback = true) {
   if (updateActive) {
     activeSelectedCode = code;
   }
@@ -557,13 +557,13 @@ function selectGrid(code, updateActive = true) {
       else              { mr.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700'; mr.innerText = 'Steril'; }
     }
 
-    if (activeTargetSatwaInput) {
+    if (triggerCallback && activeTargetSatwaInput) {
       activeTargetSatwaInput.value = standardCode;
       activeTargetSatwaInput.dispatchEvent(new Event('input', { bubbles: true }));
       activeTargetSatwaInput = null;
     }
 
-    if (typeof onMapGridSelected === 'function') {
+    if (triggerCallback && typeof onMapGridSelected === 'function') {
       onMapGridSelected(standardCode, data.zone_name);
     }
   }
@@ -616,7 +616,13 @@ document.addEventListener('focusin', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  const g = '{{ $initialGrid }}';
-  selectGrid(g, true);
+  const oldSatwaGrid = '{{ old("satwa.0.lokasi.0.grid", "") }}';
+  if (oldSatwaGrid) {
+    selectGrid(oldSatwaGrid, true, true);
+  } else {
+    // Inisialisasi peta interaktif Bagian 3 tanpa mengisi pilihan grid Bagian 2
+    const g = '{{ $initialGrid }}';
+    selectGrid(g, true, false);
+  }
 });
 </script>
