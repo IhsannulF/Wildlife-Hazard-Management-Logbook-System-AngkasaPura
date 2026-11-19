@@ -518,4 +518,101 @@
   window.addEventListener('popstate', function() {
     filterRealtime(window.location.href);
   });
+
+  // ================= PILAR 4: LAYER PREDIKSI AI (GEMINI) =================
+  let cachedAiPrediction = null;
+
+  async function toggleAiPredictionLayer(checked) {
+    const aiGroup = document.getElementById('layerAiPrediksi');
+    if (!aiGroup) return;
+
+    if (!checked) {
+      aiGroup.style.display = 'none';
+      return;
+    }
+
+    aiGroup.style.display = 'block';
+
+    if (!cachedAiPrediction) {
+      try {
+        const resp = await fetch("{{ route('admin.ai.prediksi.latest') }}", {
+          headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const json = await resp.json();
+        if (json.success && json.prediksi) {
+          cachedAiPrediction = json.prediksi;
+        }
+      } catch (e) {
+        console.error('Gagal mengambil data prediksi AI:', e);
+      }
+    }
+
+    if (!cachedAiPrediction || !cachedAiPrediction.grid_kritis) {
+      alert('Belum ada data prediksi AI aktif untuk ditampilkan pada peta.');
+      document.getElementById('toggleLayerAiPrediksi').checked = false;
+      aiGroup.style.display = 'none';
+      return;
+    }
+
+    renderAiPredictionOnMap(cachedAiPrediction);
+  }
+
+  function renderAiPredictionOnMap(prediksi) {
+    const aiGroup = document.getElementById('layerAiPrediksi');
+    if (!aiGroup) return;
+    aiGroup.innerHTML = '';
+
+    const colorMap = {
+      'kritis': { stroke: '#ef4444', fill: 'rgba(239, 68, 68, 0.45)', text: '#ffffff' },
+      'tinggi': { stroke: '#f59e0b', fill: 'rgba(245, 158, 11, 0.45)', text: '#ffffff' },
+      'sedang': { stroke: '#00A9C1', fill: 'rgba(0, 169, 193, 0.40)', text: '#ffffff' },
+      'rendah': { stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.35)', text: '#ffffff' }
+    };
+    const c = colorMap[prediksi.level_bahaya] || colorMap['tinggi'];
+
+    const grids = prediksi.grid_kritis || [];
+    grids.forEach(grid => {
+      const parts = grid.split('-');
+      if (parts.length !== 2) return;
+      const rowChar = parts[0].toUpperCase();
+      const colNum = parseInt(parts[1], 10);
+
+      const rIndex = rowLetters.indexOf(rowChar);
+      if (rIndex === -1 || colNum < 1 || colNum > 29) return;
+
+      const x = X0 + (colNum - 1) * CW;
+      const y = Y0 + rIndex * RH;
+
+      // Create SVG Rect for AI zone
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x.toFixed(2));
+      rect.setAttribute('y', y.toFixed(2));
+      rect.setAttribute('width', CW.toFixed(2));
+      rect.setAttribute('height', RH.toFixed(2));
+      rect.setAttribute('fill', c.fill);
+      rect.setAttribute('stroke', c.stroke);
+      rect.setAttribute('stroke-width', '2.5');
+      rect.setAttribute('stroke-dasharray', '4,2');
+      rect.setAttribute('rx', '2');
+      rect.setAttribute('class', 'grid-cell-pulse');
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = `[PREDIKSI AI: ${prediksi.level_bahaya.toUpperCase()}] Grid ${grid}\nJam Rawan: ${prediksi.jam_rawan_mulai || ''} - ${prediksi.jam_rawan_selesai || ''} WIB\nProbabilitas: ${Math.round(prediksi.skor_probabilitas * 100)}%`;
+      rect.appendChild(title);
+
+      aiGroup.appendChild(rect);
+
+      // Label text AI
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', (x + CW / 2).toFixed(2));
+      text.setAttribute('y', (y + RH / 2 + 3).toFixed(2));
+      text.setAttribute('font-size', '7');
+      text.setAttribute('font-weight', '900');
+      text.setAttribute('fill', '#FFFFFF');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-family', "'DM Sans', monospace");
+      text.textContent = '★ AI';
+      aiGroup.appendChild(text);
+    });
+  }
 </script>

@@ -25,6 +25,11 @@ class JenisSatwa extends Model
         'foto_path',
     ];
 
+    public function getNamaSatwaAttribute(): string
+    {
+        return $this->nama;
+    }
+
     public function getFotoUrlAttribute(): string
     {
         if ($this->foto_path && (str_starts_with($this->foto_path, 'http://') || str_starts_with($this->foto_path, 'https://'))) {

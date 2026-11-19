@@ -1,0 +1,13 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"terdeteksi_satwa\": false,\n  \"kandidat\": [],\n  \"rekomendasi_sop\": [],\n  \"catatan\": \"Tidak terdeteksi satwa liar pada gambar yang diunggah.\"\n}"
+          }
+        ]
+      }
+    }
+  ]
+}
