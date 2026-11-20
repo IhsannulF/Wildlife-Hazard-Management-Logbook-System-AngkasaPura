@@ -54,6 +54,30 @@
       </div>
     @endif
 
+    <!-- PWA Offline Drafts Sync Banner (Visible when offline drafts exist) -->
+    <div id="dashboardOfflineSyncBanner" class="hidden p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">cloud_off</span>
+        </div>
+        <div>
+          <div class="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-2">
+            <span>Draf Laporan Offline Tersedia</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider">Antrean</span>
+          </div>
+          <p class="text-xs text-amber-700 mt-0.5">
+            Terdapat <span class="whms-draft-count font-bold text-amber-900">0</span> laporan di perangkat ini yang belum tersinkronisasi ke server bandara.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button type="button" onclick="WHMS_OFFLINE.syncAllDrafts()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.98] cursor-pointer">
+          <span class="material-symbols-outlined text-base">cloud_sync</span>
+          <span>Sinkronkan Sekarang</span>
+        </button>
+      </div>
+    </div>
+
     <!-- 1. HERO BENTO STAT METRIC CARDS (3 PERSONAL METRICS) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-5">
       <!-- Card 1: Total Laporan Saya -->
@@ -343,15 +367,23 @@
                   @endif
                 </td>
 
-                <!-- Aksi Tombol: Hanya Cetak Berita Acara -->
+                <!-- Aksi Tombol: Pratinjau BA & Unduh PDF Resmi -->
                 <td class="py-3.5 px-4 text-center whitespace-nowrap" onclick="event.stopPropagation()">
-                  <a href="{{ route('laporan.cetak', $lap->id) }}" 
-                     target="_blank" 
-                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-cyan-50 text-slate-600 hover:text-[#007fa3] border border-slate-200/90 hover:border-cyan-200 text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
-                     title="Cetak Berita Acara Resmi (PDF)">
-                    <span class="material-symbols-outlined text-sm text-[#00A9C1]">print</span>
-                    <span>Cetak BA</span>
-                  </a>
+                  <div class="inline-flex items-center justify-center gap-1.5">
+                    <a href="{{ route('laporan.cetak', $lap->id) }}" 
+                       target="_blank" 
+                       class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-cyan-50 text-slate-600 hover:text-[#007fa3] border border-slate-200/90 hover:border-cyan-200 text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer" 
+                       title="Pratinjau Cetak Berita Acara">
+                      <span class="material-symbols-outlined text-sm text-[#00A9C1]">print</span>
+                      <span>Cetak BA</span>
+                    </a>
+                    <a href="{{ route('laporan.pdf', $lap->id) }}" 
+                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer" 
+                       title="Unduh PDF Resmi">
+                      <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                      <span>PDF</span>
+                    </a>
+                  </div>
                 </td>
               </tr>
             @empty
@@ -435,6 +467,10 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <a id="modalDownloadPdfBtn" href="#" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bold transition-colors" title="Unduh PDF Resmi">
+          <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+          <span>Unduh PDF</span>
+        </a>
         <a id="modalPrintBtn" href="#" target="_blank" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors" title="Cetak Berita Acara">
           <span class="material-symbols-outlined text-lg">print</span>
         </a>
@@ -627,6 +663,7 @@
     const title = document.getElementById('modalTitle');
     const statusBadge = document.getElementById('modalStatusBadge');
     const printBtn = document.getElementById('modalPrintBtn');
+    const pdfBtn = document.getElementById('modalDownloadPdfBtn');
 
     if (!modal) return;
 
@@ -645,6 +682,9 @@
 
     if (printBtn) {
       printBtn.href = `/laporan/${id}/cetak`;
+    }
+    if (pdfBtn) {
+      pdfBtn.href = `/laporan/${id}/pdf`;
     }
 
     fetch(`/laporan/${id}/detail`)

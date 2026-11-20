@@ -307,8 +307,12 @@
     <div class="px-6 py-4 bg-surface-container-lowest border-t border-border-subtle flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <a id="modalPrintBtn" href="#" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle bg-white text-on-surface hover:bg-surface-container-low font-label-lg text-xs transition-colors">
+          <span class="material-symbols-outlined text-sm">print</span>
+          <span>Pratinjau Cetak</span>
+        </a>
+        <a id="modalDownloadPdfBtn" href="#" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-label-lg text-xs font-bold transition-colors">
           <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
-          <span>Cetak Berita Acara (PDF)</span>
+          <span>Unduh PDF Resmi</span>
         </a>
       </div>
       <div class="flex items-center gap-2">

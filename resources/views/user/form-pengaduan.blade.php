@@ -261,8 +261,28 @@
               </label>
             </div>
 
+            <!-- Tombol Identifikasi Satwa via AI (Gemini Vision) -->
+            <div class="mt-2.5">
+              <button type="button" 
+                      id="btnAiIdentifySpecies" 
+                      onclick="runAiSpeciesIdentification()" 
+                      class="w-full py-2.5 px-3 rounded-xl border border-cyan-300 bg-cyan-50/80 hover:bg-cyan-100 text-[#007fa3] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-[0.98] select-none"
+                      title="Identifikasi spesies satwa otomatis dan dapatkan rekomendasi SOP pengusiran ICAO menggunakan AI Gemini Vision">
+                <span class="material-symbols-outlined text-lg text-[#00A9C1]" id="iconAiIdentify">auto_awesome</span>
+                <span id="textAiIdentify">Identifikasi Satwa via AI (Gemini Vision)</span>
+              </button>
+            </div>
+
+            <!-- Panel Hasil Identifikasi AI -->
+            <x-ai.species-result />
+
+            <!-- Hidden Inputs untuk AI Identifikasi -->
+            <input type="hidden" name="ai_identifikasi_id" id="aiIdentifikasiId" value="">
+            <input type="hidden" name="satwa[0][nama_latin]" id="aiInputNamaLatin" value="">
+            <input type="hidden" name="satwa[0][sumber_identifikasi]" id="aiInputSumberIdentifikasi" value="manual">
+
             <!-- Hidden File Inputs (Tersembunyi secara aman tanpa display:none agar kompatibel di iOS/Android & Desktop) -->
-            <input type="file" id="inputKameraBelakang" name="satwa[0][foto]" accept="image/*" capture="environment" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" onchange="handleFileSelected(this)">
+            <input type="file" id="inputKameraBelakang" accept="image/*" capture="environment" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" onchange="handleFileSelected(this)">
             <input type="file" id="inputGaleriFoto" accept="image/*" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" onchange="handleFileSelected(this)">
             <input type="file" name="satwa[0][foto]" id="formSatwaFotoInput" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" accept="image/*">
             <input type="file" name="foto_lainnya[]" id="formFotoLainnyaInput" class="sr-only" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px;" accept="image/*">
@@ -654,14 +674,9 @@
         </div>
       </div>
 
-      <!-- Tombol Submit Utama di Bawah -->
-      <div class="pt-4 pb-16">
-        <button type="submit" id="btnSubmitLaporan" style="background: linear-gradient(135deg, #00A9C1 0%, #007fa3 100%) !important; color: #ffffff !important; box-shadow: 0 10px 25px -5px rgba(0, 169, 193, 0.4), 0 8px 10px -6px rgba(0, 169, 193, 0.3) !important;" class="w-full py-4 px-6 text-white font-bold text-base rounded-2xl active:scale-[0.99] hover:opacity-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 select-none">
-          <span class="material-symbols-outlined text-xl" style="color: #ffffff !important;">send</span>
-          <span style="color: #ffffff !important;">Kirim Laporan</span>
-        </button>
-        <p class="text-center text-xs text-slate-400 mt-2">Pastikan seluruh data pengamatan dan tanda tangan digital telah terisi dengan benar sebelum mengirim.</p>
-      </div>
+      <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-base rounded-2xl shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 cursor-pointer">
+        Kirim Laporan Logbook
+      </button>
     </form>
   </div>
 
@@ -1513,7 +1528,283 @@
     if (initialVal) {
       pilihBurungByNama(initialVal);
     }
+    updateAiVisionButtonState();
   });
+
+  // ── Bagian 2: AI Species Vision & SOP Assistant (Pilar 4) ──
+  let currentAiVisionResult = null;
+
+  function updateAiVisionButtonState() {
+    const btn = document.getElementById('btnAiIdentifySpecies');
+    if (!btn) return;
+    if (!navigator.onLine) {
+      btn.disabled = true;
+      btn.classList.add('opacity-60', 'cursor-not-allowed');
+      btn.title = 'Butuh koneksi internet (Offline PWA)';
+      document.getElementById('textAiIdentify').innerText = 'Identifikasi AI (Butuh Koneksi Internet)';
+      document.getElementById('iconAiIdentify').innerText = 'wifi_off';
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('opacity-60', 'cursor-not-allowed');
+      btn.title = 'Identifikasi spesies satwa otomatis via AI Gemini Vision';
+      document.getElementById('textAiIdentify').innerText = 'Identifikasi Satwa via AI (Gemini Vision)';
+      document.getElementById('iconAiIdentify').innerText = 'auto_awesome';
+    }
+  }
+
+  window.addEventListener('online', updateAiVisionButtonState);
+  window.addEventListener('offline', updateAiVisionButtonState);
+
+  async function runAiSpeciesIdentification() {
+    if (!navigator.onLine) {
+      alert('Identifikasi Satwa via AI membutuhkan koneksi internet (PWA online).');
+      return;
+    }
+
+    const fileInput = document.getElementById('inputKameraBelakang') || document.getElementById('inputGaleriFoto');
+    const fotoPreviewImg = document.getElementById('fotoPreviewImg');
+
+    let fileToSend = null;
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      fileToSend = fileInput.files[0];
+    } else if (fotoPreviewImg && fotoPreviewImg.src && fotoPreviewImg.src.startsWith('data:')) {
+      const res = await fetch(fotoPreviewImg.src);
+      fileToSend = await res.blob();
+    }
+
+    if (!fileToSend) {
+      alert('Harap ambil foto atau unggah gambar burung terlebih dahulu sebelum menjalankan identifikasi AI.');
+      return;
+    }
+
+    const btn = document.getElementById('btnAiIdentifySpecies');
+    const icon = document.getElementById('iconAiIdentify');
+    const text = document.getElementById('textAiIdentify');
+
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    text.innerText = 'Mengidentifikasi satwa via Gemini Vision...';
+
+    const formData = new FormData();
+    formData.append('foto', fileToSend, 'satwa_lapangan.jpg');
+
+    try {
+      const response = await fetch("{{ route('laporan.identifikasi') }}", {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Accept': 'application/json'
+        },
+        body: formData
+      });
+
+      const res = await response.json();
+
+      if (!res.success) {
+        alert('Galat identifikasi AI: ' + (res.message || 'Gagal memproses gambar.'));
+        return;
+      }
+
+      currentAiVisionResult = res;
+      renderAiVisionResult(res);
+
+    } catch (err) {
+      alert('Gagal menghubungi layanan AI: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      icon.classList.remove('animate-spin');
+      text.innerText = 'Identifikasi Satwa via AI (Gemini Vision)';
+    }
+  }
+
+  function renderAiVisionResult(data) {
+    const panel = document.getElementById('aiSpeciesResultPanel');
+    const foundSec = document.getElementById('aiSpeciesFoundSection');
+    const noSpeciesSec = document.getElementById('aiNoSpeciesSection');
+    const warnSec = document.getElementById('aiConfidenceWarning');
+
+    if (!panel) return;
+    panel.classList.remove('hidden');
+
+    if (!data.terdeteksi_satwa || !data.kandidat || data.kandidat.length === 0) {
+      foundSec.classList.add('hidden');
+      noSpeciesSec.classList.remove('hidden');
+      warnSec.classList.add('hidden');
+      document.getElementById('btnApplyAiToForm').classList.add('hidden');
+      return;
+    }
+
+    foundSec.classList.remove('hidden');
+    noSpeciesSec.classList.add('hidden');
+    document.getElementById('btnApplyAiToForm').classList.remove('hidden');
+
+    const top = data.kandidat[0];
+    document.getElementById('aiCandidateLocalName').innerText = top.nama_lokal || 'Satwa Liar';
+    document.getElementById('aiCandidateLatinName').innerText = top.nama_latin ? `(${top.nama_latin})` : '';
+
+    const confPct = Math.round((top.confidence || 0) * 100);
+    const badgeConf = document.getElementById('aiCandidateConfidenceBadge');
+    badgeConf.innerText = `${confPct}% Match`;
+
+    if (data.confidence_low) {
+      warnSec.classList.remove('hidden');
+      badgeConf.className = 'px-2 py-0.5 rounded-full font-bold font-mono text-[10px] bg-amber-100 text-amber-800 border border-amber-200';
+    } else {
+      warnSec.classList.add('hidden');
+      badgeConf.className = 'px-2 py-0.5 rounded-full font-bold font-mono text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200';
+    }
+
+    const matchedBadge = document.getElementById('aiCatalogMatchedBadge');
+    if (data.matched_satwa_id) {
+      matchedBadge.classList.remove('hidden');
+      matchedBadge.innerText = `Sesuai Katalog: ${data.matched_satwa_nama}`;
+    } else {
+      matchedBadge.classList.add('hidden');
+    }
+
+    // Weight & Risk category
+    const weightBadge = document.getElementById('aiCandidateWeightBadge');
+    if (top.estimasi_bobot_kg) {
+      weightBadge.innerText = `Bobot: ~${top.estimasi_bobot_kg.min || 0} - ${top.estimasi_bobot_kg.max || 1} kg`;
+    } else {
+      weightBadge.innerText = 'Bobot: < 1 kg';
+    }
+
+    const riskCatBadge = document.getElementById('aiCandidateRiskCatBadge');
+    const riskCat = top.kategori_bobot_risiko || 1;
+    riskCatBadge.innerText = `Kategori Risiko ICAO: ${riskCat} (${riskCat === 1 ? '< 1 kg' : (riskCat === 2 ? '1-3 kg' : '> 3 kg')})`;
+
+    // Taxonomy & Behavior
+    const tax = top.taksonomi;
+    const taxEl = document.getElementById('aiTaxonomyDetails');
+    if (tax) {
+      taxEl.innerText = `Kelas: ${tax.kelas || '-'} • Ordo: ${tax.ordo || '-'} • Famili: ${tax.famili || '-'}`;
+    } else {
+      taxEl.innerText = 'Taksonomi tidak teridentifikasi';
+    }
+
+    const behEl = document.getElementById('aiBehaviorDetails');
+    behEl.innerText = top.perilaku_terlihat || 'Aktivitas normal di area sisi udara';
+
+    // SOP Recommendations
+    const sopContainer = document.getElementById('aiSopRecommendationsContainer');
+    sopContainer.innerHTML = '';
+    const sops = data.rekomendasi_sop || [];
+    if (sops.length > 0) {
+      sops.forEach(s => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1';
+        itemDiv.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold uppercase text-[10px] px-2 py-0.2 rounded bg-cyan-100 text-[#007fa3] font-mono">${s.metode}</span>
+          </div>
+          <p class="text-slate-700 font-medium leading-relaxed">${s.langkah}</p>
+          ${s.catatan_keselamatan ? `<p class="text-[10px] text-amber-700 font-medium mt-1">⚠ ${s.catatan_keselamatan}</p>` : ''}
+        `;
+        sopContainer.appendChild(itemDiv);
+      });
+    } else {
+      sopContainer.innerHTML = '<div class="text-slate-400 italic">Tidak ada rekomendasi SOP spesifik.</div>';
+    }
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function applyAiIdentificationToForm() {
+    if (!currentAiVisionResult) return;
+
+    const candidate = currentAiVisionResult.kandidat[0] || null;
+    if (!candidate) return;
+
+    if (currentAiVisionResult.confidence_low) {
+      const ok = confirm(`Tingkat keyakinan identifikasi AI adalah ${Math.round(candidate.confidence * 100)}%. Apakah Anda yakin ingin menerapkan hasil ini ke formulir?`);
+      if (!ok) return;
+    }
+
+    const localName = candidate.nama_lokal;
+    const latinName = candidate.nama_latin;
+
+    // 1. Check matching item in listBurungMaster
+    const matchedItem = listBurungMaster.find(b => b.nama.toLowerCase() === localName.toLowerCase()) || 
+                        listBurungMaster.find(b => b.nama.toLowerCase().includes(localName.toLowerCase()));
+
+    if (matchedItem) {
+      pilihBurung(matchedItem);
+    } else {
+      // Unlisted animal: set direct value
+      document.getElementById('selectJenisBurung').value = localName;
+      document.getElementById('triggerBurungText').innerText = localName + ' (AI)';
+      document.getElementById('triggerBurungText').classList.remove('text-slate-500');
+      document.getElementById('triggerBurungText').classList.add('text-slate-800', 'font-bold');
+      const dot = document.getElementById('triggerBurungDot');
+      if (dot) {
+        dot.classList.remove('bg-slate-300');
+        dot.classList.add('bg-[#00A9C1]');
+      }
+    }
+
+    // 2. Set hidden inputs
+    document.getElementById('aiIdentifikasiId').value = currentAiVisionResult.id;
+    document.getElementById('aiInputNamaLatin').value = latinName || '';
+    document.getElementById('aiInputSumberIdentifikasi').value = 'ai';
+
+    // 3. Fill ciri_ukuran textarea
+    const ciriTa = document.querySelector('textarea[name="ciri_ukuran"]');
+    if (ciriTa) {
+      let weightStr = '';
+      if (candidate.estimasi_bobot_kg) {
+        weightStr = ` (Estimasi bobot: ${candidate.estimasi_bobot_kg.min || ''} - ${candidate.estimasi_bobot_kg.max || ''} kg)`;
+      }
+      const behaviorStr = candidate.perilaku_terlihat ? `. Perilaku: ${candidate.perilaku_terlihat}` : '';
+      ciriTa.value = `Identifikasi AI: ${localName} [${latinName}]${weightStr}${behaviorStr}.`;
+    }
+
+    // 4. Append SOP to detail_pengusiran
+    const sopTa = document.querySelector('textarea[name="detail_pengusiran"]');
+    if (sopTa && currentAiVisionResult.rekomendasi_sop && currentAiVisionResult.rekomendasi_sop.length > 0) {
+      const sops = currentAiVisionResult.rekomendasi_sop.map(s => `[${s.metode.toUpperCase()}]: ${s.langkah}${s.catatan_keselamatan ? ' (Catatan: ' + s.catatan_keselamatan + ')' : ''}`).join('\n');
+      const existing = (sopTa.value && sopTa.value !== '-') ? (sopTa.value + '\n\n') : '';
+      sopTa.value = existing + 'Saran SOP (AI):\n' + sops;
+    }
+
+    // 5. Notify server of acceptance
+    fetch(`/laporan/identifikasi-satwa/${currentAiVisionResult.id}/hasil`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        diterima: true,
+        nama_final: localName
+      })
+    }).catch(e => console.warn('Gagal mencatat penerimaan AI:', e));
+
+    closeSpeciesResultPanel(true);
+    alert(`Hasil identifikasi satwa "${localName}" dan rekomendasi SOP berhasil diterapkan ke formulir.`);
+  }
+
+  function closeSpeciesResultPanel(accepted = false) {
+    const panel = document.getElementById('aiSpeciesResultPanel');
+    if (panel) panel.classList.add('hidden');
+
+    if (!accepted && currentAiVisionResult) {
+      fetch(`/laporan/identifikasi-satwa/${currentAiVisionResult.id}/hasil`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          diterima: false,
+          nama_final: null
+        })
+      }).catch(e => console.warn('Gagal mencatat penolakan AI:', e));
+    }
+  }
 
   // ── Bagian 2: Stepper Jumlah Burung ──
   function stepJumlahBurung(delta) {
@@ -1571,8 +1862,113 @@
     }
   }
 
+  // ── Mekanisme Simpan Draf Offline (IndexedDB) ──
+  async function simpanKeDrafOffline(e) {
+    if (e) e.preventDefault();
+
+    const jenisBurung = document.getElementById('selectJenisBurung');
+    if (jenisBurung && !jenisBurung.value.trim()) {
+      alert('Silakan pilih jenis burung terlebih dahulu.');
+      const btn = document.getElementById('btnTriggerBurung');
+      if (btn) {
+        btn.focus();
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const gridBurung = document.getElementById('selectGridBurung');
+    if (gridBurung && !gridBurung.value.trim()) {
+      alert('Silakan tentukan Grid lokasi pengamatan.');
+      gridBurung.focus();
+      gridBurung.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (signaturePad.isEmpty()) {
+      alert('Mohon bubuhkan tanda tangan digital Anda terlebih dahulu.');
+      document.getElementById('signature-pad').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const signatureData = signaturePad.toDataURL('image/png');
+    document.getElementById('tanda_tangan').value = signatureData;
+
+    const photos = [];
+    const fotoPreviewImg = document.getElementById('fotoPreviewImg');
+    if (fotoPreviewImg && fotoPreviewImg.src && fotoPreviewImg.src.startsWith('data:')) {
+      photos.push({
+        field_name: 'satwa[0][foto]',
+        name: 'foto_satwa.jpg',
+        type: 'image/jpeg',
+        data: fotoPreviewImg.src
+      });
+    } else {
+      const fileInput = document.getElementById('inputKameraBelakang') || document.getElementById('inputGaleriFoto');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const base64 = await new Promise((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(file);
+        });
+        photos.push({
+          field_name: 'satwa[0][foto]',
+          name: file.name,
+          type: file.type || 'image/jpeg',
+          data: base64
+        });
+      }
+    }
+
+    const form = document.getElementById('mainForm');
+    const formData = new FormData(form);
+    const payload = {};
+    for (const [key, val] of formData.entries()) {
+      if (!(val instanceof File)) {
+        payload[key] = val;
+      }
+    }
+
+    // Default ciri morfologi jika kosong
+    if (!payload['ciri_ukuran'] && jenisBurung && jenisBurung.value) {
+      payload['ciri_ukuran'] = 'Pengamatan burung ' + jenisBurung.value + ' di ' + (gridBurung ? ('Grid ' + gridBurung.value) : 'area sisi udara.');
+    }
+
+    const tgl = payload['tanggal'] || new Date().toISOString().split('T')[0];
+    const summary = `Pelaporan Offline (${tgl}) — ${jenisBurung ? jenisBurung.value : 'Satwa'} di Grid ${gridBurung ? gridBurung.value : '-'}`;
+
+    try {
+      if (window.WHMS_OFFLINE && typeof window.WHMS_OFFLINE.saveDraft === 'function') {
+        await window.WHMS_OFFLINE.saveDraft({
+          summary: summary,
+          payload: payload,
+          photos: photos,
+          signature: signatureData
+        });
+      }
+
+      alert('Draf offline berhasil disimpan di IndexedDB!\nSaat Anda kembali terhubung dengan jaringan internet bandara, Anda dapat menekan tombol "Sinkronkan Sekarang" di navbar/dashboard.');
+
+      // Reset form & signature
+      form.reset();
+      signaturePad.clear();
+      document.getElementById('tanda_tangan').value = '';
+      if (typeof hapusFotoBurung === 'function') hapusFotoBurung();
+    } catch (err) {
+      console.error('Gagal menyimpan draf offline:', err);
+      alert('Gagal menyimpan draf: ' + err.message);
+    }
+  }
+
   // ── Form Validation & Pre-submit Sync ──
   document.getElementById('mainForm').addEventListener('submit', function(e) {
+    if (!navigator.onLine) {
+      e.preventDefault();
+      simpanKeDrafOffline(e);
+      return;
+    }
+
     const jenisBurung = document.getElementById('selectJenisBurung');
     if (jenisBurung && !jenisBurung.value.trim()) {
       e.preventDefault();

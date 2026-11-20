@@ -8,6 +8,7 @@ use App\Models\FormField;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -142,17 +143,8 @@ class DashboardController extends Controller
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
-        if (! empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_petugas', 'like', "%{$search}%")
-                    ->orWhere('unit_kerja', 'like', "%{$search}%")
-                    ->orWhere('area_inspeksi', 'like', "%{$search}%")
-                    ->orWhere('grid_lokasi', 'like', "%{$search}%")
-                    ->orWhereHas('detailSatwa', function ($sq) use ($search) {
-                        $sq->where('nama_satwa', 'like', "%{$search}%")
-                            ->orWhere('grid', 'like', "%{$search}%");
-                    });
-            });
+        if (! empty($search) && is_scalar($search)) {
+            $this->applySearchFilter($query, (string) $search);
         }
 
         if (! empty($statusFilter)) {
@@ -228,6 +220,24 @@ class DashboardController extends Controller
             'zoneCounts',
             'availableGrids'
         ));
+    }
+
+    /**
+     * Terapkan filter pencarian laporan berdasarkan nomor BA, petugas, unit, area, grid, atau satwa.
+     */
+    private function applySearchFilter(Builder $query, string $search): void
+    {
+        $query->where(function (Builder $q) use ($search): void {
+            $q->where('no_laporan', 'like', "%{$search}%")
+                ->orWhere('nama_petugas', 'like', "%{$search}%")
+                ->orWhere('unit_kerja', 'like', "%{$search}%")
+                ->orWhere('area_inspeksi', 'like', "%{$search}%")
+                ->orWhere('grid_lokasi', 'like', "%{$search}%")
+                ->orWhereHas('detailSatwa', function (Builder $sq) use ($search): void {
+                    $sq->where('nama_satwa', 'like', "%{$search}%")
+                        ->orWhere('grid', 'like', "%{$search}%");
+                });
+        });
     }
 
     public function verifikasiIndex(Request $request)
@@ -330,17 +340,8 @@ class DashboardController extends Controller
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
-        if (! empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_petugas', 'like', "%{$search}%")
-                    ->orWhere('unit_kerja', 'like', "%{$search}%")
-                    ->orWhere('area_inspeksi', 'like', "%{$search}%")
-                    ->orWhere('grid_lokasi', 'like', "%{$search}%")
-                    ->orWhereHas('detailSatwa', function ($sq) use ($search) {
-                        $sq->where('nama_satwa', 'like', "%{$search}%")
-                            ->orWhere('grid', 'like', "%{$search}%");
-                    });
-            });
+        if (! empty($search) && is_scalar($search)) {
+            $this->applySearchFilter($query, (string) $search);
         }
 
         if (! empty($statusFilter)) {

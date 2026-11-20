@@ -3,24 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\MonthlyBundlePdfRequest;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
+use App\Services\BeritaAcaraPdfService;
+use App\Services\MonthlyLogbookPdfService;
+use App\Services\XlsxExportService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
     /**
-     * Tampilan cetak PDF / Berita Acara dinas per laporan.
+     * Tampilan pratinjau cetak Berita Acara dinas per laporan.
      */
     public function cetak(int $id)
     {
-        $lap = Laporan::with(['user', 'detailSatwa.fotoLaporan', 'fotoLaporan'])->findOrFail($id);
-
-        if (auth()->check() && auth()->user()->role !== 'admin' && $lap->user_id !== auth()->id()) {
-            abort(403, 'Anda tidak berhak mengakses atau mencetak berita acara milik petugas lain.');
-        }
+        $lap = $this->findAuthorizedLaporan($id);
 
         $satwa_list = [];
         foreach ($lap->detailSatwa as $ds) {
@@ -42,6 +44,90 @@ class ReportController extends Controller
     }
 
     /**
+     * Menghasilkan dan mengunduh (atau men-stream) berkas Berita Acara PDF A4 langsung dari server.
+     */
+    public function downloadPdf(Request $request, int $id, BeritaAcaraPdfService $pdfService): Response
+    {
+        $lap = $this->findAuthorizedLaporan($id);
+        $pdf = $pdfService->buildPdf($lap);
+        $filename = $pdfService->buildFilename($lap);
+
+        return $request->boolean('inline')
+            ? $pdf->stream($filename)
+            : $pdf->download($filename);
+    }
+
+    /**
+     * Menghitung ringkasan jumlah BA, ekor satwa, dan foto lampiran untuk menu Bundel Logbook Bulanan.
+     */
+    public function countMonthlyBundle(
+        MonthlyBundlePdfRequest $request,
+        MonthlyLogbookPdfService $bundleService
+    ): JsonResponse {
+        $summary = $bundleService->countSummary(
+            $request->bulan(),
+            $request->tahun(),
+            $request->statusFilter(),
+            $request->unitKerjaFilter()
+        );
+
+        return response()->json(array_merge([
+            'status' => 'success',
+        ], $summary));
+    }
+
+    /**
+     * Mengompilasi dan mengunduh (atau men-stream) Bundel Logbook Bulanan PDF A4 (Cover, Pengantar, Statistik, & seluruh BA).
+     */
+    public function downloadMonthlyBundlePdf(
+        MonthlyBundlePdfRequest $request,
+        MonthlyLogbookPdfService $bundleService
+    ): Response {
+        $binary = $bundleService->buildOrGetCachedPdfBinary(
+            $request->bulan(),
+            $request->tahun(),
+            $request->statusFilter(),
+            $request->unitKerjaFilter(),
+            auth()->user()
+        );
+
+        $filename = $bundleService->buildFilename(
+            $request->bulan(),
+            $request->tahun(),
+            $request->unitKerjaFilter()
+        );
+
+        $disposition = ($request->isInline() ? 'inline' : 'attachment').'; filename="'.$filename.'"';
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => $disposition,
+            'Content-Length' => (string) strlen($binary),
+            'Cache-Control' => 'private, max-age=0, must-revalidate',
+        ]);
+    }
+
+    /**
+     * Muat laporan dengan relasi lengkap serta pastikan hak akses pemilik/admin terpenuhi.
+     */
+    protected function findAuthorizedLaporan(int $id): Laporan
+    {
+        $lap = Laporan::with([
+            'user:id,namalengkap,username,jabatan,role',
+            'validator:id,namalengkap,username,jabatan,role,tanda_tangan',
+            'detailSatwa.fotoLaporan',
+            'fotoLaporan',
+            'tanggapan.user:id,namalengkap,username,jabatan,role',
+        ])->findOrFail($id);
+
+        if (auth()->check() && auth()->user()->role !== 'admin' && $lap->user_id !== auth()->id()) {
+            abort(403, 'Anda tidak berhak mengakses atau mencetak berita acara milik petugas lain.');
+        }
+
+        return $lap;
+    }
+
+    /**
      * Halaman Konfigurasi & Filter Ekspor Excel (Interactive Options Page).
      */
     public function index(Request $request)
@@ -51,11 +137,16 @@ class ReportController extends Controller
             ->distinct()
             ->orderBy('tahun', 'desc')
             ->pluck('tahun')
+            ->map(fn ($year): int => (int) $year)
             ->toArray();
 
-        if (empty($availableYears)) {
-            $availableYears = [(int) date('Y')];
+        $currentYear = (int) date('Y');
+        if (! in_array($currentYear, $availableYears, true)) {
+            array_unshift($availableYears, $currentYear);
+            rsort($availableYears);
         }
+
+        $availableMonths = MonthlyLogbookPdfService::monthOptions();
 
         $availableUnits = Laporan::whereNotNull('unit_kerja')
             ->where('unit_kerja', '!=', '')
@@ -77,18 +168,21 @@ class ReportController extends Controller
         $presets = $this->getPresets();
 
         // Parameter pra-pilih dari URL jika ada
-        $preSelectedTahun = $request->query('tahun', date('Y'));
+        $preSelectedTahun = (int) $request->query('tahun', date('Y'));
+        $preSelectedBulan = max(1, min(12, (int) $request->query('bulan', date('n'))));
         $preSelectedZona = $request->query('zona', '');
         $preSelectedPreset = $request->query('preset', 'dkppu');
 
         return view('admin.export.index', [
             'availableYears' => $availableYears,
+            'availableMonths' => $availableMonths,
             'availableUnits' => $availableUnits,
             'availableGrids' => $availableGrids,
             'availableSatwa' => $availableSatwa,
             'columns' => $columns,
             'presets' => $presets,
             'preSelectedTahun' => $preSelectedTahun,
+            'preSelectedBulan' => $preSelectedBulan,
             'preSelectedZona' => $preSelectedZona,
             'preSelectedPreset' => $preSelectedPreset,
         ]);
@@ -132,9 +226,9 @@ class ReportController extends Controller
     }
 
     /**
-     * Memproses dan mengunduh berkas Spreadsheet (Excel .xls / .csv) sesuai konfigurasi admin.
+     * Memproses dan mengunduh berkas Spreadsheet (Excel .xlsx / .csv) sesuai konfigurasi admin.
      */
-    public function downloadExcel(Request $request)
+    public function downloadExcel(Request $request, XlsxExportService $xlsxExportService)
     {
         $selectedColumns = $request->input('columns', []);
         $allColumnsDef = $this->getAvailableColumns();
@@ -296,29 +390,35 @@ class ReportController extends Controller
             ]);
         }
 
-        // Default: Ekspor ke Excel (.xls Spreadsheet Table)
+        $summaryData = [
+            'total_baris' => count($rows),
+            'total_laporan' => $totalLaporanCount,
+            'total_ekor' => $totalEkorKumulatif,
+            'total_amunisi' => $totalAmunisiKumulatif,
+            'persen_selesai' => $persenSelesai,
+        ];
+
+        $exportTime = Carbon::now()->translatedFormat('d F Y H:i:s').' WIB';
+        $binary = $xlsxExportService->generate(
+            $activeColumns,
+            $rows,
+            $includeSummary,
+            $summaryData,
+            $request->all(),
+            $exportTime
+        );
+
+        // Default: Ekspor ke Excel (.xlsx OOXML Asli agar bebas peringatan format Excel)
         $headers = [
-            'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}.xls\"",
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}.xlsx\"",
+            'Content-Length' => (string) strlen($binary),
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0',
         ];
 
-        return response()->view('reports.export-excel-custom', [
-            'activeColumns' => $activeColumns,
-            'rows' => $rows,
-            'includeSummary' => $includeSummary,
-            'summaryData' => [
-                'total_baris' => count($rows),
-                'total_laporan' => $totalLaporanCount,
-                'total_ekor' => $totalEkorKumulatif,
-                'total_amunisi' => $totalAmunisiKumulatif,
-                'persen_selesai' => $persenSelesai,
-            ],
-            'requestParams' => $request->all(),
-            'exportTime' => Carbon::now()->translatedFormat('d F Y H:i:s').' WIB',
-        ], 200, $headers);
+        return response($binary, 200, $headers);
     }
 
     /**
@@ -668,26 +768,7 @@ class ReportController extends Controller
      */
     protected function getLatinName(string $nama): string
     {
-        $namaLower = strtolower(trim($nama));
-
-        return match (true) {
-            str_contains($namaLower, 'biawak') => 'Varanus salvator',
-            str_contains($namaLower, 'blekok') => 'Ardeola speciosa',
-            str_contains($namaLower, 'cangak abu') => 'Ardea cinerea',
-            str_contains($namaLower, 'cangak merah') => 'Ardea purpurea',
-            str_contains($namaLower, 'kuntul kecil') => 'Egretta garzetta',
-            str_contains($namaLower, 'kuntul') => 'Bubulcus ibis',
-            str_contains($namaLower, 'pecuk') => 'Microcarbo niger',
-            str_contains($namaLower, 'sanca') || str_contains($namaLower, 'ular') => 'Malayopython reticulatus',
-            str_contains($namaLower, 'kera') || str_contains($namaLower, 'monyet') => 'Macaca fascicularis',
-            str_contains($namaLower, 'anjing') => 'Canis lupus familiaris',
-            str_contains($namaLower, 'kucing') => 'Felis catus',
-            str_contains($namaLower, 'elang') => 'Elanus caeruleus',
-            str_contains($namaLower, 'layang') || str_contains($namaLower, 'walet') => 'Hirundo rustica',
-            str_contains($namaLower, 'gereja') => 'Passer montanus',
-            str_contains($namaLower, 'dara') || str_contains($namaLower, 'merpati') => 'Columba livia',
-            default => '-',
-        };
+        return JenisSatwa::resolveNamaIlmiah($nama, '-');
     }
 
     /**
@@ -711,17 +792,7 @@ class ReportController extends Controller
      */
     protected function extractAmunisi(?string $detail): int
     {
-        if (empty($detail)) {
-            return 0;
-        }
-        if (preg_match('/(\d+)\s*(butir|pcs|biji|round|rounds|peluru|tembakan)/i', $detail, $matches)) {
-            return (int) $matches[1];
-        }
-        if (stripos($detail, 'petasan') !== false || stripos($detail, 'flare') !== false || stripos($detail, 'pyrotechnic') !== false) {
-            return 1;
-        }
-
-        return 0;
+        return BeritaAcaraPdfService::extractAmunisiCount($detail);
     }
 
     /**

@@ -209,7 +209,7 @@
     'title' => 'Verifikasi Berita Acara (BA)',
     'subtitle' => 'Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.',
     'icon' => 'fact_check',
-    'actions' => '<div class="flex items-center gap-2"><span class="text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
+    'actions' => '<div class="flex items-center gap-2"><span class="hidden md:inline text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
   ])
 
   <!-- MAIN VIEWPORT CONTAINER -->

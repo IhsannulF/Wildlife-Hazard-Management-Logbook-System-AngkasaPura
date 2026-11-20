@@ -1,0 +1,13 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"probability_score\": 1.45,\n  \"hazard_level\": \"tinggi\",\n  \"critical_time_window\": \"05:30 - 08:30 WIB\",\n  \"critical_zones\": [\"K-8\"],\n  \"target_species\": [],\n  \"contributing_factors\": [\"Faktor\"],\n  \"confidence_score\": 0.88,\n  \"executive_summary\": \"Ringkasan\",\n  \"actionable_recommendations\": [\"Saran\"]\n}"
+          }
+        ]
+      }
+    }
+  ]
+}

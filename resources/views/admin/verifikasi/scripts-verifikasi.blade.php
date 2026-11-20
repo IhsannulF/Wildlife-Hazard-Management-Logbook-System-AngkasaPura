@@ -42,10 +42,14 @@
   function openReportDetailAjax(id) {
     activeModalLaporanId = id;
     
-    // Update print button link
+    // Update print & server PDF button links
     const printBtn = document.getElementById('modalPrintBtn');
     if (printBtn) {
       printBtn.href = `/admin/laporan/${id}/cetak`;
+    }
+    const pdfBtn = document.getElementById('modalDownloadPdfBtn');
+    if (pdfBtn) {
+      pdfBtn.href = `/admin/laporan/${id}/pdf`;
     }
 
     // Fetch dynamic details

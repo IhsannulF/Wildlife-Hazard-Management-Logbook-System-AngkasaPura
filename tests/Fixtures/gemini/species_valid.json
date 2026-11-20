@@ -1,0 +1,13 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"terdeteksi_satwa\": true,\n  \"kandidat\": [\n    {\n      \"nama_lokal\": \"Kuntul Kerbau\",\n      \"nama_latin\": \"Bubulcus ibis\",\n      \"taksonomi\": {\n        \"kelas\": \"Aves\",\n        \"ordo\": \"Pelecaniformes\",\n        \"famili\": \"Ardeidae\"\n      },\n      \"estimasi_bobot_kg\": {\n        \"min\": 0.3,\n        \"max\": 0.5\n      },\n      \"kategori_bobot_risiko\": 1,\n      \"perilaku_terlihat\": \"Berdiri mencari makan di area rumput\",\n      \"confidence\": 0.94\n    }\n  ],\n  \"rekomendasi_sop\": [\n    {\n      \"metode\": \"akustik\",\n      \"langkah\": \"Gunakan distress call kuntul kerbau selama 30 detik\",\n      \"catatan_keselamatan\": \"Pastikan arah pengusiran menjauhi runway\"\n    }\n  ],\n  \"catatan\": \"Spesies teridentifikasi dengan tingkat keyakinan tinggi.\"\n}"
+          }
+        ]
+      }
+    }
+  ]
+}

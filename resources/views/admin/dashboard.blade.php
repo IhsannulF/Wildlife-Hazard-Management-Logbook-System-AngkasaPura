@@ -214,7 +214,7 @@
     'title' => $isVerifikasi ? 'Verifikasi Berita Acara (BA)' : 'Logbook Sisi Udara',
     'subtitle' => $isVerifikasi ? 'Antrean verifikasi laporan kejadian dan intervensi bahaya satwa sisi udara.' : 'Monitoring dan pengendalian bahaya satwa liar area sisi udara.',
     'icon' => $isVerifikasi ? 'fact_check' : 'space_dashboard',
-    'actions' => '<div class="flex items-center gap-2"><span class="text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
+    'actions' => '<div class="flex items-center gap-2"><span class="hidden md:inline text-[11px] text-slate-500 font-medium">Pembaruan otomatis 60d</span><button class="p-1.5 text-slate-500 hover:text-[#00A9C1] transition-colors rounded hover:bg-slate-100 cursor-pointer" onclick="refreshData()" title="Muat Ulang Data"><span class="material-symbols-outlined text-sm">sync</span></button></div>'
   ])
 
   <!-- MAIN VIEWPORT CONTAINER -->
@@ -228,7 +228,12 @@
       @include('admin.dashboard.charts-analytics')
     @endif
 
-    <!-- 3. Quick Operational Action Cards (Dashboard Utama) -->
+    <!-- 3. Pilar 4: Executive Safety Briefing & Mitigasi Birdstrike (AI) -->
+    @if(!$isVerifikasi)
+      <x-ai.briefing-card />
+    @endif
+
+    <!-- 4. Quick Operational Action Cards (Dashboard Utama) -->
     @if(!$isVerifikasi)
       @include('admin.dashboard.quick-actions')
     @endif
