@@ -78,6 +78,10 @@
         <span class="material-symbols-outlined text-base">arrow_back</span>
         Kembali
       </a>
+      <button type="submit" form="mainForm" style="background: linear-gradient(135deg, #00A9C1 0%, #007fa3 100%) !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(0, 169, 193, 0.3) !important;" class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg text-white hover:opacity-95 cursor-pointer transition-all active:scale-95 select-none">
+        <span class="material-symbols-outlined text-base" style="color: #ffffff !important;">send</span>
+        <span style="color: #ffffff !important;">Kirim Laporan</span>
+      </button>
     '
   ])
 
@@ -674,9 +678,14 @@
         </div>
       </div>
 
-      <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-[#00A9C1] to-[#007fa3] hover:from-[#007fa3] hover:to-[#005f7a] text-white font-bold text-base rounded-2xl shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all duration-200 cursor-pointer">
-        Kirim Laporan Logbook
-      </button>
+      <!-- Tombol Submit Utama di Bawah -->
+      <div class="pt-4 pb-16">
+        <button type="submit" id="btnSubmitLaporan" style="background: linear-gradient(135deg, #00A9C1 0%, #007fa3 100%) !important; color: #ffffff !important; box-shadow: 0 10px 25px -5px rgba(0, 169, 193, 0.4), 0 8px 10px -6px rgba(0, 169, 193, 0.3) !important;" class="w-full py-4 px-6 text-white font-bold text-base rounded-2xl active:scale-[0.99] hover:opacity-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 select-none">
+          <span class="material-symbols-outlined text-xl" style="color: #ffffff !important;">send</span>
+          <span style="color: #ffffff !important;">Kirim Laporan Logbook</span>
+        </button>
+        <p class="text-center text-xs text-slate-400 mt-2">Pastikan seluruh data pengamatan dan tanda tangan digital telah terisi dengan benar sebelum mengirim.</p>
+      </div>
     </form>
   </div>
 
