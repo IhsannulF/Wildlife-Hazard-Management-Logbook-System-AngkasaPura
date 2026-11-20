@@ -69,6 +69,11 @@
           <span class="material-symbols-outlined text-[15px] text-amber-500 leading-none">alt_route</span>
           <span>Rute Dispersal</span>
         </label>
+        <label class="inline-flex items-center gap-1.5 font-semibold text-cyan-800 hover:text-cyan-950 cursor-pointer select-none bg-cyan-50 px-2 py-1 rounded border border-cyan-300 shadow-2xs transition-colors">
+          <input type="checkbox" id="toggleLayerAiPrediksi" onchange="toggleAiPredictionLayer(this.checked)" class="rounded text-[#00A9C1] focus:ring-[#00A9C1] text-xs w-3.5 h-3.5">
+          <span class="material-symbols-outlined text-[15px] text-[#00A9C1] leading-none">auto_awesome</span>
+          <span>Prediksi AI (Gemini)</span>
+        </label>
 
         <!-- Opacity Slider -->
         <div class="inline-flex items-center gap-1.5 pl-2 border-l border-border-subtle">
@@ -137,6 +142,9 @@
 
             <!-- ================= OVERLAY MAPPING GROUP (CONTROLLED BY OPACITY SLIDER) ================= -->
             <g id="mainOverlayGroup" style="opacity: 0.75; transition: opacity 0.2s ease;">
+
+              <!-- SUB-LAYER AI: LAYER PREDIKSI AI (CRITICAL ZONES & HAZARD OVERLAY) -->
+              <g id="layerAiPrediksi" style="display: none;"></g>
 
               <!-- SUB-LAYER A: FASILITAS SISI UDARA (RUNWAY, APRON, REGULATING POND, TERMINAL) -->
               <g id="layerFacilities">
