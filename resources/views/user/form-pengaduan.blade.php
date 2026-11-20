@@ -78,10 +78,6 @@
         <span class="material-symbols-outlined text-base">arrow_back</span>
         Kembali
       </a>
-      <button type="submit" form="mainForm" style="background: linear-gradient(135deg, #00A9C1 0%, #007fa3 100%) !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(0, 169, 193, 0.3) !important;" class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg text-white hover:opacity-95 cursor-pointer transition-all active:scale-95 select-none">
-        <span class="material-symbols-outlined text-base" style="color: #ffffff !important;">send</span>
-        <span style="color: #ffffff !important;">Kirim Laporan</span>
-      </button>
     '
   ])
 
