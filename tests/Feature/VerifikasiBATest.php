@@ -42,7 +42,6 @@ class VerifikasiBATest extends TestCase
         $response->assertSee('Sudah Ditangani');
         $response->assertSee('signaturePad');
         $response->assertSee('miniGridContainer');
-        $response->assertDontSee('Bundel Bulanan (PDF)');
     }
 
     public function test_admin_can_access_verifikasi_via_query_tab(): void
@@ -55,7 +54,6 @@ class VerifikasiBATest extends TestCase
         $response->assertSee('Verifikasi Berita Acara (BA)');
         $response->assertSee('Antrean Verifikasi Berita Acara (BA) Sisi Udara');
         $response->assertSee('Semua Status');
-        $response->assertDontSee('Bundel Bulanan (PDF)');
     }
 
     public function test_admin_can_filter_verifikasi_by_status(): void

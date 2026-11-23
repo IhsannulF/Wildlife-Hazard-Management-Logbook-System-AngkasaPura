@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\DetailSatwa;
 use App\Models\FormField;
 use App\Models\FotoLaporan;
-use App\Models\IdentifikasiSatwaAi;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
 use App\Services\IcaoRiskMatrixService;
@@ -301,10 +300,8 @@ class LaporanController extends Controller
                     $detail = DetailSatwa::create([
                         'laporan_id' => $laporan->id,
                         'nama_satwa' => $namaSatwa,
-                        'nama_latin' => $s['nama_latin'] ?? $request->input('nama_latin'),
                         'jumlah' => $jumlah,
                         'grid' => $grid,
-                        'sumber_identifikasi' => $s['sumber_identifikasi'] ?? ($request->filled('ai_identifikasi_id') ? 'ai' : 'manual'),
                     ]);
 
                     // Cek upload foto per satwa
@@ -348,13 +345,6 @@ class LaporanController extends Controller
                     ]);
                 }
             }
-        }
-
-        if ($request->filled('ai_identifikasi_id')) {
-            IdentifikasiSatwaAi::query()
-                ->where('id', $request->input('ai_identifikasi_id'))
-                ->where('user_id', $user->id)
-                ->update(['laporan_id' => $laporan->id]);
         }
 
         return redirect()->route('user.dashboard')->with('sukses', 'Laporan berhasil dikirim dan tersimpan di sistem.');

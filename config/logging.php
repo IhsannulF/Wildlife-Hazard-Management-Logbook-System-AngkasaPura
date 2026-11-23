@@ -65,14 +65,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'ai' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/ai.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'max_files' => 14,
-            'replace_placeholders' => true,
-        ],
-
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

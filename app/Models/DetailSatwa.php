@@ -16,11 +16,9 @@ class DetailSatwa extends Model
     protected $fillable = [
         'laporan_id',
         'nama_satwa',
-        'nama_latin',
         'jumlah',
         'grid',
         'foto_path',
-        'sumber_identifikasi',
     ];
 
     protected function casts(): array
