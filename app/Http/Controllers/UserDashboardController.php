@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Laporan;
+use App\Models\MasterAlatDispersal;
+use App\Models\TindakanPengusiran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -65,7 +67,17 @@ class UserDashboardController extends Controller
 
         $laporans = $query->paginate($perPage)->withQueryString();
 
+        $alatDispersal = MasterAlatDispersal::query()->aktif()->orderBy('id')->get(['id', 'nama_alat']);
+        $pengusiranTerakhir = TindakanPengusiran::query()
+            ->with('alat:id,nama_alat')
+            ->where('user_id', $user->id)
+            ->latest('waktu')
+            ->limit(5)
+            ->get();
+
         return view('user.dashboard', compact(
+            'alatDispersal',
+            'pengusiranTerakhir',
             'user',
             'totalLaporanSaya',
             'menungguValidasi',

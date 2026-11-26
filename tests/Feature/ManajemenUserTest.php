@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\FormField;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ManajemenUserTest extends TestCase
 {
+    use DatabaseTransactions;
+
     public function test_guest_is_redirected_to_login(): void
     {
         $response = $this->get('/admin/manajemen-user');

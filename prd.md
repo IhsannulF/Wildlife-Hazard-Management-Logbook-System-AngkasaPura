@@ -401,3 +401,5 @@ sequenceDiagram
    - Menghubungkan logbook dengan alat pengusir satwa otomatis seperti *gas cannon* atau *acoustic bird repeller*.
 4. **Analisis Prediktif Berbasis AI / Machine Learning**:
    - Memprediksi lonjakan populasi satwa berdasarkan tren musiman cuaca, arah angin, dan jadwal panen di sekitar perimeter luar bandara.
+
+> **Pembaruan v2.1 (25 November 2026):** roadmap #3 (alat pengusir) dan #4 (analisis prediktif) kini masuk lingkup revisi berdasarkan masukan Pak Bagus. Kebutuhan produk ada di [`prd_revisi_birdstrike.md`](prd_revisi_birdstrike.md), spesifikasi teknis di `spec.md` §9.

@@ -31,6 +31,7 @@ class ReportController extends Controller
                 'nama' => $ds->nama_satwa,
                 'jumlah' => $ds->jumlah,
                 'grid' => $ds->grid,
+                'perilaku_kawanan' => $ds->flockBehaviorSummary(),
                 'foto_path' => $foto ? 'storage/uploads/satwa/'.$foto->nama_file : ($ds->foto_path ? 'images/'.$ds->foto_path : ''),
             ];
         }
@@ -289,7 +290,10 @@ class ReportController extends Controller
             }
 
             // Jam/waktu
-            $waktuFormatted = $lap->created_at ? $lap->created_at->format('H:i').' WIB' : '08:00 WIB';
+            // Jam pengamatan (FR-0.1) lebih tepat daripada waktu input; laporan lama memakai waktu input.
+            $waktuFormatted = $lap->jam
+                ? substr((string) $lap->jam, 0, 5).' WIB'
+                : ($lap->created_at ? $lap->created_at->copy()->timezone(config('whms_risk.zona_waktu'))->format('H:i').' WIB' : '-');
 
             if ($modeBaris === 'per_satwa' && $lap->detailSatwa->isNotEmpty()) {
                 // Tiap temuan satwa menjadi 1 baris mandiri (Standar DKPPU)
@@ -315,7 +319,7 @@ class ReportController extends Controller
                         'nama_latin' => $latinName,
                         'jumlah_ekor' => (int) $ds->jumlah,
                         'ciri_ukuran' => $lap->ciri_ukuran ?: '-',
-                        'aktivitas_satwa' => $lap->aktivitas_satwa ?: '-',
+                        'aktivitas_satwa' => $ds->flockBehaviorSummary() ?: ($lap->aktivitas_satwa ?: '-'),
                         'kategori_risiko' => $icaoRisk,
                         'tindak_lanjut' => $lap->tindak_lanjut ?: '-',
                         'metode_pengusiran' => $lap->detail_pengusiran ?: '-',
@@ -364,7 +368,7 @@ class ReportController extends Controller
                     'nama_latin' => ! empty($satwaLatin) ? implode(', ', $satwaLatin) : '-',
                     'jumlah_ekor' => $ekorTotalLap,
                     'ciri_ukuran' => $lap->ciri_ukuran ?: '-',
-                    'aktivitas_satwa' => $lap->aktivitas_satwa ?: '-',
+                    'aktivitas_satwa' => $this->flockBehaviorText($lap),
                     'kategori_risiko' => $icaoRisk,
                     'tindak_lanjut' => $lap->tindak_lanjut ?: '-',
                     'metode_pengusiran' => $lap->detail_pengusiran ?: '-',
@@ -614,7 +618,7 @@ class ReportController extends Controller
                 'key' => 'aktivitas_satwa',
                 'label' => 'Perilaku Satwa',
                 'category' => 'satwa',
-                'description' => 'Melintas, Bertengger, Mencari Makan',
+                'description' => 'Perilaku, arah terbang, dan ketinggian kawanan (catatan bebas bila tidak diisi)',
                 'align' => 'left',
             ],
             'kategori_risiko' => [
@@ -790,6 +794,22 @@ class ReportController extends Controller
     /**
      * Ekstrak konsumsi butir amunisi dari deskripsi pengusiran jika ada.
      */
+    /**
+     * Perilaku kawanan terstruktur per jenis (FR-0.2); laporan lama memakai catatan bebas.
+     */
+    protected function flockBehaviorText(Laporan $laporan): string
+    {
+        $summaries = $laporan->detailSatwa
+            ->filter(fn ($ds): bool => $ds->flockBehaviorSummary() !== null)
+            ->map(fn ($ds): string => $ds->nama_satwa.': '.$ds->flockBehaviorSummary());
+
+        if ($summaries->isNotEmpty()) {
+            return $summaries->implode('; ');
+        }
+
+        return $laporan->aktivitas_satwa ?: '-';
+    }
+
     protected function extractAmunisi(?string $detail): int
     {
         return BeritaAcaraPdfService::extractAmunisiCount($detail);

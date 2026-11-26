@@ -33,8 +33,8 @@
       <div class="text-lg sm:text-xl font-bold text-slate-navy tracking-tight mt-1">{{ $totalTitikTerpetakan }} Titik</div>
     </div>
     <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-      <span>Tersebar di {{ $totalSelAktif }} sel grid aktif</span>
-      <span class="font-code-coordinate text-injourney-teal font-bold">15 Kolom x 12 Baris</span>
+      <span>{{ $totalBurungGlobal ?? 0 }} Ekor Burung ({{ $totalSelAktif }} Sel Aktif)</span>
+      <span class="font-code-coordinate text-injourney-teal font-bold">29×12 Grid (348 Titik)</span>
     </div>
   </div>
 

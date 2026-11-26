@@ -1,292 +1,236 @@
+<script type="application/json" id="whmsStatistikData">@json($statistik)</script>
 <script>
-  // ================= AIRSIDE VISUAL ANALYTICS CHARTS (CHART.JS) =================
-  // Safely encode chart datasets from controller
-  const chartMonthLabels   = {!! json_encode($monthLabels ?? ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']) !!};
-  const chartTrendTotal     = {!! json_encode($trendTotal ?? [14, 16, 20, 18, 15, 12, 11, 13, 18, 24, 28, 32]) !!};
-  const chartTrendHandled   = {!! json_encode($trendHandled ?? [13, 15, 19, 17, 14, 12, 11, 12, 17, 22, 26, 30]) !!};
-  const chartTrendCritical  = {!! json_encode($trendCritical ?? [1, 1, 1, 1, 1, 0, 0, 1, 1, 2, 2, 2]) !!};
-  const chartCategoryLabels = {!! json_encode($categoryData['labels'] ?? ['Avian / Burung', 'Reptil', 'Mamalia']) !!};
-  const chartCategoryCounts = {!! json_encode($categoryData['counts'] ?? [124, 48, 27]) !!};
-  const chartSpeciesLabels  = {!! json_encode($topSpeciesLabels ?? ['Biawak Air', 'Burung Blekok', 'Kuntul Kerbau', 'Layang-layang Api', 'Anjing Liar']) !!};
-  const chartSpeciesCounts  = {!! json_encode($topSpeciesCounts ?? [38, 44, 29, 22, 12]) !!};
-  const chartHourlyLabels   = {!! json_encode($hourlyLabels ?? ['Pagi (06-10)', 'Siang (10-14)', 'Sore (14-18)', 'Malam (18-06)']) !!};
-  const chartHourlyCounts   = {!! json_encode($hourlyCounts ?? [78, 24, 64, 33]) !!};
-  const chartZoneLabels     = {!! json_encode($zoneLabels ?? ['Runway 07L/25R', 'Kanal & Rawa', 'Taxiway A & B', 'Apron Komersial', 'Perimeter Luar']) !!};
-  const chartZoneCounts     = {!! json_encode($zoneCounts ?? [84, 46, 34, 28, 18]) !!};
+  // ================= STATISTIK & INFOGRAFIS POPULASI BURUNG (CHART.JS) =================
+  const WHMS_STATISTIK = JSON.parse(document.getElementById('whmsStatistikData').textContent);
 
-  document.addEventListener('DOMContentLoaded', function() {
-    // 1. CHART 1: TREN TEMPORAL BULANAN (LINE & AREA)
-    const ctxTrend = document.getElementById('trendChart');
-    if (ctxTrend && typeof Chart !== 'undefined') {
-      const gradientTeal = ctxTrend.getContext('2d').createLinearGradient(0, 0, 0, 240);
-      gradientTeal.addColorStop(0, 'rgba(0, 163, 180, 0.28)');
-      gradientTeal.addColorStop(1, 'rgba(0, 163, 180, 0.01)');
-
-      const gradientEmerald = ctxTrend.getContext('2d').createLinearGradient(0, 0, 0, 240);
-      gradientEmerald.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
-      gradientEmerald.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
-
-      new Chart(ctxTrend, {
-        type: 'line',
-        data: {
-          labels: chartMonthLabels,
-          datasets: [
-            {
-              label: 'Total Temuan Satwa',
-              data: chartTrendTotal,
-              borderColor: '#00A3B4',
-              backgroundColor: gradientTeal,
-              fill: true,
-              tension: 0.38,
-              borderWidth: 2.5,
-              pointRadius: 3,
-              pointHoverRadius: 6,
-              pointBackgroundColor: '#00A3B4',
-            },
-            {
-              label: 'Berhasil Ditangani (Dispersal)',
-              data: chartTrendHandled,
-              borderColor: '#10B981',
-              backgroundColor: gradientEmerald,
-              fill: true,
-              tension: 0.38,
-              borderWidth: 2,
-              pointRadius: 2.5,
-              pointHoverRadius: 5,
-              pointBackgroundColor: '#10B981',
-            },
-            {
-              label: 'Kejadian Kritis / Aktif',
-              data: chartTrendCritical,
-              borderColor: '#EF4444',
-              borderDash: [4, 4],
-              fill: false,
-              tension: 0.35,
-              borderWidth: 1.8,
-              pointRadius: 2,
-              pointHoverRadius: 5,
-              pointBackgroundColor: '#EF4444',
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0F172A',
-              titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
-              bodyFont: { family: 'DM Sans', size: 11 },
-              padding: 8,
-              cornerRadius: 8,
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B' }
-            },
-            y: {
-              grid: { color: 'rgba(226, 232, 240, 0.7)' },
-              ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
-            }
-          }
-        }
-      });
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') {
+      return;
     }
 
-    // 2. CHART 2: KOMPOSISI TAKSONOMI (DOUGHNUT)
-    const ctxDonut = document.getElementById('categoryDonutChart');
-    if (ctxDonut && typeof Chart !== 'undefined') {
-      new Chart(ctxDonut, {
-        type: 'doughnut',
-        data: {
-          labels: chartCategoryLabels,
-          datasets: [{
-            data: chartCategoryCounts,
-            backgroundColor: ['#00A3B4', '#F59E0B', '#6366F1'],
-            borderWidth: 3,
-            borderColor: '#FFFFFF',
-            hoverOffset: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '72%',
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0F172A',
-              titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
-              bodyFont: { family: 'DM Sans', size: 11 },
-              padding: 8,
-              cornerRadius: 8,
-              callbacks: {
-                label: function(context) {
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const val = context.raw;
-                  const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                  return ` ${context.label}: ${val} (${pct}%)`;
-                }
-              }
-            }
-          }
-        }
-      });
+    const COLOR = {
+      teal: '#00A3B4',
+      indigo: '#6250D6',
+      rose: '#E34948',
+      amber: '#EDA100',
+      text: '#475569',
+      grid: 'rgba(226, 232, 240, 0.7)',
+      surface: '#FFFFFF',
+    };
+    const ACTIVITY_COLORS = ['#16A34A', '#EAB308', '#F97316', '#DC2626'];
+    const ACTIVITY_LABELS = ['Rendah', 'Sedang', 'Tinggi', 'Sangat Tinggi'];
+    const nf = new Intl.NumberFormat('id-ID');
+
+    Chart.defaults.font.family = 'DM Sans, Inter, system-ui, sans-serif';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = COLOR.text;
+
+    const tooltip = {
+      backgroundColor: '#0F172A',
+      titleFont: { weight: 'bold' },
+      padding: 8,
+      cornerRadius: 8,
+      displayColors: false,
+    };
+    const valueAxis = (title) => ({
+      beginAtZero: true,
+      grid: { color: COLOR.grid },
+      border: { display: false },
+      ticks: { precision: 0, callback: (v) => nf.format(v) },
+      title: title ? { display: true, text: title, font: { size: 10 } } : undefined,
+    });
+    const categoryAxis = { grid: { display: false }, border: { display: false } };
+    const barStyle = { borderRadius: 4, borderSkipped: 'start', maxBarThickness: 22 };
+
+    function draw(id, config) {
+      const el = document.getElementById(id);
+      if (el) {
+        new Chart(el, config);
+      }
     }
 
-    // 3. CHART 3: TOP 5 SPESIES (HORIZONTAL BAR)
-    const ctxSpecies = document.getElementById('speciesBarChart');
-    if (ctxSpecies && typeof Chart !== 'undefined') {
-      new Chart(ctxSpecies, {
-        type: 'bar',
-        data: {
-          labels: chartSpeciesLabels,
-          datasets: [{
-            label: 'Jumlah Temuan',
-            data: chartSpeciesCounts,
-            backgroundColor: [
-              '#EF4444', // Biawak Air (Kritis)
-              '#F59E0B', // Blekok (Sedang)
-              '#00A3B4', // Kuntul (Teal)
-              '#38BDF8', // Layang-layang (Sky)
-              '#818CF8'  // Mamalia (Indigo)
-            ],
-            borderRadius: 6,
-            barThickness: 14
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0F172A',
-              titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
-              bodyFont: { family: 'DM Sans', size: 11 },
-              padding: 8,
-              cornerRadius: 8
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(226, 232, 240, 0.7)' },
-              ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
+    // 1. Tren populasi burung bulanan (satu sumbu: ekor burung; observasi di tooltip)
+    const tren = WHMS_STATISTIK.tren;
+    draw('trendChart', {
+      type: 'line',
+      data: {
+        labels: tren.labels,
+        datasets: [{
+          label: 'Ekor burung',
+          data: tren.burung,
+          borderColor: COLOR.teal,
+          backgroundColor: 'rgba(0, 163, 180, 0.10)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: COLOR.teal,
+          pointBorderColor: COLOR.surface,
+          pointBorderWidth: 2,
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltip,
+            callbacks: {
+              label: (ctx) => `${nf.format(ctx.parsed.y)} ekor burung`,
+              afterLabel: (ctx) => `${nf.format(tren.observasi[ctx.dataIndex])} laporan observasi`,
             },
-            y: {
-              grid: { display: false },
-              ticks: { font: { family: 'DM Sans', size: 10, weight: '600' }, color: '#1E293B' }
-            }
-          }
-        }
-      });
-    }
+          },
+        },
+        scales: { x: categoryAxis, y: valueAxis('Ekor') },
+      },
+    });
 
-    // 4. CHART 4: DISTRIBUSI JAM AKTIVITAS (VERTICAL BAR)
-    const ctxHourly = document.getElementById('hourlyBarChart');
-    if (ctxHourly && typeof Chart !== 'undefined') {
-      new Chart(ctxHourly, {
-        type: 'bar',
-        data: {
-          labels: chartHourlyLabels,
-          datasets: [{
-            label: 'Frekuensi Muncul',
-            data: chartHourlyCounts,
-            backgroundColor: [
-              '#00A3B4', // Pagi (Peak 1)
-              '#CBD5E1', // Siang (Low)
-              '#F59E0B', // Sore (Peak 2)
-              '#64748B'  // Malam (Nocturnal)
-            ],
-            borderRadius: 6,
-            barThickness: 24
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0F172A',
-              titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
-              bodyFont: { family: 'DM Sans', size: 11 },
-              padding: 8,
-              cornerRadius: 8
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { family: 'DM Sans', size: 10, weight: '600' }, color: '#334155' }
+    // 2. Top 10 jenis burung (bar horizontal)
+    const top = WHMS_STATISTIK.top_jenis;
+    draw('speciesBarChart', {
+      type: 'bar',
+      data: {
+        labels: top.map((row) => row.nama.replace(/^Burung\s+/i, '')),
+        datasets: [{ data: top.map((row) => row.jumlah), backgroundColor: COLOR.teal, ...barStyle }],
+      },
+      options: {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltip,
+            callbacks: {
+              title: (items) => top[items[0].dataIndex].nama,
+              label: (ctx) => `${nf.format(top[ctx.dataIndex].jumlah)} ekor (${top[ctx.dataIndex].persen.toLocaleString('id-ID')}%)`,
             },
-            y: {
-              grid: { color: 'rgba(226, 232, 240, 0.7)' },
-              ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748B', precision: 0 }
-            }
-          }
-        }
-      });
-    }
+          },
+        },
+        scales: { x: valueAxis('Ekor'), y: categoryAxis },
+      },
+    });
 
-    // 5. CHART 5: SEBARAN ZONA OPERASIONAL (POLAR AREA)
-    const ctxZone = document.getElementById('zoneRadarChart');
-    if (ctxZone && typeof Chart !== 'undefined') {
-      new Chart(ctxZone, {
-        type: 'polarArea',
-        data: {
-          labels: chartZoneLabels,
-          datasets: [{
-            data: chartZoneCounts,
-            backgroundColor: [
-              'rgba(239, 68, 68, 0.75)',  // Runway 07L/25R
-              'rgba(245, 158, 11, 0.75)', // Kanal & Rawa
-              'rgba(0, 163, 180, 0.75)',  // Taxiway
-              'rgba(56, 189, 248, 0.75)', // Apron
-              'rgba(99, 102, 241, 0.75)'  // Perimeter
-            ],
-            borderWidth: 1.5,
-            borderColor: '#FFFFFF'
-          }]
+    // 3. Indeks Shannon per bulan
+    draw('diversityChart', {
+      type: 'line',
+      data: {
+        labels: tren.labels,
+        datasets: [{
+          data: tren.shannon,
+          borderColor: COLOR.indigo,
+          backgroundColor: COLOR.indigo,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          spanGaps: false,
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { ...tooltip, callbacks: { label: (ctx) => `H' = ${ctx.parsed.y.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` } },
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'right',
-              labels: {
-                boxWidth: 9,
-                font: { family: 'DM Sans', size: 9 },
-                color: '#475569',
-                padding: 4
-              }
+        scales: {
+          x: { ...categoryAxis, ticks: { font: { size: 9 } } },
+          y: { beginAtZero: true, grid: { color: COLOR.grid }, border: { display: false }, ticks: { maxTicksLimit: 3, font: { size: 9 } } },
+        },
+      },
+    });
+
+    // 4. Distribusi kelas aktivitas grid (donut)
+    const distribusi = WHMS_STATISTIK.grid.distribusi;
+    draw('gridDonutChart', {
+      type: 'doughnut',
+      data: {
+        labels: ACTIVITY_LABELS,
+        datasets: [{
+          data: [distribusi.rendah, distribusi.sedang, distribusi.tinggi, distribusi.sangat_tinggi],
+          backgroundColor: ACTIVITY_COLORS,
+          borderColor: COLOR.surface,
+          borderWidth: 2,
+          hoverOffset: 4,
+        }],
+      },
+      options: {
+        cutout: '68%',
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { ...tooltip, callbacks: { label: (ctx) => `${ctx.label}: ${nf.format(ctx.parsed)} grid` } },
+        },
+      },
+    });
+
+    // 5. Jam temuan burung
+    const jam = WHMS_STATISTIK.jam;
+    draw('hourlyBarChart', {
+      type: 'bar',
+      data: {
+        labels: jam.labels,
+        datasets: [{ data: jam.burung, backgroundColor: COLOR.amber, ...barStyle, maxBarThickness: 14 }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { ...tooltip, callbacks: { title: (items) => `Pukul ${items[0].label}:00–${items[0].label}:59`, label: (ctx) => `${nf.format(ctx.parsed.y)} ekor` } },
+        },
+        scales: { x: { ...categoryAxis, ticks: { autoSkip: true, maxTicksLimit: 12 } }, y: valueAxis() },
+      },
+    });
+
+    // 6. Kejadian bird strike per fase & waktu
+    const kejadian = WHMS_STATISTIK.kejadian;
+    const eventBar = (id, source, title) => draw(id, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(source),
+        datasets: [{ data: Object.values(source), backgroundColor: COLOR.rose, ...barStyle }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: title, align: 'start', font: { size: 11, weight: 'bold' }, color: '#0F172A' },
+          tooltip: { ...tooltip, callbacks: { label: (ctx) => `${nf.format(ctx.parsed.y)} insiden` } },
+        },
+        scales: { x: { ...categoryAxis, ticks: { font: { size: 9.5 } } }, y: valueAxis() },
+      },
+    });
+    eventBar('phaseBarChart', kejadian.fase, 'Fase penerbangan');
+    eventBar('timeBarChart', kejadian.waktu, 'Waktu kejadian');
+
+    // 7. Korelasi traffic vs burung (scatter)
+    const korelasi = WHMS_STATISTIK.korelasi;
+    draw('correlationChart', {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          data: korelasi.titik,
+          backgroundColor: 'rgba(0, 163, 180, 0.75)',
+          borderColor: COLOR.surface,
+          borderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltip,
+            callbacks: {
+              title: (items) => new Date(items[0].raw.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+              label: (ctx) => [`${nf.format(ctx.raw.x)} pergerakan pesawat`, `${nf.format(ctx.raw.y)} ekor burung`],
             },
-            tooltip: {
-              backgroundColor: '#0F172A',
-              titleFont: { family: 'DM Sans', size: 11, weight: 'bold' },
-              bodyFont: { family: 'DM Sans', size: 11 },
-              padding: 8,
-              cornerRadius: 8
-            }
           },
-          scales: {
-            r: {
-              ticks: { display: false },
-              grid: { color: 'rgba(226, 232, 240, 0.7)' }
-            }
-          }
-        }
-      });
-    }
+        },
+        scales: { x: valueAxis('Pergerakan pesawat / hari'), y: valueAxis('Ekor burung / hari') },
+      },
+    });
   });
 </script>

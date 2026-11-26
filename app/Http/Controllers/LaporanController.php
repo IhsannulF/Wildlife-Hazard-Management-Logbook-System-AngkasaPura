@@ -8,11 +8,16 @@ use App\Models\FotoLaporan;
 use App\Models\IdentifikasiSatwaAi;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
+use App\Models\MasterAlatDispersal;
+use App\Models\TindakanPengusiran;
+use App\Models\User;
 use App\Services\IcaoRiskMatrixService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class LaporanController extends Controller
 {
@@ -60,8 +65,10 @@ class LaporanController extends Controller
         $gridField = FormField::where('tipe', 'grid')->first();
         $gridmapImage = ($gridField && $gridField->gridmap_path) ? $gridField->gridmap_path : 'gridmap_injourney.jpeg';
         $gridAgg = $this->getGridAggregation();
+        $alat_dispersal_opt = MasterAlatDispersal::query()->aktif()->orderBy('id')->get(['id', 'nama_alat']);
 
         return view('user.form-pengaduan', compact(
+            'alat_dispersal_opt',
             'user',
             'unitKerjaUser',
             'formFields',
@@ -195,6 +202,86 @@ class LaporanController extends Controller
         return $fallback;
     }
 
+    /**
+     * Matriks risiko ICAO Doc 9137 dari total ekor per jenis; dipakai form web dan sinkron offline.
+     *
+     * @param  array<int, array{nama?: string, lokasi?: array<int, array<string, mixed>>}>  $satwaInput
+     * @return array{score: int, level: string}
+     */
+    private function assessIcaoRisk(array $satwaInput, ?string $areaInspeksi, ?string $grid): array
+    {
+        $satwaCalculationData = [];
+        foreach ($satwaInput as $satwa) {
+            $nama = $satwa['nama'] ?? '';
+            $jumlah = collect($satwa['lokasi'] ?? [])->sum(fn ($lokasi): int => (int) ($lokasi['jumlah'] ?? 0));
+
+            if ($jumlah > 0 || $nama !== '') {
+                $satwaCalculationData[] = ['nama' => $nama, 'jumlah' => $jumlah];
+            }
+        }
+
+        $assessment = app(IcaoRiskMatrixService::class)->calculate($satwaCalculationData, $areaInspeksi, $grid);
+
+        return ['score' => $assessment['score'], 'level' => $assessment['level']];
+    }
+
+    /**
+     * Ambil atribut perilaku kawanan yang valid dari satu baris lokasi satwa; nilai di luar daftar diabaikan.
+     *
+     * @param  array<string, mixed>  $lokasi
+     * @return array{perilaku: string|null, arah_terbang: string|null, ketinggian: string|null}
+     */
+    private function flockBehaviorAttributes(array $lokasi): array
+    {
+        $pick = fn (string $key, array $allowed): ?string => isset($lokasi[$key]) && array_key_exists((string) $lokasi[$key], $allowed)
+            ? (string) $lokasi[$key]
+            : null;
+
+        return [
+            'perilaku' => $pick('perilaku', DetailSatwa::PERILAKU),
+            'arah_terbang' => $pick('arah_terbang', DetailSatwa::ARAH_TERBANG),
+            'ketinggian' => $pick('ketinggian', DetailSatwa::KETINGGIAN),
+        ];
+    }
+
+    /**
+     * Catat tindakan pengusiran yang dilakukan saat inspeksi pada waktu dan grid laporan.
+     */
+    private function recordDispersalAction(Laporan $laporan, User $user, ?int $alatId, ?string $hasil): void
+    {
+        if (! $alatId || ! MasterAlatDispersal::query()->aktif()->whereKey($alatId)->exists()) {
+            return;
+        }
+
+        TindakanPengusiran::create([
+            'laporan_id' => $laporan->id,
+            'alat_id' => $alatId,
+            'user_id' => $user->id,
+            'waktu' => Carbon::parse($laporan->tanggal->toDateString().' '.($laporan->jam ?: '00:00:00')),
+            'grid' => $laporan->grid_lokasi ?: '-',
+            'hasil' => array_key_exists((string) $hasil, TindakanPengusiran::HASIL) ? $hasil : null,
+        ]);
+    }
+
+    /**
+     * Draf PWA menyimpan isian form sebagai kunci datar (mis. "satwa[0][lokasi][0][jumlah]").
+     * Ubah ke array bersarang agar dibaca sama seperti request form biasa.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function expandBracketKeys(array $payload): array
+    {
+        $hasFlatKeys = collect(array_keys($payload))->contains(fn ($key): bool => str_contains((string) $key, '['));
+        if (! $hasFlatKeys) {
+            return $payload;
+        }
+
+        parse_str(http_build_query($payload), $expanded);
+
+        return $expanded;
+    }
+
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -204,6 +291,12 @@ class LaporanController extends Controller
 
         $rules = [
             'tanggal' => 'required|date',
+            'jam' => ['required', 'date_format:H:i,H:i:s'],
+            'satwa.*.lokasi.*.perilaku' => ['nullable', Rule::in(array_keys(DetailSatwa::PERILAKU))],
+            'satwa.*.lokasi.*.arah_terbang' => ['nullable', Rule::in(array_keys(DetailSatwa::ARAH_TERBANG))],
+            'satwa.*.lokasi.*.ketinggian' => ['nullable', Rule::in(array_keys(DetailSatwa::KETINGGIAN))],
+            'pengusiran_alat_id' => ['nullable', 'integer', Rule::exists('master_alat_dispersal', 'id')->where('aktif', true)],
+            'pengusiran_hasil' => ['nullable', Rule::in(array_keys(TindakanPengusiran::HASIL))],
         ];
 
         foreach ($requiredFields as $rf) {
@@ -250,11 +343,13 @@ class LaporanController extends Controller
             }
         }
 
+        $riskAssessment = $this->assessIcaoRisk($satwaInput, $request->input('area_inspeksi', ''), $firstGrid);
+
         $laporan = Laporan::create([
             'user_id' => $user->id,
             'nama_petugas' => $request->input('nama_petugas', $user->namalengkap ?: $user->username),
             'tanggal' => $request->input('tanggal'),
-            'jam' => $request->input('jam', now()->format('H:i:s')),
+            'jam' => $request->input('jam'),
             'kondisi_cuaca' => $request->input('kondisi_cuaca', ''),
             'unit_kerja' => $request->input('unit_kerja', ''),
             'area_inspeksi' => $request->input('area_inspeksi', ''),
@@ -267,6 +362,8 @@ class LaporanController extends Controller
             'aktivitas_satwa' => $request->input('aktivitas_satwa', '-'),
             'tindak_lanjut' => $request->input('tindak_lanjut', 'Belum ditangani'),
             'detail_pengusiran' => $request->input('detail_pengusiran', '-'),
+            'risk_score' => $riskAssessment['score'],
+            'risk_level' => $riskAssessment['level'],
             'status' => $statusLaporan,
         ]);
 
@@ -305,6 +402,7 @@ class LaporanController extends Controller
                         'jumlah' => $jumlah,
                         'grid' => $grid,
                         'sumber_identifikasi' => $s['sumber_identifikasi'] ?? ($request->filled('ai_identifikasi_id') ? 'ai' : 'manual'),
+                        ...$this->flockBehaviorAttributes($lok),
                     ]);
 
                     // Cek upload foto per satwa
@@ -350,6 +448,13 @@ class LaporanController extends Controller
             }
         }
 
+        $this->recordDispersalAction(
+            $laporan,
+            $user,
+            $request->integer('pengusiran_alat_id') ?: null,
+            $request->input('pengusiran_hasil')
+        );
+
         if ($request->filled('ai_identifikasi_id')) {
             IdentifikasiSatwaAi::query()
                 ->where('id', $request->input('ai_identifikasi_id'))
@@ -394,9 +499,11 @@ class LaporanController extends Controller
         if (! is_array($payload)) {
             $payload = $request->all();
         }
+        $payload = $this->expandBracketKeys($payload);
 
-        $tanggal = $payload['tanggal'] ?? now()->format('Y-m-d');
-        $jam = $payload['jam'] ?? now()->format('H:i:s');
+        $waktuLokal = now(config('whms_risk.zona_waktu'));
+        $tanggal = $payload['tanggal'] ?? $waktuLokal->format('Y-m-d');
+        $jam = $payload['jam'] ?? $waktuLokal->format('H:i:s');
         $namaPetugas = $payload['nama_petugas'] ?? ($user->namalengkap ?: $user->username);
         $kondisiCuaca = $payload['kondisi_cuaca'] ?? '';
         $unitKerja = $payload['unit_kerja'] ?? '';
@@ -431,33 +538,7 @@ class LaporanController extends Controller
             }
         }
 
-        // Hitung Matriks Risiko ICAO Doc 9137 Otomatis
-        $satwaCalculationData = [];
-        if (is_array($satwaInput)) {
-            foreach ($satwaInput as $s) {
-                $namaSatwa = $s['nama'] ?? '';
-                $totalJmlPerSatwa = 0;
-                foreach ($s['lokasi'] ?? [] as $lok) {
-                    $totalJmlPerSatwa += (int) ($lok['jumlah'] ?? 0);
-                }
-                if ($totalJmlPerSatwa > 0 || ! empty($namaSatwa)) {
-                    $satwaCalculationData[] = [
-                        'nama' => $namaSatwa,
-                        'jumlah' => $totalJmlPerSatwa,
-                    ];
-                }
-            }
-        }
-
-        $riskAssessment = ['score' => 1, 'level' => 'rendah'];
-        if (class_exists(IcaoRiskMatrixService::class)) {
-            $riskService = app(IcaoRiskMatrixService::class);
-            $riskAssessment = $riskService->calculate(
-                $satwaCalculationData,
-                $areaInspeksi,
-                $firstGrid
-            );
-        }
+        $riskAssessment = $this->assessIcaoRisk(is_array($satwaInput) ? $satwaInput : [], $areaInspeksi, $firstGrid);
 
         $gpsLat = isset($payload['gps_lat']) && $payload['gps_lat'] !== '' ? (float) $payload['gps_lat'] : null;
         $gpsLng = isset($payload['gps_lng']) && $payload['gps_lng'] !== '' ? (float) $payload['gps_lng'] : null;
@@ -521,6 +602,7 @@ class LaporanController extends Controller
                             'nama_satwa' => $namaSatwa,
                             'jumlah' => $jumlah,
                             'grid' => $grid,
+                            ...$this->flockBehaviorAttributes($lok),
                         ]);
 
                         $createdDetails[$idx] = $detail;
@@ -597,6 +679,13 @@ class LaporanController extends Controller
                 }
             }
         }
+
+        $this->recordDispersalAction(
+            $laporan,
+            $user,
+            isset($payload['pengusiran_alat_id']) ? (int) $payload['pengusiran_alat_id'] : null,
+            $payload['pengusiran_hasil'] ?? null
+        );
 
         return response()->json([
             'success' => true,

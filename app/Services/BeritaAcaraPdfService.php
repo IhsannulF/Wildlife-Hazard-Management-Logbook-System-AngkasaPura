@@ -111,6 +111,7 @@ class BeritaAcaraPdfService
             $satwaMatrix[] = [
                 'no' => $idx + 1,
                 'nama_satwa' => $ds->nama_satwa ?: '-',
+                'perilaku_kawanan' => $ds->flockBehaviorSummary(),
                 'nama_ilmiah' => JenisSatwa::resolveNamaIlmiah((string) $ds->nama_satwa, '-'),
                 'jumlah' => $jumlah,
                 'grid' => strtoupper((string) ($ds->grid ?: ($laporan->grid_lokasi ?: '-'))),

@@ -250,6 +250,9 @@
                 <td class="py-3 px-4">
                   <div class="font-bold text-slate-800">{{ $item->tanggal_kejadian?->format('d M Y') }}</div>
                   <div class="text-[11px] text-slate-400 font-mono mt-0.5">{{ $item->jam_kejadian ? substr($item->jam_kejadian, 0, 5) . ' WIB' : '-' }}</div>
+                  @if($item->jenis_kejadian === 'near_miss')
+                    <span class="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-800 font-bold">NEAR-MISS</span>
+                  @endif
                 </td>
                 <td class="py-3 px-4">
                   <div class="font-bold text-slate-800">{{ $item->jenis_pesawat }}</div>
@@ -334,6 +337,32 @@
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Jam Kejadian (WIB)</label>
             <input type="time" name="jam_kejadian" id="h_jam" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-[#00A9C1]">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="h_jenis" class="block font-semibold text-slate-700 mb-1">Jenis Kejadian *</label>
+            <select name="jenis_kejadian" id="h_jenis" required class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-[#00A9C1]">
+              @foreach(\App\Models\HistoriBirdstrike::JENIS_KEJADIAN as $value => $label)
+                <option value="{{ $value }}">{{ $label }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label for="h_grid" class="block font-semibold text-slate-700 mb-1">Grid Lokasi</label>
+            <input type="text" name="grid" id="h_grid" placeholder="K-10" class="w-full px-3 py-2 rounded-lg border border-slate-200 uppercase focus:outline-none focus:border-[#00A9C1]">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="h_ketinggian" class="block font-semibold text-slate-700 mb-1">Ketinggian (ft)</label>
+            <input type="number" name="ketinggian_ft" id="h_ketinggian" min="0" max="20000" placeholder="Bila diketahui" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-[#00A9C1]">
+          </div>
+          <div>
+            <label for="h_centerline" class="block font-semibold text-slate-700 mb-1">Jarak dari Centerline (m)</label>
+            <input type="number" name="jarak_centerline_m" id="h_centerline" min="0" max="5000" placeholder="Bila diketahui" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-[#00A9C1]">
           </div>
         </div>
 
@@ -486,6 +515,10 @@
 
       document.getElementById('h_tanggal').value = item.tanggal_kejadian ? item.tanggal_kejadian.substring(0, 10) : '';
       document.getElementById('h_jam').value = item.jam_kejadian ? item.jam_kejadian.substring(0, 5) : '';
+      document.getElementById('h_jenis').value = item.jenis_kejadian || 'strike';
+      document.getElementById('h_grid').value = item.grid || '';
+      document.getElementById('h_ketinggian').value = item.ketinggian_ft ?? '';
+      document.getElementById('h_centerline').value = item.jarak_centerline_m ?? '';
       document.getElementById('h_runway').value = item.kode_runway || '10';
       document.getElementById('h_titik').value = item.titik_lokasi || 'touchdown';
       document.getElementById('h_pesawat').value = item.jenis_pesawat || '';

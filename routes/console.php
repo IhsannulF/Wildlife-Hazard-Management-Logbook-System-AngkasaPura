@@ -14,3 +14,9 @@ Schedule::command('birdstrike:predict --trigger=terjadwal')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping()
     ->onOneServer();
+
+// PRD v2.1 FR-0.5: Snapshot cuaca bandara tiap 15 menit untuk variabel prediksi bird strike
+Schedule::command('weather:snapshot')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping(10)
+    ->onOneServer();

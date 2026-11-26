@@ -20,7 +20,8 @@ class KepadatanPenerbanganFactory extends Factory
         return [
             'tanggal' => now()->toDateString(),
             'jam' => fake()->unique()->numberBetween(0, 23),
-            'jumlah_pergerakan' => fake()->numberBetween(5, 35),
+            'jumlah_takeoff' => fake()->numberBetween(2, 18),
+            'jumlah_landing' => fake()->numberBetween(2, 18),
         ];
     }
 }

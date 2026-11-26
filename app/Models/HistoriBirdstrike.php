@@ -10,17 +10,29 @@ class HistoriBirdstrike extends Model
 {
     use HasFactory;
 
+    /**
+     * @var array<string, string>
+     */
+    public const JENIS_KEJADIAN = [
+        'strike' => 'Bird strike',
+        'near_miss' => 'Near-miss',
+    ];
+
     protected $table = 'histori_birdstrike';
 
     protected $fillable = [
         'tanggal_kejadian',
         'jam_kejadian',
+        'jenis_kejadian',
         'kode_runway',
         'titik_lokasi',
+        'grid',
         'koordinat_lat',
         'koordinat_lng',
         'jenis_pesawat',
         'fase_penerbangan',
+        'ketinggian_ft',
+        'jarak_centerline_m',
         'bagian_pesawat',
         'spesies_satwa',
         'jumlah_satwa',
@@ -39,13 +51,15 @@ class HistoriBirdstrike extends Model
             'koordinat_lat' => 'decimal:7',
             'koordinat_lng' => 'decimal:7',
             'jumlah_satwa' => 'integer',
+            'ketinggian_ft' => 'integer',
+            'jarak_centerline_m' => 'integer',
         ];
     }
 
     protected static function booted(): void
     {
         static::created(function (HistoriBirdstrike $model): void {
-            if ($model->tanggal_kejadian) {
+            if ($model->tanggal_kejadian && $model->jenis_kejadian !== 'near_miss') {
                 PrediksiBirdstrikeAi::query()
                     ->whereDate('tanggal_prediksi', $model->tanggal_kejadian)
                     ->update(['insiden_terjadi' => true]);

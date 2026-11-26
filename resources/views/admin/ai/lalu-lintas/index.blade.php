@@ -156,6 +156,10 @@
             {{ number_format($totalMovements) }}
             <span class="text-xs font-medium text-slate-400">pergerakan</span>
           </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">
+            <span class="font-semibold text-slate-700">{{ number_format($totalTakeoff) }}</span> take-off ·
+            <span class="font-semibold text-slate-700">{{ number_format($totalLanding) }}</span> landing
+          </div>
         </div>
       </div>
 
@@ -200,10 +204,17 @@
         @csrf
         <input type="hidden" name="tanggal" value="{{ $selectedDate }}">
 
+        @if($unsplitHours > 0)
+          <div class="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
+            {{ $unsplitHours }} jam pada tanggal ini masih berisi total lama tanpa rincian take-off/landing. Isi kedua kolomnya untuk memisahkan; bila dibiarkan kosong, total lama tetap disimpan.
+          </div>
+        @endif
+
         <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 text-xs">
           @for($h = 0; $h <= 23; $h++)
             @php
-              $val = $hoursData[$h] ?? 0;
+              $slot = $hoursData[$h];
+              $val = $slot['total'];
               $isPeak = ($val > 0 && sprintf('%02d:00', $h) === $peakHour);
             @endphp
             <div class="p-3 rounded-2xl border {{ $isPeak ? 'border-amber-300 bg-amber-50/60 shadow-2xs ring-1 ring-amber-200' : 'border-slate-200/80 bg-slate-50/60 hover:bg-slate-50 hover:border-slate-300' }} flex flex-col justify-between transition-all">
@@ -215,9 +226,18 @@
                   <span class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200 text-amber-900 border border-amber-300">Peak</span>
                 @endif
               </div>
-              <div>
-                <input type="number" name="movements[{{ $h }}]" value="{{ $val }}" min="0" max="200" class="w-full px-2 py-2 text-sm text-center font-bold text-slate-800 rounded-xl border border-slate-200/90 focus:outline-none focus:border-[#00A9C1] bg-white shadow-2xs">
-                <span class="block text-[10px] text-center text-slate-400 mt-1.5 font-medium">pergerakan</span>
+              <div class="space-y-1.5">
+                <label class="flex items-center gap-1.5">
+                  <span class="w-7 shrink-0 text-[10px] font-bold text-slate-500" title="Take-off">TO</span>
+                  <input type="number" name="takeoff[{{ $h }}]" value="{{ $slot['takeoff'] }}" min="0" max="200" placeholder="–" aria-label="Take-off pukul {{ sprintf('%02d:00', $h) }}" class="w-full px-1.5 py-1.5 text-sm text-center font-bold text-slate-800 rounded-lg border border-slate-200/90 focus:outline-none focus:border-[#00A9C1] bg-white shadow-2xs">
+                </label>
+                <label class="flex items-center gap-1.5">
+                  <span class="w-7 shrink-0 text-[10px] font-bold text-slate-500" title="Landing">LDG</span>
+                  <input type="number" name="landing[{{ $h }}]" value="{{ $slot['landing'] }}" min="0" max="200" placeholder="–" aria-label="Landing pukul {{ sprintf('%02d:00', $h) }}" class="w-full px-1.5 py-1.5 text-sm text-center font-bold text-slate-800 rounded-lg border border-slate-200/90 focus:outline-none focus:border-[#00A9C1] bg-white shadow-2xs">
+                </label>
+                <span class="block text-[10px] text-center mt-1 font-medium {{ $slot['terpisah'] ? 'text-slate-400' : 'text-amber-700' }}">
+                  {{ $slot['terpisah'] ? 'Total '.$val : 'Total lama '.$val.' (belum dipisah)' }}
+                </span>
               </div>
             </div>
           @endfor
@@ -226,7 +246,7 @@
         <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <span class="flex items-center gap-1.5 text-slate-400 text-[11px]">
             <span class="material-symbols-outlined text-sm">info</span>
-            Nilai 0 berarti tidak ada pergerakan pesawat atau data belum diisi.
+            Kolom kosong berarti tidak diubah; isi 0 bila memang tidak ada pergerakan. Total dihitung otomatis dari take-off + landing.
           </span>
           <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#00A9C1] hover:bg-[#007fa3] text-white font-bold transition-all shadow-xs active:scale-[0.98] cursor-pointer">
             Simpan Seluruh Data 24 Jam
@@ -253,7 +273,8 @@
       <form method="POST" action="{{ route('admin.ai.lalu-lintas.import') }}" enctype="multipart/form-data" class="space-y-4 text-xs">
         @csrf
         <p class="text-slate-500 leading-relaxed">
-          Format kolom file CSV: <code>tanggal</code> (YYYY-MM-DD), <code>jam</code> (0-23), <code>jumlah_pergerakan</code>.
+          Format kolom file CSV: <code>tanggal</code> (YYYY-MM-DD), <code>jam</code> (0-23), <code>jumlah_takeoff</code>, <code>jumlah_landing</code>.
+          File format lama dengan kolom <code>jumlah_pergerakan</code> (total saja) tetap diterima.
         </p>
 
         <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-[#00A9C1] transition-colors">

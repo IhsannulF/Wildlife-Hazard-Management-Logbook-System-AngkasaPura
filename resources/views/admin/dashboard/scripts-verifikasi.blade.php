@@ -67,6 +67,24 @@
         document.getElementById('modalSpecies').innerText = speciesStr;
         document.getElementById('modalQuantity').innerText = qtyStr;
 
+        // FR-0.2: perilaku, arah terbang, dan ketinggian tiap jenis satwa.
+        const flockList = document.getElementById('modalFlockBehavior');
+        if (flockList) {
+          flockList.innerHTML = '';
+          const flockRows = (data.satwa || []).filter(s => s.perilaku_kawanan);
+          if (flockRows.length === 0) {
+            const emptyItem = document.createElement('li');
+            emptyItem.className = 'text-secondary';
+            emptyItem.textContent = 'Tidak diisi petugas';
+            flockList.appendChild(emptyItem);
+          }
+          flockRows.forEach(s => {
+            const item = document.createElement('li');
+            item.textContent = (s.nama || 'Satwa') + ' (' + (s.jumlah || 1) + '): ' + s.perilaku_kawanan;
+            flockList.appendChild(item);
+          });
+        }
+
         // Pop up rincian lengkap catatan lapangan
         if (document.getElementById('modalCiriUkuran')) {
           document.getElementById('modalCiriUkuran').innerText = data.ciri_ukuran || 'Pengamatan kawanan satwa liar aktif di sekitar runway strip dan perimeter Juanda.';

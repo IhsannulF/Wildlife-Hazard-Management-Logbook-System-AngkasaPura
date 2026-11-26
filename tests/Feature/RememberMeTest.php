@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class RememberMeTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private function createTemporaryPegawai(bool $aktif = true): User
     {
         $suffix = str_replace('.', '', (string) microtime(true)).'_'.random_int(100, 999);
