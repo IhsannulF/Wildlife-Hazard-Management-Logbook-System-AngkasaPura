@@ -707,3 +707,102 @@ graph LR
 | `TEST-XLS-01` | Ekspor Spreadsheet DKPPU | Berkas Excel memuat seluruh kolom baku dan formula hitung otomatis berfungsi tanpa *corrupt*. |
 | `TEST-UI-01` | shadcn Blade Component System | Tombol, Card, Dialog, Badge, dan Input ter-render sesuai token tema Tailwind v4 dan lolos uji responsif multi-device. |
 | `TEST-ICON-01` | Google Symbols Font Delivery | Seluruh glif Material Symbols (opsz 20/24, FILL 0/1) terpanggil tanpa kegagalan aset CDN / FOUT. |
+
+---
+
+## 9. Spesifikasi Revisi v2.1 — Zonasi Risiko & Prediksi Bird Strike
+
+Bagian ini menerjemahkan [`prd_revisi_birdstrike.md`](prd_revisi_birdstrike.md) ke spesifikasi teknis. Bila berbeda dengan bagian 1–8, bagian ini yang berlaku (mengikuti masukan Pak Bagus). Matriks ICAO §4.1 tetap dipakai untuk skor per laporan dan Berita Acara; prediksi bird strike memakai §9.2.
+
+### 9.1 Kamus Data Tambahan
+
+#### Tabel: `master_alat_dispersal`
+Tetap seperti §2.1 (nama_alat, kategori, satuan, stok_tersedia, aktif). Seeder awal: Sirene Kendaraan, Bird Scaring Cartridge 12GA, Gas Propane Cannon, Handheld Green Laser, Patroli Kendaraan.
+
+#### Tabel: `tindakan_pengusiran` (menggantikan `penggunaan_alat_dispersal`)
+Mencatat setiap tindakan pengusiran dengan waktu dan grid, dipakai sebagai variabel x_pengusiran.
+* `id`: BIGINT UNSIGNED, Primary Key.
+* `laporan_id`: BIGINT UNSIGNED, Nullable, FK → `laporan(id)` ON DELETE SET NULL (tombol aksi cepat dapat mencatat tanpa laporan).
+* `alat_id`: BIGINT UNSIGNED, FK → `master_alat_dispersal(id)`.
+* `user_id`: BIGINT UNSIGNED, FK → `users(id)`.
+* `waktu`: DATETIME, Not Null, Index.
+* `grid`: VARCHAR(20), Not Null (format `GridCode`, mis. `K-10`), Index bersama `waktu`.
+* `jumlah_digunakan`: INT, Default 1.
+* `hasil`: ENUM('berhasil', 'sebagian', 'tidak_berhasil'), Nullable.
+* `keterangan`: VARCHAR(255), Nullable.
+* `created_at`, `updated_at`: TIMESTAMP.
+
+#### Tabel: `cuaca_snapshot`
+Snapshot cuaca server per 15 menit dari Open-Meteo.
+* `id`, `waktu` (DATETIME, Unique), `kode_cuaca` (SMALLINT, WMO), `hujan_mm` (DECIMAL 5,2), `jarak_pandang_km` (DECIMAL 5,2, Nullable), `arah_angin_derajat` (SMALLINT), `kecepatan_angin_kt` (DECIMAL 5,1), `hembusan_kt` (DECIMAL 5,1, Nullable), `angin_silang_kt` (DECIMAL 5,1), `suhu_c` (DECIMAL 4,1), `kelembapan_persen` (TINYINT), `tutupan_awan_persen` (TINYINT, Nullable), `sumber` (VARCHAR 30), timestamps.
+
+#### Tabel: `grid_cell`
+Atribut per kode grid A–L × 1–29 yang sudah ada.
+* `id`, `grid` (VARCHAR 20, Unique), `zona` (ENUM runway/taxiway/apron/perimeter), `jarak_runway_m` (INT), `di_approach` (BOOLEAN), `runway_terdekat` (VARCHAR 5), timestamps.
+
+#### Tabel: `titik_pengamatan`
+* `id`, `kode` (VARCHAR 5, Unique, P1–P9), `nama`, `grid`, `fokus`, `cakupan_grid` (JSON), `aktif` (BOOLEAN), timestamps.
+
+#### Tabel: `prediksi_risiko_slot`
+Cache hasil §9.2; satu baris per (grid, slot).
+* `id`, `grid`, `runway`, `slot_mulai` (DATETIME), `x_hujan`, `x_angin`, `x_traffic`, `x_kawanan`, `x_pengusiran`, `x_jam` (DECIMAL 6,3), `kontribusi` (JSON: β·x per variabel), `probabilitas` (DECIMAL 5,4), `kategori` (ENUM rendah/sedang/tinggi), `versi_bobot` (VARCHAR 20), timestamps. Unique (`grid`, `slot_mulai`).
+
+#### Perubahan kolom
+* `laporan.jam`: wajib di validasi form (kolom tetap nullable untuk data lama); + `titik_pengamatan_id`, `kode_cuaca`, `suhu_c`, `kelembapan_persen`, `angin_kmj`, `sumber_cuaca`.
+* `detail_satwa`: + `perilaku` ENUM('melintas', 'mencari_makan', 'bertengger', 'lainnya'), `arah_terbang` ENUM('U', 'TL', 'T', 'TG', 'S', 'BD', 'B', 'BL'), `ketinggian` ENUM('<50ft', '50-200ft', '>200ft').
+* `histori_birdstrike`: + `jenis_kejadian` ENUM('strike', 'near_miss') Default 'strike', `ketinggian_ft`, `jarak_centerline_m`, `grid`.
+* `kepadatan_penerbangan`: + `jumlah_takeoff`, `jumlah_landing` (SMALLINT, Default 0).
+* `jenis_satwa`: + `ukuran` ENUM('kecil', 'sedang', 'besar'), `berkelompok` BOOLEAN.
+
+### 9.2 Algoritma Peluang Bird Strike (Baseline Logistik)
+
+Dihitung oleh `App\Services\Risk\RiskProbabilityService` per (grid, slot 30 menit), untuk slot sekarang sampai +3 jam.
+
+$$\text{logit}(p) = \beta_0 + \beta_1 x_{hujan} + \beta_2 x_{angin} + \beta_3 x_{traffic} + \beta_4 x_{kawanan} + \beta_5 x_{pengusiran} + \beta_6 x_{jam}, \quad p = \frac{1}{1+e^{-\text{logit}(p)}}$$
+
+| Parameter (`config/whms_risk.php`) | Nilai awal |
+| :--- | :--- |
+| `beta.konstanta` / `hujan` / `angin_silang` / `traffic` / `kawanan` / `pengusiran` / `jam_aktif` | −5,0 / 0,4 / 0,3 / 0,3 / 1,2 / −0,7 / 0,5 |
+| `kategori` | rendah < 0,10 ≤ sedang ≤ 0,25 < tinggi |
+| `jam_aktif` | 05:00–08:00, 16:00–18:00 |
+| `w_jarak` (m) | ≤ 300 atau approach: 3,0 · ≤ 1.000: 1,0 · ≤ 2.000: 0,3 · > 2.000: 0,1 |
+| `w_spesies` | kecil 1,0 · sedang 1,5 · besar/berkelompok 2,0 |
+| `peluruhan_kawanan_menit` | 60 (half-life) |
+| `heading_runway` | 100° / 280° |
+
+Definisi x:
+* `x_hujan` = 1 bila `hujan_mm` slot > 0,1 dan kode WMO bukan hujan lebat/petir, selain itu 0.
+* `x_angin` = |kecepatan_angin_kt × sin(arah_angin − heading_runway)| ÷ 10.
+* `x_traffic` = (`jumlah_takeoff` + `jumlah_landing` jam slot) ÷ 10; slot ke depan memakai rata-rata jam yang sama 28 hari terakhir.
+* `x_kawanan` = ln(1 + S_30m), S_30m = Σ ekor × w_jarak(grid) × w_spesies; untuk slot ke depan S_30m × 0,5^(Δmenit / 60).
+* `x_pengusiran` = 1 bila ada `tindakan_pengusiran` di grid dalam 30 menit sebelum slot.
+* `x_jam` = 1 bila awal slot berada dalam `jam_aktif`.
+
+Pemicu: scheduler `risk:predict` tiap 15 menit, event simpan/sinkron laporan, dan event simpan `tindakan_pengusiran`. Gemini (`prediksi_birdstrike_ai`) hanya menerima hasil ini untuk narasi.
+
+### 9.3 Algoritma Skor Zonasi Grid
+
+$$S_{grid} = \bar{N} \times W_{jarak} \times W_{spesies} \times W_{attractor}$$
+
+Kelas: < 3 Rendah, 3–< 9 Sedang, 9–< 15 Tinggi, ≥ 15 Sangat Tinggi. Dihitung oleh `App\Services\Risk\GridRiskService` dan disimpan di `skor_risiko_grid`.
+
+### 9.4 Route Tambahan
+
+| HTTP Method | Route URL | Controller Action | Middleware | Deskripsi |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/pengusiran` | `TindakanPengusiranController@store` | `auth, role:pegawai,admin` | Catat tindakan pengusiran / tombol aksi cepat |
+| `GET` | `/risiko/slot` | `RisikoController@slot` | `auth` | JSON heatmap peluang slot sekarang |
+| `GET` | `/risiko/timeline` | `RisikoController@timeline` | `auth` | JSON timeline 0–3 jam per runway |
+| `GET` | `/admin/manajemen/alat-dispersal` | `Admin\ManajemenController@alatIndex` | `auth, role:admin` | Master alat dispersal |
+
+### 9.5 Pengujian Tambahan
+
+| ID Pengujian | Kasus Uji | Ekspektasi |
+| :--- | :--- | :--- |
+| `TEST-PRED-01` | Lima contoh PRD §7.2 | p = 0,04 / 0,05 / 0,13 / 0,34 / 0,20 dengan kategori sesuai |
+| `TEST-PRED-02` | Batas kategori | p = 0,10 → sedang; p = 0,25 → sedang; p > 0,25 → tinggi |
+| `TEST-PRED-03` | Angin silang | Angin 100° 15 kt → 0; angin 190° 15 kt → 15 kt |
+| `TEST-PRED-04` | Pengusiran | Tindakan di grid 20 menit sebelum slot menurunkan p |
+| `TEST-DATA-01` | Jam wajib | Form menolak laporan tanpa jam |
+| `TEST-DATA-02` | Log pengusiran | Simpan tindakan memicu hitung ulang slot grid itu |
+| `TEST-DATA-03` | Kualitas data (FR-0.7) | Cuaca kosong > 2 interval 15 menit, atau observasi kosong > 2 slot 30 menit pada jam patroli (05:00–19:00), memunculkan peringatan di dashboard admin |

@@ -133,9 +133,13 @@
     if (hudCoord) hudCoord.innerText = `KOORDINAT: ${compact} (${row}-${col})`;
     if (hudInfo) {
       if (data && data.count > 0) {
-        hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+        if (data.bird_stats && data.bird_stats.total_birds > 0) {
+          hudInfo.innerText = `${data.zone_name} • ${data.count} Lap. • ${data.bird_stats.total_birds} Ekor Burung (${data.bird_stats.dominant_bird})`;
+        } else {
+          hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+        }
       } else {
-        hudInfo.innerText = `Area Steril Sisi Udara • Sumbu Horisontal ${col}, Sumbu Vertikal ${row}`;
+        hudInfo.innerText = `Titik Grid Steril Sisi Udara • Sumbu Horisontal ${col}, Sumbu Vertikal ${row}`;
       }
     }
 
@@ -167,8 +171,8 @@
 
     const clean = code.replace(/[-_ =]/g, '').toUpperCase();
     const m = clean.match(/^([A-L])(\d+)$/);
-    let rowChar = 'K';
-    let colNum  = 10;
+    let rowChar = 'D';
+    let colNum  = 9;
     let compactCode = code;
     let standardCode = code;
 
@@ -192,10 +196,17 @@
         'Pertahankan inspeksi patroli berkala regu AMC.',
         'Pemotongan rumput berkala sesuai batas standar ICAO 35m.',
         'Pastikan tidak ada genangan air terbuka.'
-      ]
+      ],
+      bird_stats: {
+        total_birds: 0,
+        bird_reports_count: 0,
+        dominant_bird: 'Tidak Ada',
+        species_breakdown: [],
+        recent_reports: []
+      }
     };
 
-    // Position Active Selection Box Reticle in SVG
+    // Position Active Selection Box & Center Reticle Point in SVG
     const rIdx = rowLetters.indexOf(rowChar);
     const cIdx = colNum - 1;
     if (rIdx >= 0 && cIdx >= 0 && cIdx < 29) {
@@ -203,6 +214,8 @@
       const boxY = (Y0 + rIdx * RH).toFixed(2);
       const boxW = CW.toFixed(2);
       const boxH = RH.toFixed(2);
+      const centerX = (X0 + (cIdx + 0.5) * CW).toFixed(2);
+      const centerY = (Y0 + (rIdx + 0.5) * RH).toFixed(2);
 
       const selBox = document.getElementById('activeSelectionBox');
       if (selBox) {
@@ -212,13 +225,26 @@
         selBox.setAttribute('height', boxH);
         selBox.classList.remove('hidden');
       }
+
+      const selPulse = document.getElementById('activeSelectionPulse');
+      if (selPulse) {
+        selPulse.setAttribute('cx', centerX);
+        selPulse.setAttribute('cy', centerY);
+        selPulse.classList.remove('hidden');
+      }
     }
 
     // Update HUD
     const hudCoord = document.getElementById('gisHudCoord');
     const hudInfo  = document.getElementById('gisHudInfo');
     if (hudCoord) hudCoord.innerText = `TERPILIH: ${compactCode} (${standardCode})`;
-    if (hudInfo) hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+    if (hudInfo) {
+      if (data.bird_stats && data.bird_stats.total_birds > 0) {
+        hudInfo.innerText = `${data.zone_name} • ${data.count} Lap. • ${data.bird_stats.total_birds} Ekor Burung (${data.bird_stats.dominant_bird})`;
+      } else {
+        hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+      }
+    }
 
     // Update Sidebar Card Details
     const badgeEl = document.getElementById('detailGridBadge');
@@ -241,20 +267,76 @@
     
     const statusEl = document.getElementById('detailStatus');
     if (statusEl) statusEl.innerText = data.status || 'Telah Ditangani';
-    
-    const hoursEl = document.getElementById('detailHours');
-    if (hoursEl) hoursEl.innerText = data.peak_hours || 'Terpantau normal.';
 
-    // Update SOP list
-    const sopContainer = document.getElementById('detailSopList');
-    if (sopContainer) {
-      sopContainer.innerHTML = '';
-      const sops = data.mitigation_sop || ['Inspeksi patroli berkala regu AMC.'];
-      sops.forEach(s => {
-        const li = document.createElement('li');
-        li.innerText = s;
-        sopContainer.appendChild(li);
-      });
+    // Update Dynamic Bird Statistics Section (Left Sub-Panel)
+    const bStats = data.bird_stats || { total_birds: 0, bird_reports_count: 0, dominant_bird: 'Tidak Ada', species_breakdown: [], recent_reports: [] };
+    const birdBadge = document.getElementById('detailBirdTotalBadge');
+    if (birdBadge) {
+      birdBadge.innerText = (bStats.total_birds || 0) + ' Ekor Terkumpul';
+    }
+
+    const birdEmptyState = document.getElementById('detailBirdEmptyState');
+    const birdList = document.getElementById('detailBirdList');
+    const birdBarsContainer = document.getElementById('detailBirdSpeciesBars');
+
+    if (bStats.species_breakdown && bStats.species_breakdown.length > 0) {
+      if (birdEmptyState) birdEmptyState.classList.add('hidden');
+      if (birdList) birdList.classList.remove('hidden');
+
+      if (birdBarsContainer) {
+        let barsHtml = '';
+        bStats.species_breakdown.forEach((item, idx) => {
+          barsHtml += `
+            <div class="bg-white/80 p-2 rounded-lg border border-cyan-100">
+              <div class="flex items-center justify-between text-[11px] mb-1">
+                <span class="font-bold text-slate-800 flex items-center gap-1">
+                  <span class="w-3.5 h-3.5 rounded-full bg-cyan-100 text-[#007fa3] text-[9px] font-black inline-flex items-center justify-center">
+                    ${idx + 1}
+                  </span>
+                  ${item.species}
+                </span>
+                <span class="font-code-coordinate font-bold text-slate-700">${item.count} Ekor (${item.percentage}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-[#00A9C1] to-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: ${item.percentage}%"></div>
+              </div>
+            </div>
+          `;
+        });
+        birdBarsContainer.innerHTML = barsHtml;
+      }
+    } else {
+      if (birdEmptyState) birdEmptyState.classList.remove('hidden');
+      if (birdList) birdList.classList.add('hidden');
+    }
+
+    // Update Riwayat Laporan Berita Acara (BA) Burung Terkini (Right Sub-Panel)
+    const birdReportsContainer = document.getElementById('detailBirdReportsList');
+    if (birdReportsContainer) {
+      if (bStats.recent_reports && bStats.recent_reports.length > 0) {
+        let repHtml = '';
+        bStats.recent_reports.forEach(r => {
+          repHtml += `
+            <div class="text-[11px] bg-white p-2 rounded-lg border border-cyan-100 flex items-center justify-between shadow-2xs hover:border-cyan-300 transition-colors">
+              <div class="truncate mr-2">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-code-coordinate font-bold text-slate-800">${r.nomor_ba}</span>
+                  <span class="text-secondary text-[10px]">• ${r.tanggal} (${r.jam})</span>
+                </div>
+                <div class="text-slate-600 truncate text-[10px] mt-0.5">${r.spesies} — ${r.jumlah} Ekor • ${r.tindak_lanjut || 'Pengusiran Sirene'}</div>
+              </div>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap">${r.status || 'Telah Ditangani'}</span>
+            </div>
+          `;
+        });
+        birdReportsContainer.innerHTML = repHtml;
+      } else {
+        birdReportsContainer.innerHTML = `
+          <div class="py-3 px-2 text-center text-secondary text-[11px] bg-white/60 rounded-lg border border-dashed border-slate-200">
+            Tidak ada catatan riwayat BA pada grid ini.
+          </div>
+        `;
+      }
     }
 
     // Update View Log Link
@@ -270,6 +352,34 @@
       setTimeout(() => {
         card.classList.remove('ring-4', 'ring-injourney-teal/30');
       }, 500);
+    }
+  }
+
+  // Switcher Tab untuk Top 5 Hotspot vs Top 5 Burung Terbanyak
+  function switchRankingTab(tabName) {
+    const tabHotspot = document.getElementById('tabContentHotspot');
+    const tabBurung = document.getElementById('tabContentBurung');
+    const btnHotspot = document.getElementById('btnTabHotspot');
+    const btnBurung = document.getElementById('btnTabBurung');
+
+    if (tabName === 'burung') {
+      if (tabHotspot) tabHotspot.classList.add('hidden');
+      if (tabBurung) tabBurung.classList.remove('hidden');
+      if (btnBurung) {
+        btnBurung.className = 'text-[11px] px-2.5 py-1 rounded-md bg-injourney-teal text-white font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1';
+      }
+      if (btnHotspot) {
+        btnHotspot.className = 'text-[11px] px-2.5 py-1 rounded-md text-secondary hover:text-slate-navy font-semibold transition-all cursor-pointer';
+      }
+    } else {
+      if (tabBurung) tabBurung.classList.add('hidden');
+      if (tabHotspot) tabHotspot.classList.remove('hidden');
+      if (btnHotspot) {
+        btnHotspot.className = 'text-[11px] px-2.5 py-1 rounded-md bg-injourney-teal text-white font-bold transition-all cursor-pointer shadow-2xs';
+      }
+      if (btnBurung) {
+        btnBurung.className = 'text-[11px] px-2.5 py-1 rounded-md text-secondary hover:text-slate-navy font-semibold transition-all cursor-pointer flex items-center gap-1';
+      }
     }
   }
 

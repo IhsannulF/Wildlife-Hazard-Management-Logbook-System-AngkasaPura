@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Laporan;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class VerifikasiBATest extends TestCase
 {
+    use DatabaseTransactions;
+
     public function test_guest_cannot_access_verifikasi(): void
     {
         $response = $this->get('/admin/verifikasi');

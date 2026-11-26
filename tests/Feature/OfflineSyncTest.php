@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Laporan;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class OfflineSyncTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function getPegawaiUser(string $username = 'amc'): User
     {
         return User::where('username', $username)->first()

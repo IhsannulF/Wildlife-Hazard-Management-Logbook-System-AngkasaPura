@@ -111,6 +111,8 @@
           <p class="text-xs text-slate-500 mt-1 pl-9">Informasi umum jadwal dan lokasi inspeksi petugas</p>
         </div>
 
+        @include('partials.weather-widget', ['class' => 'mb-5 !bg-slate-50/60'])
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-2">Nama Petugas <span class="text-rose-500">*</span></label>
@@ -119,17 +121,24 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-2">Tanggal Pemantauan <span class="text-rose-500">*</span></label>
-            <input type="date" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <input type="date" name="tanggal" value="{{ old('tanggal', now(config('whms_risk.zona_waktu'))->format('Y-m-d')) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+          </div>
+
+          <div>
+            <label for="inputJamPengamatan" class="block text-xs font-bold text-slate-700 mb-2">Jam Pengamatan (WIB) <span class="text-rose-500">*</span></label>
+            <input type="time" name="jam" id="inputJamPengamatan" value="{{ old('jam', now(config('whms_risk.zona_waktu'))->format('H:i')) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <p class="text-[11px] text-slate-500 mt-1">Jam saat satwa terlihat, bukan jam laporan dikirim. Dipakai untuk prediksi risiko per jam.</p>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-2">Kondisi Cuaca <span class="text-rose-500">*</span></label>
-            <select name="kondisi_cuaca" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <select name="kondisi_cuaca" data-weather-autofill class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
               <option value="">-- Pilih Kondisi Cuaca --</option>
               @foreach($kondisi_cuaca_opt as $c)
                 <option value="{{ $c }}" {{ old('kondisi_cuaca') == $c ? 'selected' : '' }}>{{ $c }}</option>
               @endforeach
             </select>
+            <p data-weather-autofill-hint="kondisi_cuaca" class="hidden text-[11px] text-teal-700 mt-1.5"></p>
           </div>
 
           <div>
@@ -377,6 +386,37 @@
             </div>
           </div>
 
+          <!-- 3b. Perilaku Kawanan (untuk prediksi risiko bird strike) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label for="selectPerilakuBurung" class="block text-xs font-bold text-slate-700 mb-2">Perilaku</label>
+              <select name="satwa[0][lokasi][0][perilaku]" id="selectPerilakuBurung" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                <option value="">-- Pilih --</option>
+                @foreach(\App\Models\DetailSatwa::PERILAKU as $value => $label)
+                  <option value="{{ $value }}" @selected(old('satwa.0.lokasi.0.perilaku') === $value)>{{ $label }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div>
+              <label for="selectArahTerbang" class="block text-xs font-bold text-slate-700 mb-2">Arah Terbang</label>
+              <select name="satwa[0][lokasi][0][arah_terbang]" id="selectArahTerbang" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                <option value="">-- Tidak terbang / tidak tahu --</option>
+                @foreach(\App\Models\DetailSatwa::ARAH_TERBANG as $value => $label)
+                  <option value="{{ $value }}" @selected(old('satwa.0.lokasi.0.arah_terbang') === $value)>{{ $label }} ({{ $value }})</option>
+                @endforeach
+              </select>
+            </div>
+            <div>
+              <label for="selectKetinggian" class="block text-xs font-bold text-slate-700 mb-2">Ketinggian</label>
+              <select name="satwa[0][lokasi][0][ketinggian]" id="selectKetinggian" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                <option value="">-- Pilih --</option>
+                @foreach(\App\Models\DetailSatwa::KETINGGIAN as $value => $label)
+                  <option value="{{ $value }}" @selected(old('satwa.0.lokasi.0.ketinggian') === $value)>{{ $label }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
           <!-- 4. Pilihan Grid (Kolom Input Teks Kosong) -->
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -499,6 +539,28 @@
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-2">Detail Metode Pengusiran yang Dilakukan</label>
             <textarea name="detail_pengusiran" rows="2" placeholder="Sebutkan alat atau tindakan pengusiran yang diterapkan (isi '-' jika tidak ada)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">{{ old('detail_pengusiran', '-') }}</textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label for="selectAlatPengusiran" class="block text-xs font-bold text-slate-700 mb-2">Alat Pengusiran yang Dipakai</label>
+              <select name="pengusiran_alat_id" id="selectAlatPengusiran" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                <option value="">-- Tidak ada pengusiran --</option>
+                @foreach($alat_dispersal_opt as $alat)
+                  <option value="{{ $alat->id }}" @selected((string) old('pengusiran_alat_id') === (string) $alat->id)>{{ $alat->nama_alat }}</option>
+                @endforeach
+              </select>
+              <p class="text-[11px] text-slate-500 mt-1">Tercatat ke log pengusiran pada jam dan grid laporan ini.</p>
+            </div>
+            <div>
+              <label for="selectHasilPengusiran" class="block text-xs font-bold text-slate-700 mb-2">Hasil Pengusiran</label>
+              <select name="pengusiran_hasil" id="selectHasilPengusiran" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                <option value="">-- Pilih --</option>
+                @foreach(\App\Models\TindakanPengusiran::HASIL as $value => $label)
+                  <option value="{{ $value }}" @selected(old('pengusiran_hasil') === $value)>{{ $label }}</option>
+                @endforeach
+              </select>
+            </div>
           </div>
         </div>
       </div>

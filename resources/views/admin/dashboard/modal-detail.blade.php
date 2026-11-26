@@ -75,6 +75,10 @@
               <p class="font-semibold text-on-surface text-sm" id="modalQuantity">1 Ekor</p>
             </div>
             <div>
+              <p class="text-xs text-secondary">Perilaku Kawanan (arah &amp; ketinggian):</p>
+              <ul class="text-xs text-on-surface font-medium space-y-0.5" id="modalFlockBehavior"><li>-</li></ul>
+            </div>
+            <div>
               <p class="text-xs text-secondary">Tingkat Risiko Ancaman:</p>
               <span class="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded" id="modalRiskCategory">
                 <span class="material-symbols-outlined text-xs">dangerous</span> Kategori A - Runway Hazard

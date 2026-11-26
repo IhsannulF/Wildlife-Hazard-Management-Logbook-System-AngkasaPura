@@ -64,6 +64,11 @@
           <span class="material-symbols-outlined text-[15px] text-slate-600 leading-none">grid_4x4</span>
           <span>Label Grid (A1–L29)</span>
         </label>
+        <label class="inline-flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 cursor-pointer select-none bg-card-bg px-2 py-1 rounded border border-border-subtle shadow-2xs transition-colors" title="Tampilkan titik koordinat dan garis batas kisi 348 sel sisi udara">
+          <input type="checkbox" id="toggleLayerGridPoints" checked onchange="toggleGisLayer('layerGridPoints', this.checked); toggleGisLayer('layerGridMesh', this.checked);" class="rounded text-injourney-teal focus:ring-injourney-teal text-xs w-3.5 h-3.5">
+          <span class="material-symbols-outlined text-[15px] text-injourney-teal leading-none">adjust</span>
+          <span>Titik Grid (348 Titik)</span>
+        </label>
         <label class="inline-flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 cursor-pointer select-none bg-card-bg px-2 py-1 rounded border border-border-subtle shadow-2xs transition-colors">
           <input type="checkbox" id="toggleLayerDispersal" checked onchange="toggleGisLayer('layerDispersal', this.checked)" class="rounded text-injourney-teal focus:ring-injourney-teal text-xs w-3.5 h-3.5">
           <span class="material-symbols-outlined text-[15px] text-amber-500 leading-none">alt_route</span>
@@ -236,8 +241,49 @@
                 <circle cx="754.9" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
               </g>
 
-              <!-- SUB-LAYER C: HOTSPOT BAHAYA SATWA LIAR (MAPPING PRESI PADA SETIAP SEL GRID) -->
-              <g id="layerHotspots">
+              <!-- SUB-LAYER C: GRID MESH LATTICE (KISI-KISI GARIS SEKTOR A-L & 1-29) -->
+              <g id="layerGridMesh" stroke="rgba(255, 255, 255, 0.22)" stroke-width="0.75" pointer-events="none">
+                @for($c = 0; $c <= 29; $c++)
+                  @php $lx = round($x0 + $c * $cw, 2); @endphp
+                  <line x1="{{ $lx }}" y1="{{ $y0 }}" x2="{{ $lx }}" y2="{{ round($y0 + 12 * $rh, 2) }}" stroke-dasharray="{{ $c === 0 || $c === 29 ? 'none' : '3,3' }}" />
+                @endfor
+                @for($r = 0; $r <= 12; $r++)
+                  @php $ly = round($y0 + $r * $rh, 2); @endphp
+                  <line x1="{{ $x0 }}" y1="{{ $ly }}" x2="{{ round($x0 + 29 * $cw, 2) }}" y2="{{ $ly }}" stroke-dasharray="{{ $r === 0 || $r === 12 ? 'none' : '3,3' }}" />
+                @endfor
+              </g>
+
+              <!-- SUB-LAYER D: 348 TITIK KOORDINAT SIMPUL GRID SISI UDARA (A1–L29) -->
+              <g id="layerGridPoints" pointer-events="none">
+                @foreach($rows as $rIdx => $rChar)
+                  @for($cNum = 1; $cNum <= 29; $cNum++)
+                    @php
+                      $codeKey1 = $rChar . '-' . $cNum;
+                      $codeKey2 = $rChar . $cNum;
+                      $itemData = $normGrid[$codeKey1] ?? ($normGrid[$codeKey2] ?? null);
+                      $centerX = round($x0 + ($cNum - 0.5) * $cw, 2);
+                      $centerY = round($y0 + ($rIdx + 0.5) * $rh, 2);
+                      $birdCount = $itemData['bird_stats']['total_birds'] ?? 0;
+                    @endphp
+                    @if($itemData)
+                      @if($birdCount > 0)
+                        <!-- Efek Pendaran Luar untuk Sel Burung (Tanpa menutupi angka laporan di tengah) -->
+                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="9" fill="rgba(245, 158, 11, 0.22)" stroke="#F59E0B" stroke-width="0.75" stroke-dasharray="2,2" class="grid-cell-pulse" />
+                      @endif
+                    @else
+                      <!-- Titik Grid Steril: Tetap Terlihat Tegas & Rapi (Slate / Subtle Dot Crosshair) -->
+                      <g id="pointNode_{{ $rChar }}_{{ $cNum }}" class="grid-point-item opacity-75">
+                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="1.8" fill="#CBD5E1" stroke="#334155" stroke-width="0.5" />
+                        <line x1="{{ $centerX - 2.5 }}" y1="{{ $centerY }}" x2="{{ $centerX + 2.5 }}" y2="{{ $centerY }}" stroke="#94A3B8" stroke-width="0.5" />
+                        <line x1="{{ $centerX }}" y1="{{ $centerY - 2.5 }}" x2="{{ $centerX }}" y2="{{ $centerY + 2.5 }}" stroke="#94A3B8" stroke-width="0.5" />
+                      </g>
+                    @endif
+                  @endfor
+                @endforeach
+              </g>
+
+              <!-- SUB-LAYER E: HOTSPOT BAHAYA SATWA LIAR & ANGKA LAPORAN JELAS -->
+              <g id="layerHotspots" pointer-events="none">
                 @foreach($rows as $rIdx => $rChar)
                   @for($cNum = 1; $cNum <= 29; $cNum++)
                     @php
@@ -252,22 +298,27 @@
                     @if($itemData)
                       @php
                         $cCount = $itemData['count'];
+                        $bCount = $itemData['bird_stats']['total_birds'] ?? 0;
                         $isKritis = $cCount >= 30;
                         $isSedang = $cCount >= 15 && $cCount < 30;
                         $fillColor = $isKritis ? 'rgba(239, 68, 68, 0.55)' : ($isSedang ? 'rgba(245, 158, 11, 0.50)' : 'rgba(0, 163, 180, 0.45)');
                         $strokeColor = $isKritis ? '#EF4444' : ($isSedang ? '#F59E0B' : '#00A3B4');
+                        $badgeStroke = $bCount > 0 ? '#F59E0B' : '#FFFFFF';
                       @endphp
                       <!-- Hotspot Cell {{ $codeKey1 }} -->
                       <rect x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}" fill="{{ $fillColor }}" stroke="{{ $strokeColor }}" stroke-width="1.8" rx="1.5" />
-                      <!-- Incident Count Badge in Cell Center -->
-                      <rect x="{{ round($cellLeft + ($cellW - 17)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="17" height="12" rx="3" fill="#0F172A" fill-opacity="0.88" stroke="#FFFFFF" stroke-width="0.8" />
-                      <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cCount }}</text>
+                      
+                      <!-- Incident Count Badge in Cell Center (Kotak Hitam Rapi) -->
+                      <rect x="{{ round($cellLeft + ($cellW - 18)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="18" height="12" rx="3" fill="#0F172A" fill-opacity="0.95" stroke="{{ $badgeStroke }}" stroke-width="1" />
+                      
+                      <!-- Angka Laporan Tetap Jelas & Terbaca di Tengah Kotak -->
+                      <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cCount }}</text>
                     @endif
                   @endfor
                 @endforeach
               </g>
 
-              <!-- SUB-LAYER D: LABEL KODING GRID KOORDINAT A1 - L29 -->
+              <!-- SUB-LAYER F: LABEL KODING GRID KOORDINAT A1 - L29 -->
               <g id="layerGridLabels">
                 @foreach($rows as $rIdx => $rChar)
                   @for($cNum = 1; $cNum <= 29; $cNum++)
@@ -303,6 +354,7 @@
             <!-- ================= ACTIVE SELECTION RETICLE (ANIMATED HIGHLIGHT) ================= -->
             <g id="activeSelectionGroup">
               <rect id="activeSelectionBox" x="0" y="0" width="32.45" height="32.92" rx="2" fill="none" stroke="#38BDF8" stroke-width="2.5" class="hidden transition-all duration-300 pointer-events-none" filter="url(#glowTeal)" />
+              <circle id="activeSelectionPulse" cx="0" cy="0" r="11" fill="none" stroke="#38BDF8" stroke-width="1.8" class="hidden grid-cell-pulse pointer-events-none" />
             </g>
 
           </svg>
@@ -417,7 +469,7 @@
     <!-- BOTTOM MAP FOOTER: RISK LEVEL LEGEND -->
     <div class="mt-3.5 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3 text-xs">
       <div id="mapRiskLegend" class="flex items-center gap-4 flex-wrap">
-        <span class="text-secondary font-bold uppercase tracking-wider text-[11px]">Legenda Tingkat Risiko ICAO:</span>
+        <span class="text-secondary font-bold uppercase tracking-wider text-[11px]">Legenda Titik &amp; Risiko ICAO:</span>
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 rounded bg-warning-rose"></span>
           <span class="text-slate-navy font-semibold text-[11px]">Kritis / Kategori 4 (&gt;30 Temuan)</span>
@@ -432,11 +484,15 @@
         </div>
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 rounded border border-slate-300 bg-surface-container-low"></span>
-          <span class="text-secondary text-[11px]">Steril / Tanpa Laporan</span>
+          <span class="text-secondary text-[11px]">Titik Grid Steril</span>
+        </div>
+        <div class="flex items-center gap-1.5 pl-2 border-l border-border-subtle">
+          <span class="w-3 h-3 rounded-full bg-amber-500 ring-2 ring-amber-300 animate-pulse"></span>
+          <span class="text-amber-900 font-bold text-[11px]">Titik Populasi Burung</span>
         </div>
       </div>
       <div class="text-secondary font-code-coordinate text-xs">
-        Bandara Internasional Juanda (SUB/WARR) • Sisi Udara 29 Kolom × 12 Baris (Sumbu A–L)
+        Bandara Internasional Juanda (SUB/WARR) • Sisi Udara 29 Kolom × 12 Baris (348 Titik Koordinat)
       </div>
     </div>
 

@@ -471,7 +471,12 @@
                     @forelse($satwa_list as $idx => $sw)
                       <tr>
                         <td style="text-align: center;">{{ $idx + 1 }}</td>
-                        <td><strong>{{ $sw['nama'] }}</strong></td>
+                        <td>
+                          <strong>{{ $sw['nama'] }}</strong>
+                          @if(!empty($sw['perilaku_kawanan']))
+                            <br><span style="font-size: 0.85em; color: #475569;">{{ $sw['perilaku_kawanan'] }}</span>
+                          @endif
+                        </td>
                         <td>{{ $sw['jumlah'] }} ekor</td>
                         <td><strong>{{ $sw['grid'] ?: '-' }}</strong></td>
                       </tr>

@@ -20,21 +20,39 @@ class KepadatanPenerbanganController extends Controller
 
         $existing = KepadatanPenerbangan::query()
             ->where('tanggal', $selectedDate)
-            ->pluck('jumlah_pergerakan', 'jam')
-            ->toArray();
+            ->get()
+            ->keyBy('jam');
 
         // 24 hours template 0..23
         $hoursData = [];
         $totalMovements = 0;
+        $totalTakeoff = 0;
+        $totalLanding = 0;
+        $unsplitHours = 0;
         $peakHour = null;
         $maxVal = 0;
 
         for ($h = 0; $h <= 23; $h++) {
-            $val = $existing[$h] ?? 0;
-            $hoursData[$h] = $val;
-            $totalMovements += $val;
-            if ($val > $maxVal) {
-                $maxVal = $val;
+            /** @var KepadatanPenerbangan|null $record */
+            $record = $existing->get($h);
+            $total = $record?->jumlah_pergerakan ?? 0;
+            $isSplit = $record?->isSplit() ?? true;
+
+            $hoursData[$h] = [
+                'takeoff' => $record && $isSplit ? $record->jumlah_takeoff : null,
+                'landing' => $record && $isSplit ? $record->jumlah_landing : null,
+                'total' => $total,
+                'terpisah' => $isSplit,
+            ];
+
+            $totalMovements += $total;
+            $totalTakeoff += $record?->jumlah_takeoff ?? 0;
+            $totalLanding += $record?->jumlah_landing ?? 0;
+            if (! $isSplit) {
+                $unsplitHours++;
+            }
+            if ($total > $maxVal) {
+                $maxVal = $total;
                 $peakHour = sprintf('%02d:00', $h);
             }
         }
@@ -47,22 +65,51 @@ class KepadatanPenerbanganController extends Controller
             ->limit(14)
             ->get();
 
-        return view('admin.ai.lalu-lintas.index', compact('selectedDate', 'hoursData', 'totalMovements', 'peakHour', 'recordedDates'));
+        return view('admin.ai.lalu-lintas.index', compact(
+            'selectedDate',
+            'hoursData',
+            'totalMovements',
+            'totalTakeoff',
+            'totalLanding',
+            'unsplitHours',
+            'peakHour',
+            'recordedDates'
+        ));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'tanggal' => ['required', 'date'],
-            'movements' => ['required', 'array'],
+            'takeoff' => ['array', 'required_without:movements'],
+            'landing' => ['array', 'required_without:movements'],
+            'takeoff.*' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'landing.*' => ['nullable', 'integer', 'min:0', 'max:200'],
+            // Format lama: hanya total pergerakan per jam.
+            'movements' => ['array', 'required_without_all:takeoff,landing'],
             'movements.*' => ['nullable', 'integer', 'min:0', 'max:200'],
         ]);
 
         $tanggal = $request->tanggal;
-        $movements = $request->movements;
 
-        DB::transaction(function () use ($tanggal, $movements) {
-            foreach ($movements as $hour => $count) {
+        DB::transaction(function () use ($request, $tanggal) {
+            if ($request->has('takeoff') || $request->has('landing')) {
+                for ($h = 0; $h <= 23; $h++) {
+                    $takeoff = $request->input("takeoff.{$h}");
+                    $landing = $request->input("landing.{$h}");
+
+                    // Kosong di kedua kolom = tidak diubah, agar total lama yang belum dipisah tidak terhapus.
+                    if ($takeoff === null && $landing === null) {
+                        continue;
+                    }
+
+                    $this->saveSplitMovements($tanggal, $h, (int) $takeoff, (int) $landing);
+                }
+
+                return;
+            }
+
+            foreach ($request->movements as $hour => $count) {
                 $h = (int) $hour;
                 if ($h >= 0 && $h <= 23) {
                     KepadatanPenerbangan::updateOrCreate(
@@ -86,10 +133,10 @@ class KepadatanPenerbanganController extends Controller
 
         return response()->stream(function () {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['tanggal', 'jam', 'jumlah_pergerakan']);
-            $today = date('Y-m-d');
+            fputcsv($handle, ['tanggal', 'jam', 'jumlah_takeoff', 'jumlah_landing']);
+            $today = now(config('whms_risk.zona_waktu'))->toDateString();
             for ($h = 5; $h <= 22; $h++) {
-                fputcsv($handle, [$today, $h, rand(5, 25)]);
+                fputcsv($handle, [$today, $h, rand(2, 12), rand(2, 12)]);
             }
             fclose($handle);
         }, 200, $headers);
@@ -133,7 +180,10 @@ class KepadatanPenerbanganController extends Controller
             $val = Validator::make($row, [
                 'tanggal' => ['required', 'date'],
                 'jam' => ['required', 'integer', 'between:0,23'],
-                'jumlah_pergerakan' => ['required', 'integer', 'min:0', 'max:300'],
+                'jumlah_takeoff' => ['nullable', 'integer', 'min:0', 'max:200', 'required_without:jumlah_pergerakan'],
+                'jumlah_landing' => ['nullable', 'integer', 'min:0', 'max:200', 'required_without:jumlah_pergerakan'],
+                // Format lama: hanya total pergerakan.
+                'jumlah_pergerakan' => ['nullable', 'integer', 'min:0', 'max:300', 'required_without_all:jumlah_takeoff,jumlah_landing'],
             ]);
 
             if ($val->fails()) {
@@ -151,6 +201,14 @@ class KepadatanPenerbanganController extends Controller
 
         DB::transaction(function () use ($validRows) {
             foreach ($validRows as $item) {
+                $hasSplit = ($item['jumlah_takeoff'] ?? '') !== '' || ($item['jumlah_landing'] ?? '') !== '';
+
+                if ($hasSplit) {
+                    $this->saveSplitMovements($item['tanggal'], (int) $item['jam'], (int) ($item['jumlah_takeoff'] ?? 0), (int) ($item['jumlah_landing'] ?? 0));
+
+                    continue;
+                }
+
                 KepadatanPenerbangan::updateOrCreate(
                     ['tanggal' => $item['tanggal'], 'jam' => (int) $item['jam']],
                     ['jumlah_pergerakan' => (int) $item['jumlah_pergerakan']]
@@ -166,5 +224,20 @@ class KepadatanPenerbanganController extends Controller
         $firstDate = $validRows[0]['tanggal'] ?? date('Y-m-d');
 
         return redirect()->route('admin.ai.lalu-lintas.index', ['tanggal' => $firstDate])->with('success', $msg);
+    }
+
+    /**
+     * Simpan rincian take-off/landing satu jam; total selalu ditulis ulang agar nol eksplisit juga tersimpan.
+     */
+    private function saveSplitMovements(string $tanggal, int $jam, int $takeoff, int $landing): void
+    {
+        KepadatanPenerbangan::updateOrCreate(
+            ['tanggal' => $tanggal, 'jam' => $jam],
+            [
+                'jumlah_takeoff' => $takeoff,
+                'jumlah_landing' => $landing,
+                'jumlah_pergerakan' => $takeoff + $landing,
+            ]
+        );
     }
 }

@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property \Illuminate\Support\Carbon|null $tanggal
+ * @property \Illuminate\Support\Carbon|null $validated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Laporan extends Model
 {
     use HasFactory;
@@ -153,6 +159,11 @@ class Laporan extends Model
     public function tanggapan(): HasMany
     {
         return $this->hasMany(Tanggapan::class, 'laporan_id')->latest();
+    }
+
+    public function tindakanPengusiran(): HasMany
+    {
+        return $this->hasMany(TindakanPengusiran::class, 'laporan_id');
     }
 
     public function getFotoExtraAttribute(): array

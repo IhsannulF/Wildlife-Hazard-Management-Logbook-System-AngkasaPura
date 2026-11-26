@@ -3,6 +3,9 @@
 @section('title', 'Dashboard Riwayat Laporan — InJourney Airports')
 
 @section('content')
+@php
+  /** @var \Illuminate\Pagination\LengthAwarePaginator<int, \App\Models\Laporan> $laporans */
+@endphp
 <div class="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans flex flex-col">
 
   <!-- Shared Unified Side Navigation Bar -->
@@ -53,6 +56,10 @@
         </button>
       </div>
     @endif
+
+    @include('partials.weather-widget')
+
+    @include('partials.pengusiran-card')
 
     <!-- PWA Offline Drafts Sync Banner (Visible when offline drafts exist) -->
     <div id="dashboardOfflineSyncBanner" class="hidden p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
@@ -262,7 +269,7 @@
                 $firstFoto = $firstSatwa?->fotoLaporan?->first() ?? $lap->fotoLaporan->first();
                 $riskLevel = strtolower($lap->risk_level ?? 'rendah');
               @endphp
-              <tr onclick="openDetailModal({{ $lap->id }})" class="hover:bg-cyan-50/40 transition-colors cursor-pointer group" title="Klik baris untuk membuka rincian Berita Acara #{{ $noReg }}">
+              <tr data-laporan-id="{{ $lap->id }}" onclick="openDetailModal(Number(this.dataset.laporanId))" class="hover:bg-cyan-50/40 transition-colors cursor-pointer group" title="Klik baris untuk membuka rincian Berita Acara #{{ $noReg }}">
                 <!-- No Urut -->
                 <td class="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
                   {{ $laporans->firstItem() + $index }}
@@ -309,7 +316,8 @@
                       <img src="{{ $firstFoto->url }}" 
                            alt="Foto Bukti" 
                            class="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0 bg-slate-100"
-                           onerror="this.onerror=null; this.src='{{ asset('images/logo_login.png') }}';">
+                           data-fallback-src="{{ asset('images/logo_login.png') }}"
+                           onerror="this.onerror=null; this.src=this.dataset.fallbackSrc;">
                     @else
                       <div class="w-10 h-10 rounded-lg bg-cyan-50 border border-cyan-100 flex items-center justify-center text-[#00A9C1] shrink-0">
                         <span class="material-symbols-outlined text-xl">pets</span>

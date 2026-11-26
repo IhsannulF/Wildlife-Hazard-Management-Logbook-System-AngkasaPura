@@ -367,11 +367,12 @@
 
       <!-- Group: Kecerdasan Buatan (AI) & Prediksi (Collapsible Dropdown) -->
       @php
-        $isAiNav = ($currentPage === 'ai_prediksi' || $currentPage === 'ai_histori' || $currentPage === 'ai_lalu_lintas' || request()->routeIs('admin.ai.*'));
+        $isAiNav = ($currentPage === 'ai_prediksi' || $currentPage === 'ai_histori' || $currentPage === 'ai_lalu_lintas' || $currentPage === 'ai_pengusiran' || request()->routeIs('admin.ai.*'));
         $activeAiSub = ($currentPage === 'ai_prediksi' || request()->routeIs('admin.ai.prediksi.*')) ? 'prediksi' : (
           ($currentPage === 'ai_histori' || request()->routeIs('admin.ai.histori.*')) ? 'histori' : (
-          ($currentPage === 'ai_lalu_lintas' || request()->routeIs('admin.ai.lalu-lintas.*')) ? 'lalu_lintas' : 'prediksi'
-        ));
+          ($currentPage === 'ai_lalu_lintas' || request()->routeIs('admin.ai.lalu-lintas.*')) ? 'lalu_lintas' : (
+          ($currentPage === 'ai_pengusiran' || request()->routeIs('admin.ai.pengusiran.*')) ? 'pengusiran' : 'prediksi'
+        )));
       @endphp
       <div>
         <div class="px-2 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none flex items-center justify-between">
@@ -408,6 +409,12 @@
             <a href="{{ route('admin.ai.lalu-lintas.index') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1] {{ ($isAiNav && $activeAiSub === 'lalu_lintas') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
               <span class="material-symbols-outlined text-[15px] {{ ($isAiNav && $activeAiSub === 'lalu_lintas') ? 'text-[#00A9C1]' : 'text-slate-400' }}">flight_takeoff</span>
               <span class="truncate">Kepadatan Pesawat</span>
+            </a>
+
+            <!-- 4. Log Pengusiran & Master Alat -->
+            <a href="{{ route('admin.ai.pengusiran.index') }}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A9C1] {{ ($isAiNav && $activeAiSub === 'pengusiran') ? 'font-bold text-[#007fa3] bg-cyan-100/70 border border-cyan-200/50' : 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+              <span class="material-symbols-outlined text-[15px] {{ ($isAiNav && $activeAiSub === 'pengusiran') ? 'text-[#00A9C1]' : 'text-slate-400' }}">campaign</span>
+              <span class="truncate">Log Pengusiran</span>
             </a>
           </div>
         </div>

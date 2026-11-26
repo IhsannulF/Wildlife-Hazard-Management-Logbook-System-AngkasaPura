@@ -6,10 +6,13 @@ use App\Models\DetailSatwa;
 use App\Models\Laporan;
 use App\Models\Tanggapan;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class UserDashboardTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function getPegawaiUser(string $username = 'amc'): User
     {
         return User::where('username', $username)->first()

@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Laporan;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class TanggapanDanPrioritasRisikoTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function getAdminUser(): User
     {
         return User::where('role', 'admin')->first()

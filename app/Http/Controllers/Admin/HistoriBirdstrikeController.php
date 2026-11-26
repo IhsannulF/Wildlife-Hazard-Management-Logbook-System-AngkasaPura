@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreHistoriBirdstrikeRequest;
 use App\Models\HistoriBirdstrike;
+use App\Support\GridCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,7 @@ class HistoriBirdstrikeController extends Controller
 
     public function store(StoreHistoriBirdstrikeRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $request->historiData();
         $data['created_by'] = $request->user()->id;
 
         HistoriBirdstrike::create($data);
@@ -59,7 +60,7 @@ class HistoriBirdstrikeController extends Controller
     public function update(StoreHistoriBirdstrikeRequest $request, int $id): RedirectResponse
     {
         $histori = HistoriBirdstrike::findOrFail($id);
-        $histori->update($request->validated());
+        $histori->update($request->historiData());
 
         return redirect()->route('admin.ai.histori.index')->with('success', 'Data histori birdstrike berhasil diperbarui.');
     }
@@ -95,6 +96,10 @@ class HistoriBirdstrikeController extends Controller
                 'jumlah_satwa',
                 'tingkat_kerusakan',
                 'keterangan',
+                'jenis_kejadian',
+                'grid',
+                'ketinggian_ft',
+                'jarak_centerline_m',
             ]);
             fputcsv($handle, [
                 date('Y-m-d', strtotime('-5 days')),
@@ -110,6 +115,10 @@ class HistoriBirdstrikeController extends Controller
                 '2',
                 'minor',
                 'Ditemukan bulu di cowl engine nomor 1',
+                'strike',
+                'K-10',
+                '50',
+                '15',
             ]);
             fclose($handle);
         }, 200, $headers);
@@ -166,6 +175,10 @@ class HistoriBirdstrikeController extends Controller
                 'jumlah_satwa' => ['required', 'integer', 'min:1'],
                 'tingkat_kerusakan' => ['required', 'in:nihil,minor,substansial,fatal'],
                 'keterangan' => ['nullable', 'string', 'max:1000'],
+                'jenis_kejadian' => ['nullable', 'in:strike,near_miss'],
+                'grid' => ['nullable', 'string', 'max:20'],
+                'ketinggian_ft' => ['nullable', 'integer', 'min:0', 'max:20000'],
+                'jarak_centerline_m' => ['nullable', 'integer', 'min:0', 'max:5000'],
             ]);
 
             if ($validator->fails()) {
@@ -174,7 +187,11 @@ class HistoriBirdstrikeController extends Controller
                 continue;
             }
 
-            $validated = $validator->validated();
+            $validated = array_map(fn ($value) => $value === '' ? null : $value, $validator->validated());
+            $validated['jenis_kejadian'] = $validated['jenis_kejadian'] ?? 'strike';
+            if (! empty($validated['grid'])) {
+                $validated['grid'] = GridCode::normalize($validated['grid']);
+            }
             $validated['created_by'] = $userId;
             $validated['created_at'] = now();
             $validated['updated_at'] = now();

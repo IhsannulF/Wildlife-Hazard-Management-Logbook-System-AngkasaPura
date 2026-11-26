@@ -220,6 +220,10 @@
   <!-- MAIN VIEWPORT CONTAINER -->
   <main class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-space-xl py-space-lg space-y-space-lg">
     
+    @if(!$isVerifikasi)
+      @include('admin.dashboard.data-quality-alert', ['peringatanKualitasData' => $peringatanKualitasData ?? []])
+    @endif
+
     <!-- 1. Hero Title & Bento Stat Cards -->
     @include('admin.dashboard.hero-metrics')
 

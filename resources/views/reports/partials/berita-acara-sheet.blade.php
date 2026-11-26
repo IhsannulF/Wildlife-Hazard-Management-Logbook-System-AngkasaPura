@@ -150,7 +150,12 @@
       @forelse($ba['satwa_matrix'] as $idx => $row)
         <tr class="{{ $idx % 2 === 1 ? 'alt-row' : '' }}">
           <td class="text-center">{{ $row['no'] }}</td>
-          <td class="font-bold">{{ $row['nama_satwa'] }}</td>
+          <td class="font-bold">
+            {{ $row['nama_satwa'] }}
+            @if(!empty($row['perilaku_kawanan']))
+              <br><span style="font-weight: normal; color: #475569; font-size: 6.8pt;">{{ $row['perilaku_kawanan'] }}</span>
+            @endif
+          </td>
           <td class="italic" style="color: #475569;">{{ $row['nama_ilmiah'] }}</td>
           <td class="text-center font-bold">{{ $row['jumlah'] }} ekor</td>
           <td class="text-center mono font-bold">{{ $row['grid'] }}</td>

@@ -5,12 +5,14 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HistoriBirdstrikeController as AdminHistoriBirdstrikeController;
 use App\Http\Controllers\Admin\KepadatanPenerbanganController as AdminKepadatanPenerbanganController;
 use App\Http\Controllers\Admin\ManajemenController as AdminManajemenController;
+use App\Http\Controllers\Admin\PengusiranController as AdminPengusiranController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\StatistikController as AdminStatistikController;
 use App\Http\Controllers\AiIdentifikasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\TanggapanController;
+use App\Http\Controllers\TindakanPengusiranController;
 use App\Http\Controllers\UserDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +53,9 @@ Route::middleware(['auth', 'role:pegawai,admin'])->group(function () {
     Route::get('/laporan/{id}/cetak', [AdminReportController::class, 'cetak'])->name('laporan.cetak');
     Route::get('/laporan/{id}/pdf', [AdminReportController::class, 'downloadPdf'])->name('laporan.pdf');
     Route::post('/laporan/{id}/tanggapan', [TanggapanController::class, 'store'])->name('laporan.tanggapan.store');
+
+    // PRD v2.1 F0: Log tindakan pengusiran (scare action) per waktu & grid
+    Route::post('/pengusiran', [TindakanPengusiranController::class, 'store'])->name('pengusiran.store');
 });
 
 // Rute Pegawai
@@ -125,5 +130,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::post('/lalu-lintas', [AdminKepadatanPenerbanganController::class, 'store'])->name('lalu-lintas.store');
         Route::get('/lalu-lintas/template', [AdminKepadatanPenerbanganController::class, 'template'])->name('lalu-lintas.template');
         Route::post('/lalu-lintas/import', [AdminKepadatanPenerbanganController::class, 'import'])->name('lalu-lintas.import');
+
+        // PRD v2.1 F0: Log Pengusiran & Master Alat Dispersal
+        Route::get('/pengusiran', [AdminPengusiranController::class, 'index'])->name('pengusiran.index');
+        Route::post('/pengusiran/alat', [AdminPengusiranController::class, 'storeAlat'])->name('pengusiran.alat.store');
+        Route::put('/pengusiran/alat/{id}', [AdminPengusiranController::class, 'updateAlat'])->name('pengusiran.alat.update');
+        Route::post('/pengusiran/alat/{id}/toggle', [AdminPengusiranController::class, 'toggleAlat'])->name('pengusiran.alat.toggle');
+        Route::delete('/pengusiran/alat/{id}', [AdminPengusiranController::class, 'destroyAlat'])->name('pengusiran.alat.destroy');
     });
 });
