@@ -49,9 +49,9 @@ class ManajemenUserTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/manajemen-user?tab=fields');
         $response->assertStatus(200);
-        $response->assertSee('Pengaturan Field Form Pelaporan Dinamis');
-        $response->assertSee('modalAddField');
-        $response->assertSee('Field Form Pelaporan');
+        // Pengaturan isian dipindah ke halaman Form Inspeksi; tab lama berisi tautan ke sana.
+        $response->assertSee('Pengaturan isian form inspeksi sudah pindah');
+        $response->assertSee(route('admin.form-inspeksi.index'), false);
     }
 
     public function test_admin_can_store_and_delete_user(): void
@@ -102,11 +102,10 @@ class ManajemenUserTest extends TestCase
     public function test_admin_can_toggle_form_field(): void
     {
         $admin = User::where('role', 'admin')->first();
-        $field = FormField::first();
-
-        if (! $field) {
-            $this->markTestSkipped('FormField record not found.');
-        }
+        // Isian tambahan masih bisa di-toggle lewat aksi lama; isian bawaan dilindungi.
+        $field = FormField::create(['nama_field' => 'catatan_toggle_uji', 'tipe' => 'text', 'label' => 'Catatan Uji', 'wajib' => false, 'aktif' => true, 'urutan' => 99]);
+        $this->actingAs($admin)->post('/admin/manajemen/fields/'.FormField::where('nama_field', 'nama_petugas')->value('id').'/toggle')
+            ->assertRedirect(route('admin.form-inspeksi.index'));
 
         $initialStatus = $field->aktif;
         $response = $this->actingAs($admin)->post("/admin/manajemen/fields/{$field->id}/toggle");

@@ -97,9 +97,19 @@
       </div>
     @endif
 
-    <form id="mainForm" action="{{ route('laporan.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <form id="mainForm" action="{{ route('laporan.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" data-officer="{{ auth()->user()->namalengkap ?: auth()->user()->username }}" data-stamp-logo="{{ asset('images/logo_login.png') }}">
       @csrf
       <input type="hidden" name="tanda_tangan" id="tanda_tangan">
+
+      @php
+        // Pengaturan isian dari halaman admin "Form Inspeksi"; nilai bawaan dipakai bila belum diatur.
+        $fc = collect([
+          'nama_petugas' => 'Nama Petugas', 'tanggal' => 'Tanggal Pemantauan', 'kondisi_cuaca' => 'Kondisi Cuaca',
+          'unit_kerja' => 'Unit Kerja', 'area_inspeksi' => 'Area Inspeksi', 'ciri_ukuran' => 'Ciri-ciri & Ukuran Satwa Liar',
+          'kondisi_apron' => 'Kondisi Ditemukan di Area Sisi Udara', 'aktivitas_satwa' => 'Aktivitas Satwa Liar di Lapangan',
+          'tindak_lanjut' => 'Tindak Lanjut Penanganan', 'detail_pengusiran' => 'Detail Metode Pengusiran yang Dilakukan',
+        ])->map(fn ($label, $key) => ($fieldConfig[$key] ?? []) + ['label' => $label, 'wajib' => true, 'aktif' => true, 'placeholder' => null])->all();
+      @endphp
 
       <!-- SECTION 1: Identitas -->
       <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
@@ -114,13 +124,15 @@
         @include('partials.weather-widget', ['class' => 'mb-5 !bg-slate-50/60'])
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          @if($fc['nama_petugas']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Nama Petugas <span class="text-rose-500">*</span></label>
-            <input type="text" name="nama_petugas" value="{{ old('nama_petugas', $user->namalengkap ?: $user->username) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['nama_petugas']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['nama_petugas']['wajib']])</label>
+            <input type="text" name="nama_petugas" @required($fc['nama_petugas']['wajib']) value="{{ old('nama_petugas', $user->namalengkap ?: $user->username) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
           </div>
+          @endif
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Tanggal Pemantauan <span class="text-rose-500">*</span></label>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['tanggal']['label'] }} <span class="text-rose-500">*</span></label>
             <input type="date" name="tanggal" value="{{ old('tanggal', now(config('whms_risk.zona_waktu'))->format('Y-m-d')) }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
           </div>
 
@@ -130,9 +142,10 @@
             <p class="text-[11px] text-slate-500 mt-1">Jam saat satwa terlihat, bukan jam laporan dikirim. Dipakai untuk prediksi risiko per jam.</p>
           </div>
 
+          @if($fc['kondisi_cuaca']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Kondisi Cuaca <span class="text-rose-500">*</span></label>
-            <select name="kondisi_cuaca" data-weather-autofill class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['kondisi_cuaca']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['kondisi_cuaca']['wajib']])</label>
+            <select name="kondisi_cuaca" data-weather-autofill @required($fc['kondisi_cuaca']['wajib']) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
               <option value="">-- Pilih Kondisi Cuaca --</option>
               @foreach($kondisi_cuaca_opt as $c)
                 <option value="{{ $c }}" {{ old('kondisi_cuaca') == $c ? 'selected' : '' }}>{{ $c }}</option>
@@ -140,26 +153,31 @@
             </select>
             <p data-weather-autofill-hint="kondisi_cuaca" class="hidden text-[11px] text-teal-700 mt-1.5"></p>
           </div>
+          @endif
 
+          @if($fc['unit_kerja']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Unit Kerja <span class="text-rose-500">*</span></label>
-            <select name="unit_kerja" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['unit_kerja']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['unit_kerja']['wajib']])</label>
+            <select name="unit_kerja" @required($fc['unit_kerja']['wajib']) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
               <option value="">-- Pilih Unit Kerja --</option>
               @foreach($unit_kerja_opt as $u)
                 <option value="{{ $u }}" {{ old('unit_kerja', $unitKerjaUser) == $u ? 'selected' : '' }}>{{ $u }}</option>
               @endforeach
             </select>
           </div>
+          @endif
 
+          @if($fc['area_inspeksi']['aktif'])
           <div class="sm:col-span-2">
-            <label class="block text-xs font-bold text-slate-700 mb-2">Area Inspeksi <span class="text-rose-500">*</span></label>
-            <select name="area_inspeksi" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['area_inspeksi']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['area_inspeksi']['wajib']])</label>
+            <select name="area_inspeksi" @required($fc['area_inspeksi']['wajib']) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
               <option value="">-- Pilih Area Inspeksi --</option>
               @foreach($area_opt as $a)
                 <option value="{{ $a }}" {{ old('area_inspeksi') == $a ? 'selected' : '' }}>{{ $a }}</option>
               @endforeach
             </select>
           </div>
+          @endif
         </div>
       </div>
 
@@ -264,6 +282,12 @@
             <input type="file" id="inputGaleriFoto" accept="image/*" style="display: none !important;" class="hidden" onchange="handleFileSelected(this)">
             <input type="file" name="satwa[0][foto]" id="formSatwaFotoInput" style="display: none !important;" class="hidden" accept="image/*">
             <input type="file" name="foto_lainnya[]" id="formFotoLainnyaInput" style="display: none !important;" class="hidden" accept="image/*">
+            {{-- Lokasi GPS perangkat & waktu saat foto bukti diambil/diunggah (diisi whms-photo-stamp.js) --}}
+            <input type="hidden" name="gps_lat" id="fotoGpsLat">
+            <input type="hidden" name="gps_lng" id="fotoGpsLng">
+            <input type="hidden" name="gps_akurasi_m" id="fotoGpsAkurasi">
+            <input type="hidden" name="foto_diambil_at" id="fotoDiambilAt">
+            <input type="hidden" name="foto_sumber" id="fotoSumber">
 
           </div>
 
@@ -504,42 +528,52 @@
         </div>
 
         <div class="space-y-4">
+          @if($fc['ciri_ukuran']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Ciri-ciri & Ukuran Satwa Liar <span class="text-rose-500">*</span></label>
-            <textarea name="ciri_ukuran" rows="3" placeholder="Deskripsikan morfologi dan ukuran fisik satwa..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>{{ old('ciri_ukuran') }}</textarea>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['ciri_ukuran']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['ciri_ukuran']['wajib']])</label>
+            <textarea name="ciri_ukuran" @required($fc['ciri_ukuran']['wajib']) rows="3" placeholder="{{ $fc['ciri_ukuran']['placeholder'] ?: 'Deskripsikan morfologi dan ukuran fisik satwa...' }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">{{ old('ciri_ukuran') }}</textarea>
           </div>
+          @endif
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @if($fc['kondisi_apron']['aktif'])
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-2">Kondisi Ditemukan di Area Sisi Udara <span class="text-rose-500">*</span></label>
-              <select name="kondisi_apron" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+              <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['kondisi_apron']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['kondisi_apron']['wajib']])</label>
+              <select name="kondisi_apron" @required($fc['kondisi_apron']['wajib']) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
                 <option value="">-- Pilih Kondisi --</option>
                 @foreach($kondisi_apron_opt as $kp)
                   <option value="{{ $kp }}" {{ old('kondisi_apron') == $kp ? 'selected' : '' }}>{{ $kp }}</option>
                 @endforeach
               </select>
             </div>
+            @endif
 
+            @if($fc['aktivitas_satwa']['aktif'])
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-2">Aktivitas Satwa Liar di Lapangan <span class="text-rose-500">*</span></label>
-              <input type="text" name="aktivitas_satwa" value="{{ old('aktivitas_satwa') }}" placeholder="cth: Melintas taxiway, mencari makan" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+              <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['aktivitas_satwa']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['aktivitas_satwa']['wajib']])</label>
+              <input type="text" name="aktivitas_satwa" @required($fc['aktivitas_satwa']['wajib']) value="{{ old('aktivitas_satwa') }}" placeholder="{{ $fc['aktivitas_satwa']['placeholder'] ?: 'cth: Melintas taxiway, mencari makan' }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
             </div>
+            @endif
           </div>
 
+          @if($fc['tindak_lanjut']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Tindak Lanjut Penanganan <span class="text-rose-500">*</span></label>
-            <select name="tindak_lanjut" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all" required>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['tindak_lanjut']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['tindak_lanjut']['wajib']])</label>
+            <select name="tindak_lanjut" @required($fc['tindak_lanjut']['wajib']) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
               <option value="">-- Pilih Tindak Lanjut --</option>
               @foreach($tindak_lanjut_opt as $tl)
                 <option value="{{ $tl }}" {{ old('tindak_lanjut') == $tl ? 'selected' : '' }}>{{ $tl }}</option>
               @endforeach
             </select>
           </div>
+          @endif
 
+          @if($fc['detail_pengusiran']['aktif'])
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-2">Detail Metode Pengusiran yang Dilakukan</label>
-            <textarea name="detail_pengusiran" rows="2" placeholder="Sebutkan alat atau tindakan pengusiran yang diterapkan (isi '-' jika tidak ada)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">{{ old('detail_pengusiran', '-') }}</textarea>
+            <label class="block text-xs font-bold text-slate-700 mb-2">{{ $fc['detail_pengusiran']['label'] }} @include('partials.form-field-badge', ['wajib' => $fc['detail_pengusiran']['wajib']])</label>
+            <textarea name="detail_pengusiran" @required($fc['detail_pengusiran']['wajib']) rows="2" placeholder="{{ $fc['detail_pengusiran']['placeholder'] ?: 'Sebutkan alat atau tindakan pengusiran yang diterapkan (isi \'-\' jika tidak ada)' }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">{{ old('detail_pengusiran', '-') }}</textarea>
           </div>
+          @endif
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
@@ -564,6 +598,40 @@
           </div>
         </div>
       </div>
+
+      <!-- SECTION TAMBAHAN: Isian yang ditambahkan admin di halaman "Form Inspeksi" (tersimpan di extra_data laporan) -->
+      @if(($customFields ?? collect())->isNotEmpty())
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
+          <div class="border-b border-slate-100 pb-4 mb-6">
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 font-bold text-xs flex items-center justify-center border border-teal-200">+</span>
+              Isian Tambahan
+            </h2>
+            <p class="text-xs text-slate-500 mt-1 pl-9">Isian tambahan yang ditetapkan admin untuk inspeksi ini</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            @foreach($customFields as $extraField)
+              @php $extraId = 'isian_' . $extraField->nama_field; @endphp
+              <div class="{{ $extraField->tipe === 'textarea' ? 'sm:col-span-2' : '' }}">
+                <label for="{{ $extraId }}" class="block text-xs font-bold text-slate-700 mb-2">{{ $extraField->label }} @include('partials.form-field-badge', ['wajib' => $extraField->wajib])</label>
+                @if($extraField->tipe === 'textarea')
+                  <textarea id="{{ $extraId }}" name="{{ $extraField->nama_field }}" rows="3" placeholder="{{ $extraField->placeholder }}" @required($extraField->wajib) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">{{ old($extraField->nama_field) }}</textarea>
+                @elseif($extraField->tipe === 'dropdown')
+                  <select id="{{ $extraId }}" name="{{ $extraField->nama_field }}" @required($extraField->wajib) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                    <option value="">-- Pilih --</option>
+                    @foreach($extraField->options as $option)
+                      <option value="{{ $option->nilai }}" @selected(old($extraField->nama_field) === $option->nilai)>{{ $option->nilai }}</option>
+                    @endforeach
+                  </select>
+                @else
+                  <input id="{{ $extraId }}" type="{{ in_array($extraField->tipe, ['date', 'number'], true) ? $extraField->tipe : 'text' }}" name="{{ $extraField->nama_field }}" value="{{ old($extraField->nama_field) }}" placeholder="{{ $extraField->placeholder }}" @required($extraField->wajib) class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all">
+                @endif
+              </div>
+            @endforeach
+          </div>
+        </div>
+      @endif
 
       <!-- SECTION 5: Tanda Tangan Digital -->
       <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
@@ -604,6 +672,7 @@
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script src="{{ asset('js/whms-photo-stamp.js') }}"></script>
 <script>
   // ── Signature Pad ──
   const canvas = document.getElementById('signature-pad');
@@ -641,59 +710,91 @@
     }
   }
 
+  // Foto asli (tanpa watermark) untuk identifikasi AI; foto ber-watermark dikirim bersama laporan.
+  let fotoBurungAsli = null;
+  let fotoBurungBukti = null;
+
   function handleFileSelected(input) {
     if (!input.files || !input.files[0]) return;
-    applyPhotoFile(input.files[0], input);
+    applyPhotoFile(input.files[0], input.id === 'inputGaleriFoto' ? 'galeri' : 'kamera');
   }
 
-  function applyPhotoFile(file, sourceInput = null) {
-    hasBirdPhoto = true;
+  function setFotoLokasiInputs(stamped) {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
+    set('fotoGpsLat', stamped?.location ? stamped.location.lat.toFixed(7) : '');
+    set('fotoGpsLng', stamped?.location ? stamped.location.lng.toFixed(7) : '');
+    set('fotoGpsAkurasi', stamped?.location ? stamped.location.accuracy : '');
+    set('fotoDiambilAt', stamped?.takenAt ?? '');
+    set('fotoSumber', stamped?.source ?? '');
+  }
 
-    // Create object URL for instant high-quality preview
-    const previewUrl = URL.createObjectURL(file);
+  /**
+   * Pasang foto bukti: beri watermark Angkasa Pura + koordinat GPS + waktu WIB, lalu kirim lewat
+   * satu input form. Bila browser tidak mendukung, foto asli dipakai apa adanya.
+   */
+  async function applyPhotoFile(file, source = 'kamera') {
+    hasBirdPhoto = true;
+    fotoBurungAsli = file;
+
     const img = document.getElementById('fotoPreviewImg');
     const ph = document.getElementById('fotoPlaceholder');
     const filled = document.getElementById('fotoPreviewFilled');
     const nama = document.getElementById('fotoNamaFile');
     const ukuran = document.getElementById('fotoUkuranFile');
     const badge = document.getElementById('fotoStatusBadge');
+    const form = document.getElementById('mainForm');
 
-    if (img) img.src = previewUrl;
+    if (badge) {
+      badge.innerHTML = '<span class="text-amber-600 font-bold flex items-center gap-1">Menambahkan watermark &amp; lokasi…</span>';
+    }
+
+    let stamped = null;
+    try {
+      stamped = await window.WhmsPhotoStamp.stamp(file, {
+        source,
+        officer: form?.dataset.officer || '',
+        logoUrl: form?.dataset.stampLogo || '',
+      });
+    } catch (e) {
+      console.warn('Watermark foto gagal, memakai foto asli:', e);
+    }
+
+    fotoBurungBukti = stamped ? stamped.file : file;
+    setFotoLokasiInputs(stamped);
+
+    if (img) img.src = URL.createObjectURL(fotoBurungBukti);
     if (ph) ph.classList.add('hidden');
     if (filled) {
       filled.classList.remove('hidden');
       filled.classList.add('flex');
     }
 
-    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-    if (nama) nama.textContent = file.name;
-    if (ukuran) ukuran.textContent = `Ukuran: ${sizeMb} MB • Format: ${file.type || 'image/jpeg'}`;
+    const sizeMb = (fotoBurungBukti.size / (1024 * 1024)).toFixed(2);
+    const lokasiText = stamped?.location
+      ? `📍 ${stamped.location.lat.toFixed(6)}, ${stamped.location.lng.toFixed(6)} (±${stamped.location.accuracy} m)`
+      : '📍 Lokasi tidak tersedia — izinkan akses lokasi di browser';
+    if (nama) nama.textContent = fotoBurungBukti.name;
+    if (ukuran) ukuran.textContent = `Ukuran: ${sizeMb} MB • ${lokasiText}`;
     if (badge) {
-      badge.innerHTML = '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Terlampir</span>';
+      badge.innerHTML = stamped
+        ? '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto bukti ber-watermark</span>'
+        : '<span class="text-teal-600 font-bold flex items-center gap-1">✓ Foto Terlampir (tanpa watermark)</span>';
     }
 
-    // Assign file to form input
+    // Satu-satunya input yang dikirim: foto ber-watermark. Input kamera/galeri dikosongkan agar foto mentah tidak ikut.
     const cam = document.getElementById('inputKameraBelakang');
     const gal = document.getElementById('inputGaleriFoto');
     const satwaFoto = document.getElementById('formSatwaFotoInput');
-
-    if (sourceInput === cam) {
-      cam.name = 'satwa[0][foto]';
-      if (gal) gal.removeAttribute('name');
-    } else if (sourceInput === gal) {
-      gal.name = 'satwa[0][foto]';
-      if (cam) cam.removeAttribute('name');
-    } else {
-      // From live camera or canvas snapshot
-      if (satwaFoto && window.DataTransfer) {
-        try {
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          satwaFoto.files = dt.files;
-          satwaFoto.name = 'satwa[0][foto]';
-          if (cam) cam.removeAttribute('name');
-          if (gal) gal.removeAttribute('name');
-        } catch (e) {}
+    if (cam) { cam.removeAttribute('name'); cam.value = ''; }
+    if (gal) { gal.removeAttribute('name'); gal.value = ''; }
+    if (satwaFoto && window.DataTransfer) {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(fotoBurungBukti);
+        satwaFoto.files = dt.files;
+        satwaFoto.name = 'satwa[0][foto]';
+      } catch (e) {
+        console.warn('Browser tidak mendukung DataTransfer:', e);
       }
     }
   }
@@ -721,6 +822,9 @@
     if (cam) { cam.value = ''; cam.removeAttribute('name'); }
     if (gal) { gal.value = ''; gal.removeAttribute('name'); }
     if (satwaFoto) satwaFoto.value = '';
+    fotoBurungAsli = null;
+    fotoBurungBukti = null;
+    setFotoLokasiInputs(null);
   }
 
   // ── Live Camera Modal (WebRTC) ──
@@ -789,7 +893,7 @@
     canvas.toBlob((blob) => {
       if (!blob) return;
       const file = new File([blob], 'foto_kamera_' + Date.now() + '.jpg', { type: 'image/jpeg' });
-      applyPhotoFile(file);
+      applyPhotoFile(file, 'kamera');
       tutupLiveKameraModal();
     }, 'image/jpeg', 0.92);
   }
@@ -1073,14 +1177,12 @@
       return;
     }
 
-    const fileInput = document.getElementById('inputKameraBelakang') || document.getElementById('inputGaleriFoto');
     const fotoPreviewImg = document.getElementById('fotoPreviewImg');
 
-    let fileToSend = null;
+    // AI memakai foto asli (tanpa pita watermark) dari kamera maupun galeri.
+    let fileToSend = fotoBurungAsli;
 
-    if (fileInput && fileInput.files && fileInput.files[0]) {
-      fileToSend = fileInput.files[0];
-    } else if (fotoPreviewImg && fotoPreviewImg.src && fotoPreviewImg.src.startsWith('data:')) {
+    if (!fileToSend && fotoPreviewImg && fotoPreviewImg.src && fotoPreviewImg.src.startsWith('data:')) {
       const res = await fetch(fotoPreviewImg.src);
       fileToSend = await res.blob();
     }
@@ -1405,9 +1507,9 @@
         data: fotoPreviewImg.src
       });
     } else {
-      const fileInput = document.getElementById('inputKameraBelakang') || document.getElementById('inputGaleriFoto');
-      if (fileInput && fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
+      // Draf offline menyimpan foto ber-watermark (sama dengan yang dikirim saat online).
+      if (fotoBurungBukti) {
+        const file = fotoBurungBukti;
         const base64 = await new Promise((res) => {
           const r = new FileReader();
           r.onload = () => res(r.result);

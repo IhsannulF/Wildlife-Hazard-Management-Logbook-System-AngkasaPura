@@ -42,7 +42,7 @@
         <label class="font-label-md text-label-md text-secondary whitespace-nowrap">Area Sisi Udara:</label>
         <select id="filterArea" onchange="searchTable()" class="h-9 px-2.5 py-1 text-xs font-label-md rounded-lg border border-border-subtle bg-white text-on-surface focus:border-injourney-teal focus:ring-0">
           <option value="">Semua Area Sisi Udara</option>
-          <option value="Runway">Runway 07L / 25R</option>
+          <option value="Runway">Runway 10/28</option>
           <option value="Taxiway">Taxiway Alpha &amp; Bravo</option>
           <option value="Apron">Apron Komersial</option>
           <option value="Perimeter">Perimeter Utara / Selatan</option>

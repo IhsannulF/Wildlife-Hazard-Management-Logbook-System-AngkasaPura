@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AiPrediksiController as AdminAiPrediksiController;
+use App\Http\Controllers\Admin\AmbangZonasiController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\FormInspeksiController;
 use App\Http\Controllers\Admin\HistoriBirdstrikeController as AdminHistoriBirdstrikeController;
 use App\Http\Controllers\Admin\KepadatanPenerbanganController as AdminKepadatanPenerbanganController;
 use App\Http\Controllers\Admin\ManajemenController as AdminManajemenController;
@@ -79,6 +81,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/laporan/{id}/delete', [AdminDashboardController::class, 'destroy'])->name('laporan.delete');
 
     Route::get('/statistik', [AdminStatistikController::class, 'index'])->name('statistik');
+    Route::put('/statistik/ambang-zonasi', AmbangZonasiController::class)->name('statistik.ambang-zonasi');
+
+    // Pengaturan isian form inspeksi pegawai
+    Route::get('/form-inspeksi', [FormInspeksiController::class, 'index'])->name('form-inspeksi.index');
+    Route::put('/form-inspeksi', [FormInspeksiController::class, 'update'])->name('form-inspeksi.update');
+    Route::post('/form-inspeksi/fields', [FormInspeksiController::class, 'store'])->name('form-inspeksi.store');
+    Route::delete('/form-inspeksi/fields/{field}', [FormInspeksiController::class, 'destroy'])->name('form-inspeksi.destroy');
 
     Route::get('/manajemen', [AdminManajemenController::class, 'index'])->name('manajemen');
     Route::get('/manajemen-user', [AdminManajemenController::class, 'userIndex'])->name('users');

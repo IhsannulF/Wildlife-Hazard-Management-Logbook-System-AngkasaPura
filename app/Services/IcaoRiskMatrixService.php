@@ -2,16 +2,43 @@
 
 namespace App\Services;
 
+use App\Services\Risk\GridRiskService;
+use App\Support\GridCode;
+use Carbon\CarbonImmutable;
+use Closure;
+use Illuminate\Support\Facades\Cache;
+
 class IcaoRiskMatrixService
 {
+    private const HOTSPOT_CACHE_KEY = 'icao.hotspot_grids';
+
     /**
-     * Grid hotspot berfrekuensi tinggi di Bandara Juanda berdasarkan data historis
+     * @param  (Closure(): list<string>)|null  $hotspotResolver  sumber grid hotspot; null = dari skor zonasi F1
      */
-    public const HOTSPOT_GRIDS = [
-        'K-10', 'D-9', 'E-12', 'G-18', 'H-8', 'F-5',
-        'A-2', 'B-4', 'L-10', 'C-6', 'J-11', 'E-18',
-        'K-09', 'K-11', 'D-10', 'E-7',
-    ];
+    public function __construct(private ?Closure $hotspotResolver = null) {}
+
+    /**
+     * Grid hotspot = grid berkelas Tinggi/Sangat Tinggi pada skor zonasi F1 dalam jendela zonasi
+     * (bukan lagi daftar tetap). Disimpan di cache 15 menit karena dipakai setiap laporan disimpan.
+     *
+     * @return list<string>
+     */
+    public function hotspotGrids(): array
+    {
+        if ($this->hotspotResolver !== null) {
+            return ($this->hotspotResolver)();
+        }
+
+        return Cache::remember(self::HOTSPOT_CACHE_KEY, now()->addMinutes(15), function (): array {
+            $from = CarbonImmutable::now(config('whms_risk.zona_waktu'))->subDays((int) config('whms_risk.zonasi.jendela_hari'));
+            $highClasses = [GridRiskService::CLASS_HIGH, GridRiskService::CLASS_VERY_HIGH];
+
+            return array_keys(array_filter(
+                app(GridRiskService::class)->scores($from),
+                fn (array $score): bool => in_array($score['kelas'], $highClasses, true)
+            ));
+        });
+    }
 
     /**
      * Hitung matriks risiko ICAO berdasarkan data satwa, zona, dan grid
@@ -75,8 +102,8 @@ class IcaoRiskMatrixService
         // Penyesuaian frekuensi area / hotspot
         $isHotspot = false;
         if (! empty($gridLokasi)) {
-            $normalizedGrid = strtoupper(trim(str_replace('=', '-', $gridLokasi)));
-            $isHotspot = in_array($normalizedGrid, self::HOTSPOT_GRIDS, true);
+            $normalizedGrid = GridCode::normalize(str_replace('=', '-', $gridLokasi));
+            $isHotspot = in_array($normalizedGrid, $this->hotspotGrids(), true);
         }
 
         if ($isHotspot && $baseP < 3) {

@@ -1,5 +1,5 @@
 <!-- 3. DETAIL & AUDIT ROW BELOW WIDE AIRSIDE MAP: DETAIL GRID TERPILIH & FILTER CEPAT (SPAN 2 COLUMNS) -->
-<div id="detailCard" class="lg:col-span-2 bg-card-bg rounded-xl border-2 border-warning-rose/30 p-3.5 sm:p-4 shadow-sm relative overflow-hidden transition-all duration-200 flex flex-col justify-between">
+<div id="detailCard" data-selected-grid="{{ $selectedGrid['grid'] ?? '-' }}" class="lg:col-span-2 bg-card-bg rounded-xl border-2 border-warning-rose/30 p-3.5 sm:p-4 shadow-sm relative overflow-hidden transition-all duration-200 flex flex-col justify-between">
   <div id="detailTopBar" class="absolute top-0 left-0 right-0 h-1 bg-warning-rose"></div>
   
   <div class="grid grid-cols-1 md:grid-cols-12 gap-5 h-full">
@@ -10,32 +10,32 @@
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <span id="detailGridBadge" class="font-code-coordinate text-xs font-bold bg-error-container text-error px-2 py-0.5 rounded">
-              GRID {{ $selectedGrid['grid'] ?? 'K-10' }}
+              GRID {{ $selectedGrid['grid'] ?? '-' }}
             </span>
             <span id="detailRiskBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold">
-              {{ $selectedGrid['risk_category'] ?? 'Kategori 4 - Kritis' }}
+              {{ $selectedGrid['risk_category'] ?? 'Tanpa Data' }}
             </span>
           </div>
           <span class="text-[11px] text-secondary font-medium">Terpilih Aktif</span>
         </div>
 
         <h2 id="detailZoneName" class="text-sm sm:text-base font-bold text-slate-navy">
-          {{ $selectedGrid['zone_name'] ?? 'Bahu Runway 25R & Kanal Selatan' }}
+          {{ $selectedGrid['zone_name'] ?? '-' }}
         </h2>
         <p id="detailDesc" class="text-[11px] text-secondary mt-0.5 mb-2.5 leading-relaxed">
-          {{ $selectedGrid['desc'] ?? 'Zona perimeter strip aktif runway 25R berdekatan dengan jalur drainase induk sisi barat.' }}
+          {{ $selectedGrid['desc'] ?? '' }}
         </p>
 
         <!-- Detail Metrics Grid -->
         <div class="grid grid-cols-2 gap-2.5 mb-2.5">
           <div class="bg-surface-container-low p-2.5 rounded-lg border border-border-subtle">
             <span class="text-[10px] uppercase text-secondary font-bold block">Total Temuan</span>
-            <span id="detailCount" class="text-sm sm:text-base font-bold text-slate-navy mt-0.5 block">{{ $selectedGrid['count'] ?? 38 }} Kejadian</span>
-            <span id="detailFreq" class="text-[10px] text-warning-rose font-semibold mt-0.5 block">Hotspot Utama</span>
+            <span id="detailCount" class="text-sm sm:text-base font-bold text-slate-navy mt-0.5 block">{{ $selectedGrid['count'] ?? 0 }} Temuan</span>
+            <span id="detailFreq" class="text-[10px] text-warning-rose font-semibold mt-0.5 block" title="Dua jam dengan jumlah satwa terbanyak menurut jam laporan">Jam puncak: {{ $selectedGrid['peak_hours'] ?? 'Belum ada data jam' }}</span>
           </div>
           <div class="bg-surface-container-low p-2.5 rounded-lg border border-border-subtle">
             <span class="text-[10px] uppercase text-secondary font-bold block">Spesies Dominan</span>
-            <span id="detailSpecies" class="text-xs sm:text-sm font-bold text-slate-navy truncate mt-0.5 block">{{ $selectedGrid['dominant_species'] ?? 'Burung Blekok Sawah' }}</span>
+            <span id="detailSpecies" class="text-xs sm:text-sm font-bold text-slate-navy truncate mt-0.5 block">{{ $selectedGrid['dominant_species'] ?? 'Tidak Ada' }}</span>
             <span id="detailStatus" class="text-[10px] text-secondary mt-0.5 block">{{ $selectedGrid['status'] ?? 'Telah Ditangani' }}</span>
           </div>
         </div>
@@ -88,7 +88,7 @@
 
       <!-- Quick Action Buttons -->
       <div class="flex items-center gap-2 pt-2 border-t border-border-subtle mt-2">
-        <a id="btnViewLog" href="{{ route('admin.dashboard', ['search' => $selectedGrid['grid'] ?? 'K-10']) }}" class="flex-1 py-1.5 px-2.5 border border-border-subtle rounded-lg bg-card-bg hover:bg-surface-container-low text-on-surface text-xs font-semibold transition-colors text-center shadow-2xs">
+        <a id="btnViewLog" href="{{ route('admin.dashboard', ['search' => $selectedGrid['grid'] ?? '']) }}" class="flex-1 py-1.5 px-2.5 border border-border-subtle rounded-lg bg-card-bg hover:bg-surface-container-low text-on-surface text-xs font-semibold transition-colors text-center shadow-2xs">
           Lihat Log Terkait
         </a>
         <button type="button" onclick="triggerDispersalAction()" class="flex-1 py-1.5 px-2.5 rounded-lg bg-injourney-teal hover:bg-injourney-dark-teal text-white text-xs font-semibold transition-colors text-center shadow-xs cursor-pointer">
@@ -119,16 +119,16 @@
             <div>
               <span class="text-[10px] uppercase text-secondary font-bold block mb-1">Kategori Fauna:</span>
               <div class="flex flex-wrap gap-1.5 text-[11px] font-semibold">
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'all', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => 'all', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Semua Satwa
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'burung', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'burung' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => 'burung', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'burung' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Avian / Burung
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'reptil', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'reptil' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => 'reptil', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'reptil' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Reptil
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => 'mamalia', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'mamalia' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => 'mamalia', 'zona' => $zonaFilter]) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $kategori === 'mamalia' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Mamalia
                 </a>
               </div>
@@ -138,19 +138,19 @@
             <div class="pt-2 border-t border-border-subtle">
               <span class="text-[10px] uppercase text-secondary font-bold block mb-1">Zona Operasional:</span>
               <div class="flex flex-wrap gap-1.5 text-[11px] font-semibold">
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'all']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => $kategori, 'zona' => 'all']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'all' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Semua Zona
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'runway']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'runway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => $kategori, 'zona' => 'runway']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'runway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Runway Strip
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'taxiway']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'taxiway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => $kategori, 'zona' => 'taxiway']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'taxiway' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Taxiway
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'apron']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'apron' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => $kategori, 'zona' => 'apron']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'apron' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Apron &amp; Hanggar
                 </a>
-                <a href="{{ route('admin.statistik', ['time_filter' => $timeFilter, 'kategori' => $kategori, 'zona' => 'perimeter']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'perimeter' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
+                <a href="{{ route('admin.statistik', [...$periodeQuery, 'kategori' => $kategori, 'zona' => 'perimeter']) }}" class="quick-filter-link px-2.5 py-1 rounded-lg transition-colors {{ $zonaFilter === 'perimeter' ? 'bg-injourney-teal text-white shadow-xs' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high' }}">
                   Perimeter Luar
                 </a>
               </div>

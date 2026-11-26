@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @include('partials.tailwind-gradient-fix')
 </head>
 <body class="font-sans min-h-screen flex flex-col items-center justify-center p-4 relative bg-cover bg-center bg-no-out bg-fixed" style="background-image: linear-gradient(180deg, rgba(220,235,245,0.7) 0%, rgba(180,215,235,0.8) 100%), url('{{ asset('images/bg_login.jpeg') }}');">
 

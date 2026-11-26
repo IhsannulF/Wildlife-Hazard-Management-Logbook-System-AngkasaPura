@@ -48,12 +48,24 @@
         if (document.getElementById('modalUnitKerja')) {
           document.getElementById('modalUnitKerja').innerText = unitName;
         }
-        document.getElementById('modalTimestamp').innerText = (data.tanggal || '-') + ', ' + (data.created_at ? data.created_at.substring(11, 16) + ' WIB' : '08:00 WIB');
-        document.getElementById('modalWeather').innerText = data.kondisi_cuaca ? (data.kondisi_cuaca + ' / Angin 8 kts WSW') : 'Berawan 29°C / Angin 8 kts WSW';
+        document.getElementById('modalTimestamp').innerText = data.waktu_pengamatan || '-';
+        document.getElementById('modalWeather').innerText = data.cuaca_ringkas || data.kondisi_cuaca || '-';
         
         let speciesStr = 'Satwa Liar';
         let qtyStr = '1 Ekor';
-        let gridStr = data.grid_lokasi || 'K-10';
+        let gridStr = data.grid_lokasi || '-';
+
+        // Lokasi & waktu foto bukti (GPS perangkat petugas); tanpa koordinat karangan.
+        const fotoLokasi = (data.satwa && data.satwa[0] && data.satwa[0].foto_lokasi) || null;
+        const geoOverlay = document.getElementById('modalGeoOverlay');
+        const geoText = document.getElementById('modalPhotoLocationText');
+        const geoLink = document.getElementById('modalPhotoMapLink');
+        if (geoOverlay) geoOverlay.innerText = fotoLokasi ? ('GEO: ' + fotoLokasi.lat + ', ' + fotoLokasi.lng) : 'Lokasi foto tidak tercatat';
+        if (geoText) geoText.innerText = fotoLokasi ? fotoLokasi.keterangan : 'Lokasi foto tidak tercatat';
+        if (geoLink) {
+          geoLink.classList.toggle('hidden', !fotoLokasi);
+          geoLink.href = fotoLokasi ? fotoLokasi.peta_url : '#';
+        }
 
         if (data.satwa && data.satwa.length > 0) {
           speciesStr = data.satwa[0].nama || speciesStr;
@@ -105,9 +117,9 @@
           document.getElementById('modalTindakLanjut').innerText = data.tindak_lanjut || data.detail_pengusiran || 'Pengusiran aktif oleh tim gabungan AMC & Bird Hazard Control.';
         }
 
-        document.getElementById('modalLocation').innerText = (data.area_inspeksi || 'Runway 07L Bahu') + ' [' + gridStr + ']';
+        document.getElementById('modalLocation').innerText = (data.area_inspeksi || '-') + ' [' + gridStr + ']';
         document.getElementById('modalGridText').innerText = 'GRID ' + gridStr;
-        document.getElementById('schematicGridTarget').innerText = gridStr + ' (' + (data.area_inspeksi || 'Bahu Landasan') + ')';
+        document.getElementById('schematicGridTarget').innerText = gridStr + ' (' + (data.area_inspeksi || '-') + ')';
 
         // Update mini grid schematic highlight
         updateMiniGridSchematic(gridStr);

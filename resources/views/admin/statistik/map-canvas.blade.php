@@ -115,9 +115,9 @@
     <!-- Real-Time Cursor HUD Strip (Top-Left) -->
     <div id="gisCursorHud" class="absolute top-3 left-3 z-30 flex items-center gap-2 bg-slate-navy/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-runway-grid text-xs text-slate-200 pointer-events-none">
       <span class="w-2 h-2 rounded-full bg-injourney-teal animate-pulse"></span>
-      <span id="gisHudCoord" class="font-code-coordinate font-bold text-cyan-300">KOORDINAT: K-10 (K10)</span>
+      <span id="gisHudCoord" class="font-code-coordinate font-bold text-cyan-300">{{ ($selectedGrid['grid'] ?? '-') !== '-' ? 'TERPILIH: ' . str_replace('-', '', $selectedGrid['grid']) . ' (' . $selectedGrid['grid'] . ')' : 'KOORDINAT: -' }}</span>
       <span class="text-slate-500">•</span>
-      <span id="gisHudInfo" class="text-slate-300 truncate max-w-xs sm:max-w-md">Bahu Runway 25R &amp; Kanal Selatan (38 Kejadian)</span>
+      <span id="gisHudInfo" class="text-slate-300 truncate max-w-xs sm:max-w-md">{{ ($selectedGrid['grid'] ?? '-') !== '-' ? ($selectedGrid['zone_name'] ?? '') . ' • ' . ($selectedGrid['count'] ?? 0) . ' temuan' : 'Tidak ada temuan pada periode ini' }}</span>
     </div>
 
     <!-- ================= LAYER 1: GIS OPERATIONAL MAP CONTAINER (BASE MAP + EXACT SVG OVERLAY) ================= -->
@@ -139,6 +139,10 @@
                 <feGaussianBlur stdDeviation="2.5" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
+              <!-- Penghalus heatmap zonasi agar tampil bergradasi -->
+              <filter id="heatmapBlur" x="-5%" y="-5%" width="110%" height="110%">
+                <feGaussianBlur stdDeviation="7" />
+              </filter>
               <!-- Pattern for Isolated Parking -->
               <pattern id="isolatedParkingPattern" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(239, 68, 68, 0.45)" stroke-width="1.5" />
@@ -151,8 +155,80 @@
               <!-- SUB-LAYER AI: LAYER PREDIKSI AI (CRITICAL ZONES & HAZARD OVERLAY) -->
               <g id="layerAiPrediksi" style="display: none;"></g>
 
-              <!-- SUB-LAYER A: FASILITAS SISI UDARA (RUNWAY, APRON, REGULATING POND, TERMINAL) -->
-              <g id="layerFacilities">
+
+
+              <!-- SUB-LAYER H: HEATMAP ZONASI RISIKO (F1) - seluruh 348 sel, makin dekat runway makin cepat memerah -->
+              <g id="layerHeatmapZonasi" pointer-events="none" filter="url(#heatmapBlur)">
+                @php
+                  $heatWarna = [
+                    'rendah' => ['#22C55E', 0.30],
+                    'sedang' => ['#FACC15', 0.45],
+                    'tinggi' => ['#F97316', 0.55],
+                    'sangat_tinggi' => ['#EF4444', 0.62],
+                  ];
+                @endphp
+                @foreach($rows as $rIdx => $rChar)
+                  @for($cNum = 1; $cNum <= 29; $cNum++)
+                    @php
+                      $heatCell = $heatmapZonasi[$rChar . '-' . $cNum] ?? null;
+                      [$heatFill, $heatOpacity] = $heatWarna[$heatCell['kelas'] ?? 'rendah'];
+                    @endphp
+                    {{-- Sel di luar filter (kategori non-burung / zona lain) tidak diwarnai --}}
+                    @if($heatCell)
+                      <rect x="{{ round($x0 + ($cNum - 1) * $cw, 2) }}" y="{{ round($y0 + $rIdx * $rh, 2) }}" width="{{ round($cw, 2) }}" height="{{ round($rh, 2) }}" fill="{{ $heatFill }}" fill-opacity="{{ $heatOpacity }}" />
+                    @endif
+                  @endfor
+                @endforeach
+              </g>
+
+              <!-- SUB-LAYER C: GRID MESH LATTICE (KISI-KISI GARIS SEKTOR A-L & 1-29) -->
+              <g id="layerGridMesh" stroke="rgba(255, 255, 255, 0.22)" stroke-width="0.75" pointer-events="none">
+                @for($c = 0; $c <= 29; $c++)
+                  @php $lx = round($x0 + $c * $cw, 2); @endphp
+                  <line x1="{{ $lx }}" y1="{{ $y0 }}" x2="{{ $lx }}" y2="{{ round($y0 + 12 * $rh, 2) }}" stroke-dasharray="{{ $c === 0 || $c === 29 ? 'none' : '3,3' }}" />
+                @endfor
+                @for($r = 0; $r <= 12; $r++)
+                  @php $ly = round($y0 + $r * $rh, 2); @endphp
+                  <line x1="{{ $x0 }}" y1="{{ $ly }}" x2="{{ round($x0 + 29 * $cw, 2) }}" y2="{{ $ly }}" stroke-dasharray="{{ $r === 0 || $r === 12 ? 'none' : '3,3' }}" />
+                @endfor
+              </g>
+
+              <!-- SUB-LAYER D: 348 TITIK KOORDINAT SIMPUL GRID SISI UDARA (A1–L29) -->
+              <g id="layerGridPoints" pointer-events="none">
+                @foreach($rows as $rIdx => $rChar)
+                  @for($cNum = 1; $cNum <= 29; $cNum++)
+                    @php
+                      $codeKey1 = $rChar . '-' . $cNum;
+                      $codeKey2 = $rChar . $cNum;
+                      $itemData = $normGrid[$codeKey1] ?? ($normGrid[$codeKey2] ?? null);
+                      $centerX = round($x0 + ($cNum - 0.5) * $cw, 2);
+                      $centerY = round($y0 + ($rIdx + 0.5) * $rh, 2);
+                      $birdCount = $itemData['bird_stats']['total_birds'] ?? 0;
+                    @endphp
+                    @if($itemData)
+                      @if($birdCount > 0)
+                        <!-- Efek Pendaran Luar untuk Sel Burung (Tanpa menutupi angka laporan di tengah) -->
+                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="9" fill="rgba(245, 158, 11, 0.22)" stroke="#F59E0B" stroke-width="0.75" stroke-dasharray="2,2" class="grid-cell-pulse" />
+                      @endif
+                    @else
+                      <!-- Titik Grid Steril: Tetap Terlihat Tegas & Rapi (Slate / Subtle Dot Crosshair) -->
+                      <g id="pointNode_{{ $rChar }}_{{ $cNum }}" class="grid-point-item opacity-75">
+                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="1.8" fill="#CBD5E1" stroke="#334155" stroke-width="0.5" />
+                        <line x1="{{ $centerX - 2.5 }}" y1="{{ $centerY }}" x2="{{ $centerX + 2.5 }}" y2="{{ $centerY }}" stroke="#94A3B8" stroke-width="0.5" />
+                        <line x1="{{ $centerX }}" y1="{{ $centerY - 2.5 }}" x2="{{ $centerX }}" y2="{{ $centerY + 2.5 }}" stroke="#94A3B8" stroke-width="0.5" />
+                      </g>
+                    @endif
+                  @endfor
+                @endforeach
+              </g>
+
+              <!-- SUB-LAYER A: FASILITAS SISI UDARA (RUNWAY, APRON, REGULATING POND, TERMINAL) — di atas heatmap, di bawah penanda burung -->
+              <g id="layerFacilities" pointer-events="none">
+                <style>
+                  #layerFacilities > rect { stroke-width: 1.8px; }
+                  #layerFacilities > text { paint-order: stroke; stroke: #FFFFFF; stroke-width: 2.6px; stroke-linejoin: round; }
+                  #layerFacilities > text[fill="#FFFFFF"], #layerFacilities > text[fill="#F8FAFC"] { stroke: #0F172A; }
+                </style>
                 <!-- Runway 10/28 Strip Buffer (G5-G25 & H5-H25: x: 170.8 s/d 852.2, y: 318.5 s/d 384.3) -->
                 <rect x="170.79" y="318.50" width="681.41" height="65.83" fill="rgba(245, 158, 11, 0.16)" stroke="rgba(245, 158, 11, 0.75)" stroke-width="1.3" stroke-dasharray="4,3" rx="2" />
                 
@@ -232,56 +308,6 @@
                 <text x="154.5" y="318" font-size="5.5" font-weight="800" fill="#EF4444" text-anchor="middle" font-family="'DM Sans', monospace">ISOLATED</text>
               </g>
 
-              <!-- SUB-LAYER B: RUTE PATROLI & MITIGASI DISPERSAL AMC -->
-              <g id="layerDispersal">
-                <line x1="170.79" y1="324" x2="852.2" y2="324" stroke="#10B981" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.8" />
-                <line x1="170.79" y1="378" x2="852.2" y2="378" stroke="#10B981" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.8" />
-                <circle cx="235.7" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
-                <circle cx="511.5" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
-                <circle cx="754.9" cy="324" r="3" fill="#10B981" stroke="#FFFFFF" stroke-width="0.8" />
-              </g>
-
-              <!-- SUB-LAYER C: GRID MESH LATTICE (KISI-KISI GARIS SEKTOR A-L & 1-29) -->
-              <g id="layerGridMesh" stroke="rgba(255, 255, 255, 0.22)" stroke-width="0.75" pointer-events="none">
-                @for($c = 0; $c <= 29; $c++)
-                  @php $lx = round($x0 + $c * $cw, 2); @endphp
-                  <line x1="{{ $lx }}" y1="{{ $y0 }}" x2="{{ $lx }}" y2="{{ round($y0 + 12 * $rh, 2) }}" stroke-dasharray="{{ $c === 0 || $c === 29 ? 'none' : '3,3' }}" />
-                @endfor
-                @for($r = 0; $r <= 12; $r++)
-                  @php $ly = round($y0 + $r * $rh, 2); @endphp
-                  <line x1="{{ $x0 }}" y1="{{ $ly }}" x2="{{ round($x0 + 29 * $cw, 2) }}" y2="{{ $ly }}" stroke-dasharray="{{ $r === 0 || $r === 12 ? 'none' : '3,3' }}" />
-                @endfor
-              </g>
-
-              <!-- SUB-LAYER D: 348 TITIK KOORDINAT SIMPUL GRID SISI UDARA (A1–L29) -->
-              <g id="layerGridPoints" pointer-events="none">
-                @foreach($rows as $rIdx => $rChar)
-                  @for($cNum = 1; $cNum <= 29; $cNum++)
-                    @php
-                      $codeKey1 = $rChar . '-' . $cNum;
-                      $codeKey2 = $rChar . $cNum;
-                      $itemData = $normGrid[$codeKey1] ?? ($normGrid[$codeKey2] ?? null);
-                      $centerX = round($x0 + ($cNum - 0.5) * $cw, 2);
-                      $centerY = round($y0 + ($rIdx + 0.5) * $rh, 2);
-                      $birdCount = $itemData['bird_stats']['total_birds'] ?? 0;
-                    @endphp
-                    @if($itemData)
-                      @if($birdCount > 0)
-                        <!-- Efek Pendaran Luar untuk Sel Burung (Tanpa menutupi angka laporan di tengah) -->
-                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="9" fill="rgba(245, 158, 11, 0.22)" stroke="#F59E0B" stroke-width="0.75" stroke-dasharray="2,2" class="grid-cell-pulse" />
-                      @endif
-                    @else
-                      <!-- Titik Grid Steril: Tetap Terlihat Tegas & Rapi (Slate / Subtle Dot Crosshair) -->
-                      <g id="pointNode_{{ $rChar }}_{{ $cNum }}" class="grid-point-item opacity-75">
-                        <circle cx="{{ $centerX }}" cy="{{ $centerY }}" r="1.8" fill="#CBD5E1" stroke="#334155" stroke-width="0.5" />
-                        <line x1="{{ $centerX - 2.5 }}" y1="{{ $centerY }}" x2="{{ $centerX + 2.5 }}" y2="{{ $centerY }}" stroke="#94A3B8" stroke-width="0.5" />
-                        <line x1="{{ $centerX }}" y1="{{ $centerY - 2.5 }}" x2="{{ $centerX }}" y2="{{ $centerY + 2.5 }}" stroke="#94A3B8" stroke-width="0.5" />
-                      </g>
-                    @endif
-                  @endfor
-                @endforeach
-              </g>
-
               <!-- SUB-LAYER E: HOTSPOT BAHAYA SATWA LIAR & ANGKA LAPORAN JELAS -->
               <g id="layerHotspots" pointer-events="none">
                 @foreach($rows as $rIdx => $rChar)
@@ -299,23 +325,62 @@
                       @php
                         $cCount = $itemData['count'];
                         $bCount = $itemData['bird_stats']['total_birds'] ?? 0;
-                        $isKritis = $cCount >= 30;
-                        $isSedang = $cCount >= 15 && $cCount < 30;
-                        $fillColor = $isKritis ? 'rgba(239, 68, 68, 0.55)' : ($isSedang ? 'rgba(245, 158, 11, 0.50)' : 'rgba(0, 163, 180, 0.45)');
-                        $strokeColor = $isKritis ? '#EF4444' : ($isSedang ? '#F59E0B' : '#00A3B4');
+                        // F1: warna dari kelas skor zonasi; grid tanpa pengamatan burung tampil netral.
+                        $zonasiWarna = [
+                          'rendah' => ['rgba(16, 185, 129, 0.45)', '#10B981'],
+                          'sedang' => ['rgba(250, 204, 21, 0.50)', '#EAB308'],
+                          'tinggi' => ['rgba(249, 115, 22, 0.55)', '#F97316'],
+                          'sangat_tinggi' => ['rgba(239, 68, 68, 0.60)', '#EF4444'],
+                        ];
+                        [$fillColor, $strokeColor] = $zonasiWarna[$itemData['zonasi_kelas'] ?? ''] ?? ['rgba(148, 163, 184, 0.30)', '#94A3B8'];
                         $badgeStroke = $bCount > 0 ? '#F59E0B' : '#FFFFFF';
                       @endphp
                       <!-- Hotspot Cell {{ $codeKey1 }} -->
-                      <rect x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}" fill="{{ $fillColor }}" stroke="{{ $strokeColor }}" stroke-width="1.8" rx="1.5" />
+                      <rect x="{{ $cellLeft }}" y="{{ $cellTop }}" width="{{ $cellW }}" height="{{ $cellH }}" fill="none" stroke="{{ $strokeColor }}" stroke-width="1.4" rx="1.5" />
                       
                       <!-- Incident Count Badge in Cell Center (Kotak Hitam Rapi) -->
-                      <rect x="{{ round($cellLeft + ($cellW - 18)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="18" height="12" rx="3" fill="#0F172A" fill-opacity="0.95" stroke="{{ $badgeStroke }}" stroke-width="1" />
+                      @php $badgeText = $bCount > 0 ? 'B:' . $bCount : (string) $cCount; $badgeW = 6 + 4.3 * strlen($badgeText); @endphp
+                      <rect x="{{ round($cellLeft + ($cellW - $badgeW)/2, 2) }}" y="{{ round($cellTop + ($cellH - 12)/2, 2) }}" width="{{ $badgeW }}" height="12" rx="3" fill="#0F172A" fill-opacity="0.95" stroke="{{ $badgeStroke }}" stroke-width="1" />
                       
                       <!-- Angka Laporan Tetap Jelas & Terbaca di Tengah Kotak -->
-                      <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cCount }}</text>
+                      <text x="{{ round($cellLeft + $cellW/2, 2) }}" y="{{ round($cellTop + $cellH/2 + 3.2, 2) }}" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="'DM Sans', monospace">{{ $badgeText }}</text>
                     @endif
                   @endfor
                 @endforeach
+              </g>
+
+              <!-- SUB-LAYER B: RUTE PATROLI & MITIGASI DISPERSAL AMC (di atas heatmap agar tetap terlihat) -->
+              <!-- Loop searah jarum jam mengelilingi runway strip: sisi utara (y 324) ke timur, sisi selatan (y 378) ke barat, berbelok di kedua ujung approach. -->
+              <g id="layerDispersal" pointer-events="none">
+                <style>
+                  #layerDispersal .dispersal-flow { animation: dispersalFlow 1.4s linear infinite; }
+                  @keyframes dispersalFlow { to { stroke-dashoffset: -18; } }
+                  @media (prefers-reduced-motion: reduce) { #layerDispersal .dispersal-flow { animation: none; } }
+                </style>
+                @php $dispersalPath = 'M170.79,324 H852.2 C872,324 878,378 852.2,378 H170.79 C151,378 145,324 170.79,324 Z'; @endphp
+                <!-- Tepi gelap agar kontras di atas heatmap & foto udara -->
+                <path d="{{ $dispersalPath }}" fill="none" stroke="#0F172A" stroke-width="5" stroke-opacity="0.75" stroke-linejoin="round" />
+                <!-- Garis rute utama -->
+                <path d="{{ $dispersalPath }}" fill="none" stroke="#22D3EE" stroke-width="2.6" stroke-linejoin="round" />
+                <!-- Aliran arah patroli -->
+                <path class="dispersal-flow" d="{{ $dispersalPath }}" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-dasharray="6,12" stroke-linecap="round" />
+
+                <!-- Panah arah: utara ke timur, selatan ke barat -->
+                @foreach([340, 510, 680] as $arrowX)
+                  <polygon points="{{ $arrowX - 4 }},320 {{ $arrowX + 5 }},324 {{ $arrowX - 4 }},328" fill="#FFFFFF" stroke="#0F172A" stroke-width="0.8" />
+                  <polygon points="{{ $arrowX + 4 }},374 {{ $arrowX - 5 }},378 {{ $arrowX + 4 }},382" fill="#FFFFFF" stroke="#0F172A" stroke-width="0.8" />
+                @endforeach
+
+                <!-- Checkpoint patroli dispersal -->
+                @foreach([['CP1', 235.7, 324], ['CP2', 511.5, 324], ['CP3', 754.9, 324], ['CP4', 754.9, 378], ['CP5', 511.5, 378], ['CP6', 235.7, 378]] as [$cpLabel, $cpX, $cpY])
+                  <circle cx="{{ $cpX }}" cy="{{ $cpY }}" r="5" fill="#0E7490" stroke="#FFFFFF" stroke-width="1.4" />
+                  <rect x="{{ $cpX - 10 }}" y="{{ $cpY < 350 ? $cpY - 17 : $cpY + 7 }}" width="20" height="9" rx="2" fill="#0F172A" fill-opacity="0.85" />
+                  <text x="{{ $cpX }}" y="{{ $cpY < 350 ? $cpY - 10.5 : $cpY + 13.5 }}" font-size="6" font-weight="900" fill="#67E8F9" text-anchor="middle" font-family="'DM Sans', monospace">{{ $cpLabel }}</text>
+                @endforeach
+
+                <!-- Label rute -->
+                <rect x="262" y="383" width="104" height="11" rx="2.5" fill="#0F172A" fill-opacity="0.85" stroke="#22D3EE" stroke-width="0.8" />
+                <text x="314" y="391" font-size="6.2" font-weight="900" fill="#67E8F9" text-anchor="middle" font-family="'DM Sans', sans-serif" letter-spacing="0.4">RUTE PATROLI DISPERSAL</text>
               </g>
 
               <!-- SUB-LAYER F: LABEL KODING GRID KOORDINAT A1 - L29 -->
@@ -386,7 +451,7 @@
                     $isRunway = ($col >= 5 && $col <= 26);
                   @endphp
                   @if($hasData)
-                    <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                    <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ ($item['zonasi_kelas'] ?? null) === 'sangat_tinggi' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
                       <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-bold leading-none">{{ $code }}</span>
                       <span class="text-[9px] font-bold bg-white text-slate-navy px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
                     </div>
@@ -419,7 +484,7 @@
                     $isRunway = ($col >= 5 && $col <= 26);
                   @endphp
                   @if($hasData)
-                    <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                    <div onclick="selectGrid('{{ $code }}')" class="h-10 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ ($item['zonasi_kelas'] ?? null) === 'sangat_tinggi' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
                       <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-bold leading-none">{{ $code }}</span>
                       <span class="text-[9px] font-bold bg-white text-slate-navy px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
                     </div>
@@ -448,7 +513,7 @@
                   $item = $hasData ? ($gridAgg[$code] ?? $gridAgg[$r . $col]) : null;
                 @endphp
                 @if($hasData)
-                  <div onclick="selectGrid('{{ $code }}')" class="h-9 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ $item['risk_level'] === 'Kritis' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
+                  <div onclick="selectGrid('{{ $code }}')" class="h-9 rounded border-2 {{ $item['risk_border'] }} {{ $item['risk_bg'] }} {{ ($item['zonasi_kelas'] ?? null) === 'sangat_tinggi' ? 'grid-cell-pulse' : '' }} hover:border-white transition-all flex flex-col items-center justify-center p-0.5 cursor-pointer relative z-10" title="Grid {{ $code }}: {{ $item['dominant_species'] }} ({{ $item['count'] }} temuan)">
                     <span class="text-[10px] font-code-coordinate {{ $item['risk_text'] }} font-semibold leading-none">{{ $code }}</span>
                     <span class="text-[9px] font-bold bg-white/20 text-white px-1 rounded mt-0.5 leading-none">{{ $item['count'] }}</span>
                   </div>
@@ -467,25 +532,58 @@
     </div>
 
     <!-- BOTTOM MAP FOOTER: RISK LEVEL LEGEND -->
-    <div class="mt-3.5 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3 text-xs">
+    <p id="heatmapFilterNote" class="mt-3 text-[11px] text-slate-600 flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-sm text-injourney-teal">info</span>
+      <span>{{ $heatmapKeterangan }}</span>
+    </p>
+    <div class="mt-2 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3 text-xs">
       <div id="mapRiskLegend" class="flex items-center gap-4 flex-wrap">
-        <span class="text-secondary font-bold uppercase tracking-wider text-[11px]">Legenda Titik &amp; Risiko ICAO:</span>
+        @php
+          $fmtAmbang = fn ($v) => rtrim(rtrim(number_format((float) $v, 1, ',', '.'), '0'), ',');
+        @endphp
+        <span class="text-secondary font-bold uppercase tracking-wider text-[11px]" title="S = rata-rata ekor burung per pengamatan × bobot spesies × bobot jarak ke runway × bobot attractor">Skor Zonasi Risiko (S):</span>
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 rounded bg-warning-rose"></span>
-          <span class="text-slate-navy font-semibold text-[11px]">Kritis / Kategori 4 (&gt;30 Temuan)</span>
+          <span class="text-slate-navy font-semibold text-[11px]">Sangat Tinggi (S ≥ {{ $fmtAmbang($ambangZonasi['sangat_tinggi']) }})</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded bg-amber-500"></span>
-          <span class="text-slate-navy font-semibold text-[11px]">Sedang / Flocking (15-30)</span>
+          <span class="w-3 h-3 rounded bg-orange-500"></span>
+          <span class="text-slate-navy font-semibold text-[11px]">Tinggi ({{ $fmtAmbang($ambangZonasi['tinggi']) }} – &lt; {{ $fmtAmbang($ambangZonasi['sangat_tinggi']) }})</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded bg-sky-500"></span>
-          <span class="text-slate-navy font-semibold text-[11px]">Rendah / Terpantau (&lt;15)</span>
+          <span class="w-3 h-3 rounded bg-yellow-400"></span>
+          <span class="text-slate-navy font-semibold text-[11px]">Sedang ({{ $fmtAmbang($ambangZonasi['sedang']) }} – &lt; {{ $fmtAmbang($ambangZonasi['tinggi']) }})</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded border border-slate-300 bg-surface-container-low"></span>
-          <span class="text-secondary text-[11px]">Titik Grid Steril</span>
+          <span class="w-3 h-3 rounded bg-emerald-500"></span>
+          <span class="text-slate-navy font-semibold text-[11px]">Rendah (S &lt; {{ $fmtAmbang($ambangZonasi['sedang']) }})</span>
         </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded bg-slate-400/60"></span>
+          <span class="text-secondary text-[11px]">Tanpa Data Burung</span>
+        </div>
+        <div class="flex items-center gap-1.5 pl-2 border-l border-border-subtle">
+          <span class="w-5 h-1 rounded-full bg-cyan-400 ring-1 ring-slate-900"></span>
+          <span class="text-slate-navy font-semibold text-[11px]">Rute Patroli Dispersal (CP1–CP6)</span>
+        </div>
+        <details class="relative">
+          <summary class="cursor-pointer text-[11px] font-semibold text-injourney-teal hover:underline list-none">Ubah ambang</summary>
+          <form method="POST" action="{{ route('admin.statistik.ambang-zonasi') }}" class="absolute z-40 bottom-6 left-0 w-64 bg-card-bg border border-border-subtle rounded-lg shadow-lg p-3 space-y-2">
+            @csrf
+            @method('PUT')
+            <p class="text-[11px] text-secondary">Batas bawah tiap kelas. Berlaku langsung untuk semua admin.</p>
+            @foreach(['sedang' => 'Sedang', 'tinggi' => 'Tinggi', 'sangat_tinggi' => 'Sangat Tinggi'] as $kunciAmbang => $labelAmbang)
+              <label class="flex items-center justify-between gap-2 text-[11px] text-slate-navy font-semibold">
+                <span>{{ $labelAmbang }} mulai S ≥</span>
+                <input type="number" name="{{ $kunciAmbang }}" step="0.1" min="0.1" value="{{ old($kunciAmbang, $ambangZonasi[$kunciAmbang]) }}" required class="w-20 rounded border border-border-subtle px-2 py-1 text-[11px]">
+              </label>
+            @endforeach
+            @if($errors->has('sedang') || $errors->has('tinggi') || $errors->has('sangat_tinggi'))
+              <p class="text-[11px] text-rose-700">{{ $errors->first('sedang') ?: ($errors->first('tinggi') ?: $errors->first('sangat_tinggi')) }}</p>
+            @endif
+            <button type="submit" class="w-full rounded bg-injourney-teal text-white text-[11px] font-bold py-1.5 cursor-pointer">Simpan ambang</button>
+          </form>
+        </details>
         <div class="flex items-center gap-1.5 pl-2 border-l border-border-subtle">
           <span class="w-3 h-3 rounded-full bg-amber-500 ring-2 ring-amber-300 animate-pulse"></span>
           <span class="text-amber-900 font-bold text-[11px]">Titik Populasi Burung</span>

@@ -64,7 +64,7 @@
             </div>
             <div>
               <p class="text-xs text-secondary">Kondisi Cuaca &amp; Angin:</p>
-              <p class="font-semibold text-on-surface text-sm" id="modalWeather">Berawan 29°C / Angin 8 kts WSW</p>
+              <p class="font-semibold text-on-surface text-sm" id="modalWeather">-</p>
             </div>
           </div>
 
@@ -153,7 +153,7 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-injourney-teal text-sm">grid_view</span>
-              <span class="font-label-md text-label-md uppercase tracking-wider font-semibold text-slate-300">Sketsa Gridmap Runway 07L/25R</span>
+              <span class="font-label-md text-label-md uppercase tracking-wider font-semibold text-slate-300">Sketsa Gridmap Runway 10/28</span>
             </div>
             <span class="text-xs text-slate-400">Target Sel Aktif: <strong class="text-warning-rose font-code-coordinate" id="schematicGridTarget">K-10 (Bahu Landasan)</strong></span>
           </div>
@@ -186,10 +186,16 @@
             <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">Foto Dokumentasi Sisi Udara</span>
             <div class="h-52 rounded-xl border border-border-subtle bg-slate-100 overflow-hidden relative group">
               <img id="modalPhotoImg" class="w-full h-full object-cover" src="{{ asset('images/biawak.jpeg') }}" alt="Foto Dokumentasi Satwa Liar"/>
-              <div class="absolute bottom-2 left-2 px-2 py-1 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] rounded font-code-coordinate" id="modalGeoOverlay">
-                GEO: -6.125642, 106.655819 | INJOURNEY AIRSIDE
+              <div class="absolute top-2 left-2 px-2 py-1 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] rounded font-code-coordinate" id="modalGeoOverlay">
+                Lokasi foto tidak tercatat
               </div>
             </div>
+            {{-- Lokasi GPS perangkat saat foto bukti diambil/diunggah (diisi dari data laporan) --}}
+            <p class="text-[11px] text-secondary -mt-2 flex items-center gap-1.5" id="modalPhotoLocation">
+              <span class="material-symbols-outlined text-sm">location_on</span>
+              <span id="modalPhotoLocationText">Lokasi foto tidak tercatat</span>
+              <a id="modalPhotoMapLink" href="#" target="_blank" rel="noopener" class="hidden font-semibold text-injourney-teal hover:underline">Buka di peta</a>
+            </p>
             
             <div class="p-4 rounded-xl bg-surface-container-lowest border border-border-subtle space-y-2">
               <span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">Tindakan Pengusiran / Mitigasi</span>

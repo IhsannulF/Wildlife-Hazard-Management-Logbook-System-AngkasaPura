@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CuacaSnapshot;
 use App\Models\DetailSatwa;
 use App\Models\Laporan;
 use App\Models\User;
@@ -29,6 +30,25 @@ class PerilakuKawananAdminTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('satwa.0.perilaku_kawanan', 'Mencari makan · arah Timur Laut · ketinggian 50–200 ft');
+    }
+
+    public function test_modal_detail_memakai_jam_pengamatan_dan_snapshot_cuaca_terdekat(): void
+    {
+        $laporan = $this->createLaporanWithFlock();
+        CuacaSnapshot::create([
+            'waktu' => '2019-03-10 06:15:00',
+            'suhu_c' => 27.5,
+            'kecepatan_angin_kt' => 9.2,
+            'arah_angin_derajat' => 90,
+            'angin_silang_kt' => 1.6,
+            'sumber' => 'test',
+        ]);
+
+        $response = $this->actingAs(User::factory()->admin()->create())
+            ->getJson(route('admin.laporan.detail', $laporan->id));
+
+        $response->assertJsonPath('waktu_pengamatan', '10 Mar 2019, 06:15 WIB');
+        $response->assertJsonPath('cuaca_ringkas', 'Cerah / 27,5°C / Angin 9,2 kt dari T (silang 1,6 kt)');
     }
 
     public function test_berita_acara_menampilkan_perilaku_kawanan(): void

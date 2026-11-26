@@ -41,7 +41,7 @@ class StoreHistoriBirdstrikeRequest extends FormRequest
             'tanggal_kejadian' => ['required', 'date', 'before_or_equal:today'],
             'jam_kejadian' => ['nullable', 'date_format:H:i'],
             'jenis_kejadian' => ['nullable', 'in:strike,near_miss'],
-            'kode_runway' => ['required', 'in:10,28,07L,25R'],
+            'kode_runway' => ['required', 'in:10,28'],
             'titik_lokasi' => ['required', 'in:touchdown,roll,threshold,grid'],
             'grid' => ['nullable', 'string', 'max:20', 'regex:'.GridCode::REGEX],
             'ketinggian_ft' => ['nullable', 'integer', 'min:0', 'max:20000'],

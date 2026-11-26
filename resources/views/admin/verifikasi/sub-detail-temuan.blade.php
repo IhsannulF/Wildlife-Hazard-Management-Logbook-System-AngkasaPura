@@ -67,7 +67,7 @@
             </td>
             <td class="py-3 px-3.5">
               <span class="font-code-coordinate text-code-coordinate font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
-                GRID {{ $item->grid ?: ($lap?->grid_lokasi ?: 'K-10') }}
+                GRID {{ $item->grid ?: ($lap?->grid_lokasi ?: '-') }}
               </span>
             </td>
             <td class="py-3 px-3.5 font-semibold text-on-surface">

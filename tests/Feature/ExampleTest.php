@@ -123,7 +123,8 @@ class ExampleTest extends TestCase
 
         $responseFields = $this->actingAs($admin)->get('/admin/manajemen-user?tab=fields');
         $responseFields->assertStatus(200);
-        $responseFields->assertSee('Pengaturan Field Form Pelaporan');
+        $responseFields->assertSee('Pengaturan isian form inspeksi sudah pindah');
+        $responseFields->assertSee(route('admin.form-inspeksi.index'), false);
     }
 
     public function test_admin_can_download_excel(): void

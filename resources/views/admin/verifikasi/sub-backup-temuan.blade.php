@@ -70,7 +70,7 @@
               {{ $lap && $lap->tanggal ? $lap->tanggal->format('Y-m-d') : '2026-06-01' }} {{ $b->created_at ? $b->created_at->format('H:i:s') : '08:00:00' }}
             </td>
             <td class="py-2.5 px-3">
-              <span class="font-bold text-slate-800">{{ $b->grid ?: ($lap?->grid_lokasi ?: 'K-10') }}</span>
+              <span class="font-bold text-slate-800">{{ $b->grid ?: ($lap?->grid_lokasi ?: '-') }}</span>
             </td>
             <td class="py-2.5 px-3 text-slate-900 font-semibold">
               {{ $b->nama_satwa }}

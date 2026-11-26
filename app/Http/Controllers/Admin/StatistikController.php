@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailSatwa;
+use App\Models\GridCell;
 use App\Models\Laporan;
+use App\Services\Risk\GridRiskService;
+use App\Support\GridCode;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 
 class StatistikController extends Controller
@@ -24,6 +28,7 @@ class StatistikController extends Controller
             'pecuk', 'gereja', 'dara', 'merpati', 'bebek', 'ibis', 'puyuh',
             'camar', 'gagak', 'tekukur', 'pipit', 'walik', 'koak', 'mandar',
             'belibis', 'trinil', 'cerek', 'kokokan', 'ruak', 'kareo',
+            'cabak', 'jalak', 'kerak', 'bangau', 'alap', 'perkutut', 'kepodang',
         ];
 
         foreach ($keywords as $kw) {
@@ -35,43 +40,139 @@ class StatistikController extends Controller
         return false;
     }
 
-    public function index(Request $request)
+    /**
+     * Rentang tanggal laporan untuk seluruh halaman (grid, heatmap, top 5, tabel).
+     * `custom` = rentang bulan pilihan pengguna (`dari`/`sampai` format Y-m), urutan terbalik ditukar.
+     *
+     * @return array{0: CarbonImmutable|null, 1: CarbonImmutable|null}
+     */
+    private function periodWindow(string $timeFilter, int $tahun, ?string $dari, ?string $sampai): array
     {
+        $today = CarbonImmutable::now(config('whms_risk.zona_waktu'));
+
+        if ($timeFilter === 'custom') {
+            $start = CarbonImmutable::createFromFormat('!Y-m', $dari ?? $today->format('Y-m'), config('whms_risk.zona_waktu'));
+            $end = CarbonImmutable::createFromFormat('!Y-m', $sampai ?? $dari ?? $today->format('Y-m'), config('whms_risk.zona_waktu'));
+            if ($start->gt($end)) {
+                [$start, $end] = [$end, $start];
+            }
+
+            return [$start->startOfMonth(), $end->endOfMonth()];
+        }
+
+        return match ($timeFilter) {
+            'month' => [$today->startOfMonth(), $today],
+            'quarter' => [$today->subMonths(3)->startOfDay(), $today],
+            '12m' => [$today->subYear()->addDay()->startOfDay(), $today],
+            'year' => [CarbonImmutable::create($tahun)->startOfYear(), CarbonImmutable::create($tahun)->endOfYear()],
+            default => [null, null],
+        };
+    }
+
+    /**
+     * Dua jam dengan jumlah satwa terbanyak dari jam laporan, mis. "06:00–07:00 & 17:00–18:00 WIB".
+     *
+     * @param  array<int, int>  $hourCounts  jam (0–23) => jumlah ekor
+     */
+    private static function peakHours(array $hourCounts): string
+    {
+        if ($hourCounts === []) {
+            return 'Belum ada data jam';
+        }
+
+        arsort($hourCounts);
+        $peaks = array_slice(array_keys($hourCounts), 0, 2);
+        sort($peaks);
+
+        return implode(' & ', array_map(fn (int $hour): string => sprintf('%02d:00–%02d:00', $hour, ($hour + 1) % 24), $peaks)).' WIB';
+    }
+
+    /**
+     * Teks periode aktif, mis. "Jan 2026 – Mar 2026 (3 bulan)".
+     */
+    private function periodLabel(?CarbonImmutable $from, ?CarbonImmutable $to): string
+    {
+        if ($from === null || $to === null) {
+            return 'Semua data';
+        }
+
+        $months = ($to->year - $from->year) * 12 + $to->month - $from->month + 1;
+        $format = fn (CarbonImmutable $date): string => $date->locale('id')->translatedFormat('M Y');
+        $range = $months === 1 ? $format($from) : $format($from).' – '.$format($to);
+
+        return sprintf('%s (%d bulan)', $range, $months);
+    }
+
+    /**
+     * Label, warna sel, dan badge untuk kelas zonasi (FR-1.3: hijau/kuning/oranye/merah).
+     *
+     * @param  array{skor: float, kelas: string}|null  $zone  null bila grid tidak punya pengamatan burung
+     * @return array<string, mixed>
+     */
+    private static function zoningPresentation(?array $zone): array
+    {
+        $styles = [
+            GridRiskService::CLASS_LOW => ['badge' => 'bg-emerald-100 text-emerald-800', 'bg' => 'bg-emerald-950/70', 'border' => 'border-emerald-400', 'text' => 'text-emerald-200', 'bar' => 'bg-emerald-500'],
+            GridRiskService::CLASS_MEDIUM => ['badge' => 'bg-yellow-100 text-yellow-900', 'bg' => 'bg-yellow-950/70', 'border' => 'border-yellow-400', 'text' => 'text-yellow-200', 'bar' => 'bg-yellow-400'],
+            GridRiskService::CLASS_HIGH => ['badge' => 'bg-orange-100 text-orange-900', 'bg' => 'bg-orange-950/80', 'border' => 'border-orange-500', 'text' => 'text-orange-200', 'bar' => 'bg-orange-500'],
+            GridRiskService::CLASS_VERY_HIGH => ['badge' => 'bg-error-container text-error', 'bg' => 'bg-warning-rose', 'border' => 'border-warning-rose', 'text' => 'text-white', 'bar' => 'bg-warning-rose'],
+        ];
+        $neutral = ['badge' => 'bg-slate-100 text-slate-600', 'bg' => 'bg-slate-800/60', 'border' => 'border-slate-500', 'text' => 'text-slate-300', 'bar' => 'bg-slate-400'];
+
+        $kelas = $zone['kelas'] ?? null;
+        $style = $kelas ? $styles[$kelas] : $neutral;
+        $label = $kelas ? GridRiskService::CLASS_LABELS[$kelas] : 'Tanpa Data Burung';
+
+        return [
+            'zonasi' => $zone,
+            'zonasi_kelas' => $kelas,
+            'zonasi_bar' => $style['bar'],
+            'risk_level' => $label,
+            'risk_category' => $zone ? sprintf('%s (S = %s)', $label, number_format($zone['skor'], 1, ',', '.')) : $label,
+            'risk_badge_class' => $style['badge'],
+            'risk_bg' => $style['bg'],
+            'risk_border' => $style['border'],
+            'risk_text' => $style['text'],
+        ];
+    }
+
+    public function index(Request $request, GridRiskService $gridRisk)
+    {
+        $request->validate([
+            'time_filter' => ['nullable', 'in:month,quarter,12m,year,all,custom'],
+            'dari' => ['nullable', 'date_format:Y-m'],
+            'sampai' => ['nullable', 'date_format:Y-m'],
+        ]);
+
         $tahun = (int) $request->query('tahun', date('Y'));
-        $timeFilter = $request->query('time_filter', 'month'); // 'month', 'quarter', 'year', 'all'
+        $timeFilter = $request->query('time_filter', 'month');
         $kategori = $request->query('kategori', 'all');
         $zonaFilter = $request->query('zona', 'all');
         $search = trim($request->query('search', ''));
 
+        // Satu rentang periode untuk semua bagian halaman.
+        [$periodeFrom, $periodeTo] = $this->periodWindow($timeFilter, $tahun, $request->query('dari'), $request->query('sampai'));
+        $periodeLabel = $this->periodLabel($periodeFrom, $periodeTo);
+        $periodeDari = $periodeFrom?->format('Y-m') ?? '';
+        $periodeSampai = $periodeTo?->format('Y-m') ?? '';
+        $periodeQuery = array_filter([
+            'time_filter' => $timeFilter,
+            'tahun' => $timeFilter === 'year' ? $tahun : null,
+            'dari' => $timeFilter === 'custom' ? $periodeDari : null,
+            'sampai' => $timeFilter === 'custom' ? $periodeSampai : null,
+        ]);
+        $bulanPertamaData = Laporan::query()->min('tanggal');
+        $bulanPertamaData = $bulanPertamaData ? CarbonImmutable::parse($bulanPertamaData)->format('Y-m') : null;
+
         // Query data detail_satwa with eager loading laporan
         $query = DetailSatwa::with('laporan')
             ->whereNotNull('grid')
-            ->where('grid', '!=', '');
-
-        if ($timeFilter === 'month') {
-            $query->whereHas('laporan', function ($q) {
-                $q->whereMonth('tanggal', now()->month)
-                    ->whereYear('tanggal', now()->year);
-            });
-        } elseif ($timeFilter === 'quarter') {
-            $query->whereHas('laporan', function ($q) {
-                $q->where('tanggal', '>=', now()->subMonths(3)->startOfDay());
-            });
-        } elseif ($timeFilter === 'year') {
-            $query->whereHas('laporan', function ($q) use ($tahun) {
-                $q->whereYear('tanggal', $tahun);
-            });
-        }
+            ->where('grid', '!=', '')
+            ->when($periodeFrom, fn ($q) => $q->whereHas('laporan', fn ($laporan) => $laporan->whereBetween('tanggal', [$periodeFrom->toDateString(), $periodeTo->toDateString()])));
 
         if ($kategori !== 'all') {
             if ($kategori === 'burung') {
-                $query->where(function ($q) {
-                    $q->where('nama_satwa', 'like', '%Burung%')
-                        ->orWhere('nama_satwa', 'like', '%Blekok%')
-                        ->orWhere('nama_satwa', 'like', '%Kuntul%')
-                        ->orWhere('nama_satwa', 'like', '%Elang%')
-                        ->orWhere('nama_satwa', 'like', '%Layang%');
-                });
+                // Disaring setelah query dengan isBirdSpecies() agar sama dengan skor zonasi (mis. Cabak, Jalak ikut).
             } elseif ($kategori === 'reptil') {
                 $query->where(function ($q) {
                     $q->where('nama_satwa', 'like', '%Biawak%')
@@ -88,222 +189,51 @@ class StatistikController extends Controller
             }
         }
 
-        $details = $query->get();
+        // Urut kronologis agar "mitigasi terakhir" dan "laporan terbaru" benar-benar yang terbaru.
+        $details = $query->get()
+            ->when($kategori === 'burung', fn ($rows) => $rows->filter(fn (DetailSatwa $d): bool => self::isBirdSpecies($d->nama_satwa)))
+            // Kata kunci reptil/mamalia bisa mengenai nama burung (mis. "Kerak Kerbau", "Elang Tikus"), jadi burung dikeluarkan.
+            ->when(in_array($kategori, ['reptil', 'mamalia'], true), fn ($rows) => $rows->reject(fn (DetailSatwa $d): bool => self::isBirdSpecies($d->nama_satwa)))
+            ->sortBy(fn (DetailSatwa $d): string => ($d->laporan?->tanggal?->format('Y-m-d') ?? '').' '.($d->laporan?->jam ?? ''))
+            ->values();
 
-        // Baseline data grid terkalibrasi dengan Denah Resmi Bandara Internasional Juanda
-        $baselineGrids = [
-            'K-10' => [
-                'count' => 38,
-                'satwa' => 'Biawak Air',
-                'total' => 38,
-                'area' => 'Kanal Drainase Perimeter Selatan Terminal 2',
-                'type' => 'perimeter',
-                'category' => 'reptil',
-                'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.',
-                'bird_counts' => ['Burung Kuntul Kecil' => 6],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/091', 'tanggal' => '19 Nov 2026', 'jam' => '06:40 WIB', 'spesies' => 'Burung Kuntul Kecil', 'jumlah' => 6, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Patroli sirene AMC & pemantauan kanal'],
-                ],
-            ],
-            'D-9' => [
-                'count' => 44,
-                'satwa' => 'Burung Blekok Sawah',
-                'total' => 44,
-                'area' => 'Rawa Buffer Barat & Runway 10 Approach',
-                'type' => 'perimeter',
-                'category' => 'burung',
-                'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.',
-                'bird_counts' => ['Burung Blekok Sawah' => 28, 'Kuntul Kerbau' => 10, 'Burung Layang-layang Api' => 6],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/104', 'tanggal' => '21 Nov 2026', 'jam' => '07:15 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 18, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Aktivasi sirene patroli & laser bird repeller'],
-                    ['nomor_ba' => 'BA/2026/XI/098', 'tanggal' => '20 Nov 2026', 'jam' => '16:30 WIB', 'spesies' => 'Kuntul Kerbau', 'jumlah' => 10, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Dispersal akustik unit mobile AMC'],
-                    ['nomor_ba' => 'BA/2026/XI/085', 'tanggal' => '18 Nov 2026', 'jam' => '08:10 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 10, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Pengusiran manual regu jaga strip barat'],
-                ],
-            ],
-            'E-12' => [
-                'count' => 29,
-                'satwa' => 'Kuntul Kerbau',
-                'total' => 29,
-                'area' => 'Apron C & Taxiway NP-2',
-                'type' => 'apron',
-                'category' => 'burung',
-                'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.',
-                'bird_counts' => ['Kuntul Kerbau' => 20, 'Burung Gereja' => 9],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/088', 'tanggal' => '19 Nov 2026', 'jam' => '09:20 WIB', 'spesies' => 'Kuntul Kerbau', 'jumlah' => 14, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Penyisiran area rumput bahu taxiway'],
-                    ['nomor_ba' => 'BA/2026/XI/076', 'tanggal' => '17 Nov 2026', 'jam' => '15:45 WIB', 'spesies' => 'Burung Gereja', 'jumlah' => 9, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Sirene kendaraan patroli AMC'],
-                ],
-            ],
-            'A-2' => [
-                'count' => 22,
-                'satwa' => 'Burung Layang-layang Api',
-                'total' => 22,
-                'area' => 'Perimeter Barat Laut',
-                'type' => 'perimeter',
-                'category' => 'burung',
-                'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.',
-                'bird_counts' => ['Burung Layang-layang Api' => 16, 'Burung Walet Sapi' => 6],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/065', 'tanggal' => '15 Nov 2026', 'jam' => '17:10 WIB', 'spesies' => 'Burung Layang-layang Api', 'jumlah' => 16, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Pengusiran berkala regu perimeter'],
-                ],
-            ],
-            'G-18' => [
-                'count' => 28,
-                'satwa' => 'Burung Cangak Abu',
-                'total' => 28,
-                'area' => 'Bahu Runway 10/28 (Tengah Landasan)',
-                'type' => 'runway',
-                'category' => 'burung',
-                'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.',
-                'bird_counts' => ['Burung Cangak Abu' => 18, 'Burung Blekok Sawah' => 10],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/102', 'tanggal' => '21 Nov 2026', 'jam' => '16:50 WIB', 'spesies' => 'Burung Cangak Abu', 'jumlah' => 12, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Intervensi darurat sirene & gas cannon runway'],
-                    ['nomor_ba' => 'BA/2026/XI/083', 'tanggal' => '18 Nov 2026', 'jam' => '17:20 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 10, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Patroli runway sweeper mobil AMC'],
-                ],
-            ],
-            'H-8' => [
-                'count' => 19,
-                'satwa' => 'Burung Elang Tikus',
-                'total' => 19,
-                'area' => 'Runway Strip 10 (Barat)',
-                'type' => 'runway',
-                'category' => 'burung',
-                'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.',
-                'bird_counts' => ['Burung Elang Tikus' => 12, 'Burung Alap-alap Sapi' => 7],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/079', 'tanggal' => '17 Nov 2026', 'jam' => '10:15 WIB', 'spesies' => 'Burung Elang Tikus', 'jumlah' => 8, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Aktivasi pyrotechnic & sirene mobil patroli'],
-                ],
-            ],
-            'F-5' => [
-                'count' => 16,
-                'satwa' => 'Kera Ekor Panjang',
-                'total' => 16,
-                'area' => 'Regulating Pond 1 & Perimeter Barat',
-                'type' => 'perimeter',
-                'category' => 'mamalia',
-                'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.',
-                'bird_counts' => ['Burung Blekok Sawah' => 4],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/051', 'tanggal' => '12 Nov 2026', 'jam' => '08:00 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 4, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Penyisiran vegetasi pinggir kolam retensi'],
-                ],
-            ],
-            'B-4' => [
-                'count' => 12,
-                'satwa' => 'Anjing Liar',
-                'total' => 12,
-                'area' => 'Perimeter Utara Buffer',
-                'type' => 'perimeter',
-                'category' => 'mamalia',
-                'desc' => 'Anjing liar terpantau melintas di area perimeter utara.',
-                'bird_counts' => [],
-                'recent_reports' => [],
-            ],
-            'L-10' => [
-                'count' => 11,
-                'satwa' => 'Biawak Air',
-                'total' => 11,
-                'area' => 'Kanal Drainase Perimeter Selatan',
-                'type' => 'perimeter',
-                'category' => 'reptil',
-                'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.',
-                'bird_counts' => ['Burung Blekok Sawah' => 3],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/044', 'tanggal' => '10 Nov 2026', 'jam' => '07:30 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 3, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Sirene patroli AMC'],
-                ],
-            ],
-            'C-6' => [
-                'count' => 8,
-                'satwa' => 'Ular Sanca Kembang',
-                'total' => 8,
-                'area' => 'Perimeter Barat Hanggar',
-                'type' => 'perimeter',
-                'category' => 'reptil',
-                'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.',
-                'bird_counts' => [],
-                'recent_reports' => [],
-            ],
-            'J-11' => [
-                'count' => 17,
-                'satwa' => 'Kucing Liar',
-                'total' => 17,
-                'area' => 'Apron A Terminal 2',
-                'type' => 'apron',
-                'category' => 'mamalia',
-                'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.',
-                'bird_counts' => ['Burung Gereja' => 5],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/061', 'tanggal' => '14 Nov 2026', 'jam' => '11:20 WIB', 'spesies' => 'Burung Gereja', 'jumlah' => 5, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Pengusiran area kanopi apron'],
-                ],
-            ],
-            'E-18' => [
-                'count' => 14,
-                'satwa' => 'Burung Blekok Sawah',
-                'total' => 14,
-                'area' => 'Apron B Terminal 1',
-                'type' => 'apron',
-                'category' => 'burung',
-                'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.',
-                'bird_counts' => ['Burung Blekok Sawah' => 10, 'Kuntul Kerbau' => 4],
-                'recent_reports' => [
-                    ['nomor_ba' => 'BA/2026/XI/095', 'tanggal' => '20 Nov 2026', 'jam' => '06:15 WIB', 'spesies' => 'Burung Blekok Sawah', 'jumlah' => 10, 'status' => 'Telah Ditangani', 'tindak_lanjut' => 'Aktivasi sirene unit apron'],
-                ],
-            ],
-        ];
+        // F1: skor zonasi dari data laporan pada rentang filter yang sama (tanpa data baseline hardcode).
+        $zonasi = $gridRisk->scores($periodeFrom, $periodeTo);
+        $ambangZonasi = $gridRisk->thresholds();
+        $gridCells = GridCell::query()->get()->keyBy('grid');
 
-        if ($kategori !== 'all') {
-            $baselineGrids = array_filter($baselineGrids, fn ($b) => ($b['category'] ?? '') === $kategori);
-        }
-        if ($zonaFilter !== 'all') {
-            $baselineGrids = array_filter($baselineGrids, fn ($b) => ($b['type'] ?? '') === $zonaFilter);
+        // Heatmap mengikuti filter: hanya burung (risiko bird strike) dan hanya sel di zona terpilih.
+        $heatmapKeterangan = 'Heatmap: risiko bird strike dari seluruh temuan burung pada periode ini.';
+        if (in_array($kategori, ['reptil', 'mamalia'], true)) {
+            $heatmapZonasi = [];
+            $heatmapKeterangan = 'Heatmap disembunyikan: risiko bird strike hanya dihitung dari burung, bukan '.$kategori.'.';
+        } else {
+            $inZone = fn (string $grid): bool => $zonaFilter === 'all' || $gridCells->get($grid)?->zona === $zonaFilter;
+            $heatmapZonasi = array_filter(
+                $gridRisk->heatmap(array_filter($zonasi, $inZone, ARRAY_FILTER_USE_KEY)),
+                $inZone,
+                ARRAY_FILTER_USE_KEY
+            );
+            if ($zonaFilter !== 'all') {
+                $heatmapKeterangan = 'Heatmap: risiko bird strike dari temuan burung di zona '.$zonaFilter.' saja.';
+            }
         }
 
         $gridAgg = [];
-        foreach ($baselineGrids as $bgKey => $bgVal) {
-            $initialBirdCounts = $bgVal['bird_counts'] ?? [];
-            if (empty($initialBirdCounts) && ($bgVal['category'] ?? '') === 'burung') {
-                $initialBirdCounts = [$bgVal['satwa'] => $bgVal['total']];
-            }
-
-            $gridAgg[$bgKey] = [
-                'grid' => $bgKey,
-                'count' => $bgVal['count'],
-                'total_satwa' => $bgVal['total'],
-                'dominant_species' => $bgVal['satwa'],
-                'dominant_count' => $bgVal['total'],
-                'species_counts' => [$bgVal['satwa'] => $bgVal['total']],
-                'bird_species_counts' => $initialBirdCounts,
-                'bird_reports_count' => count($bgVal['recent_reports'] ?? []),
-                'recent_bird_reports' => $bgVal['recent_reports'] ?? [],
-                'status' => 'Telah Ditangani',
-                'zone_name' => $bgVal['area'],
-                'zone_type' => $bgVal['type'],
-                'desc' => $bgVal['desc'],
-                'last_mitigation' => 'Aktivasi Sirene Patroli & Repellent Trap',
-                'peak_hours' => '06:30 - 08:30 WIB & 16:00 - 17:30 WIB',
-                'mitigation_sop' => [
-                    'Peningkatan patroli kendaraan bersirene unit AMC interval 30 menit.',
-                    'Pembersihan vegetasi gulma pada saluran gorong-gorong sekitar sel.',
-                    'Aktivasi repellent trap & pagar penghalau satwa melata.',
-                ],
-            ];
-        }
 
         // Overlay with live database records
         foreach ($details as $d) {
-            $rawG = strtoupper(trim(str_replace('=', '-', $d->grid)));
-            if (empty($rawG)) {
+            $rawG = (string) GridCode::normalize(str_replace('=', '-', $d->grid));
+            if ($rawG === '') {
                 continue;
             }
 
-            $rowLetter = substr($rawG, 0, 1);
-            $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
+            $zoneType = $gridCells->get($rawG)?->zona ?? 'perimeter';
             if ($zonaFilter !== 'all' && $zoneType !== $zonaFilter) {
                 continue;
             }
 
             if (! isset($gridAgg[$rawG])) {
-                $rowLetter = substr($rawG, 0, 1);
-                $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
                 $zoneName = $zoneType === 'runway' ? 'Bahu Runway 10/28 Juanda' : ($zoneType === 'taxiway' ? 'Taxiway & Rawa Buffer' : ($zoneType === 'apron' ? 'Apron Area Pergerakan' : 'Perimeter Sisi Udara'));
 
                 $gridAgg[$rawG] = [
@@ -316,12 +246,15 @@ class StatistikController extends Controller
                     'bird_species_counts' => [],
                     'bird_reports_count' => 0,
                     'recent_bird_reports' => [],
-                    'status' => 'Belum Ditangani',
+                    // Menjadi "Belum Ditangani" bila ada satu saja laporan di grid ini yang belum ditangani.
+                    'status' => 'Telah Ditangani',
                     'zone_name' => $zoneName,
                     'zone_type' => $zoneType,
                     'desc' => 'Zona sisi udara bandara dipantau oleh regu jaga patroli AMC.',
-                    'last_mitigation' => $d->laporan?->tindak_lanjut ?: 'Penyisiran Regu Jaga AMC',
-                    'peak_hours' => '07:00 - 09:00 WIB & 15:30 - 17:00 WIB',
+                    'last_mitigation' => 'Belum tercatat',
+                    'hour_counts' => [],
+                    'peak_hours' => 'Belum ada data jam',
+                    // SOP umum (sama untuk semua grid), bukan catatan mitigasi grid ini.
                     'mitigation_sop' => [
                         'Patroli mobile rutin AMC Airside.',
                         'Pengusiran akustik menggunakan sirene mobil patroli.',
@@ -336,15 +269,19 @@ class StatistikController extends Controller
             $gridAgg[$rawG]['count'] += 1;
             $gridAgg[$rawG]['total_satwa'] += $qty;
             $gridAgg[$rawG]['species_counts'][$sp] = ($gridAgg[$rawG]['species_counts'][$sp] ?? 0) + $qty;
+            if ($d->laporan?->jam) {
+                $hour = (int) substr((string) $d->laporan->jam, 0, 2);
+                $gridAgg[$rawG]['hour_counts'][$hour] = ($gridAgg[$rawG]['hour_counts'][$hour] ?? 0) + $qty;
+            }
 
             // Jika satwa ini tergolong burung, catat ke analitik burung
             if (self::isBirdSpecies($sp)) {
                 $gridAgg[$rawG]['bird_species_counts'][$sp] = ($gridAgg[$rawG]['bird_species_counts'][$sp] ?? 0) + $qty;
                 $gridAgg[$rawG]['bird_reports_count'] = ($gridAgg[$rawG]['bird_reports_count'] ?? 0) + 1;
 
-                $baNo = $d->laporan?->nomor_ba ?: ('BA/'.date('Y/m', strtotime($d->laporan?->tanggal ?: now())).'/'.str_pad((string) $d->laporan_id, 3, '0', STR_PAD_LEFT));
-                $tgl = $d->laporan?->tanggal ? date('d M Y', strtotime($d->laporan->tanggal)) : date('d M Y');
-                $jam = $d->laporan?->jam ? date('H:i', strtotime($d->laporan->jam)).' WIB' : '07:00 WIB';
+                $baNo = $d->laporan?->no_laporan ?: '#'.$d->laporan_id;
+                $tgl = $d->laporan?->tanggal ? $d->laporan->tanggal->format('d M Y') : '-';
+                $jam = $d->laporan?->jam ? substr((string) $d->laporan->jam, 0, 5).' WIB' : 'Jam tidak dicatat';
 
                 $gridAgg[$rawG]['recent_bird_reports'][] = [
                     'nomor_ba' => $baNo,
@@ -353,7 +290,7 @@ class StatistikController extends Controller
                     'spesies' => $sp,
                     'jumlah' => $qty,
                     'status' => ($d->laporan && $d->laporan->status === 'belum') ? 'Belum Ditangani' : 'Telah Ditangani',
-                    'tindak_lanjut' => $d->laporan?->tindak_lanjut ?: 'Pengusiran Sirene AMC',
+                    'tindak_lanjut' => $d->laporan?->tindak_lanjut ?: '-',
                 ];
             }
 
@@ -375,6 +312,8 @@ class StatistikController extends Controller
         $totalLaporanBurungGlobal = 0;
 
         foreach ($gridAgg as $gCode => &$gItem) {
+            $gItem['peak_hours'] = self::peakHours($gItem['hour_counts']);
+
             if (! empty($gItem['species_counts'])) {
                 arsort($gItem['species_counts']);
                 $gItem['dominant_species'] = array_key_first($gItem['species_counts']);
@@ -415,28 +354,8 @@ class StatistikController extends Controller
                 'recent_reports' => array_slice(array_reverse($gItem['recent_bird_reports'] ?? []), 0, 3),
             ];
 
-            if ($gItem['count'] >= 30) {
-                $gItem['risk_level'] = 'Kritis';
-                $gItem['risk_category'] = 'Kategori 4 - Kritis';
-                $gItem['risk_badge_class'] = 'bg-error-container text-error';
-                $gItem['risk_bg'] = 'bg-warning-rose';
-                $gItem['risk_border'] = 'border-warning-rose';
-                $gItem['risk_text'] = 'text-white';
-            } elseif ($gItem['count'] >= 15) {
-                $gItem['risk_level'] = 'Sedang';
-                $gItem['risk_category'] = 'Kategori 3 - Sedang';
-                $gItem['risk_badge_class'] = 'bg-amber-100 text-amber-900';
-                $gItem['risk_bg'] = 'bg-amber-950/80';
-                $gItem['risk_border'] = 'border-amber-500';
-                $gItem['risk_text'] = 'text-amber-200';
-            } else {
-                $gItem['risk_level'] = 'Rendah';
-                $gItem['risk_category'] = 'Kategori 2 - Rendah';
-                $gItem['risk_badge_class'] = 'bg-sky-100 text-sky-800';
-                $gItem['risk_bg'] = 'bg-sky-950/70';
-                $gItem['risk_border'] = 'border-sky-400';
-                $gItem['risk_text'] = 'text-sky-200';
-            }
+            // F1: kelas risiko dari skor zonasi S_grid, bukan lagi jumlah laporan.
+            $gItem = [...$gItem, ...self::zoningPresentation($zonasi[$gCode] ?? null)];
 
             $totalIncidentsAll += $gItem['count'];
             if ($gItem['status'] === 'Telah Ditangani') {
@@ -465,7 +384,7 @@ class StatistikController extends Controller
                 'count' => $tVal['count'],
                 'dominant' => $tVal['dominant_species'],
                 'bar_width' => $pctWidth,
-                'color' => $tVal['risk_level'] === 'Kritis' ? 'bg-warning-rose' : ($tVal['risk_level'] === 'Sedang' ? 'bg-alert-amber' : 'bg-injourney-teal'),
+                'color' => $tVal['zonasi_bar'],
             ];
         }
 
@@ -488,20 +407,20 @@ class StatistikController extends Controller
             ];
         }
 
-        // Selected Grid (Default to Top Grid, e.g. D-9 atau K-10)
-        $selectedGridCode = $request->query('selected_grid', array_key_first($gridAgg) ?: 'D-9');
+        // Grid terpilih: dari URL, atau grid dengan temuan terbanyak; tanpa data = kartu kosong.
+        $selectedGridCode = $request->query('selected_grid', array_key_first($gridAgg) ?: '-');
         $selectedGrid = $gridAgg[$selectedGridCode] ?? (! empty($gridAgg) ? reset($gridAgg) : [
-            'grid' => 'Steril',
+            'grid' => '-',
             'count' => 0,
             'total_satwa' => 0,
             'dominant_species' => 'Tidak Ada',
             'dominant_count' => 0,
             'status' => 'Steril Aman',
-            'risk_category' => 'Steril / Terkendali',
+            'risk_category' => 'Tanpa Data pada Periode Ini',
             'zone_name' => 'Area Steril Terkendali',
             'desc' => 'Tidak ada catatan insiden satwa liar pada kategori dan zona terpilih.',
-            'last_mitigation' => 'Patroli Regu Jaga AMC',
-            'peak_hours' => 'Kondisi steril terpantau 24 jam.',
+            'last_mitigation' => 'Belum tercatat',
+            'peak_hours' => 'Belum ada data jam',
             'mitigation_sop' => ['Pertahankan inspeksi patroli berkala regu AMC.'],
             'bird_stats' => [
                 'total_birds' => 0,
@@ -558,6 +477,15 @@ class StatistikController extends Controller
             'totalSelAktif',
             'runwayActiveCount',
             'efektivitasDispersal',
+            'zonasi',
+            'ambangZonasi',
+            'heatmapZonasi',
+            'heatmapKeterangan',
+            'periodeLabel',
+            'periodeDari',
+            'periodeSampai',
+            'periodeQuery',
+            'bulanPertamaData',
             'totalHandledAll'
         ));
     }
