@@ -49,7 +49,7 @@
             $firstSatwa = $lap->detailSatwa->first();
             $speciesName = $firstSatwa ? $firstSatwa->nama_satwa : 'Satwa Liar';
             $totalQty = $lap->detailSatwa->sum('jumlah') ?: 1;
-            $gridName = $lap->grid_lokasi ?: ($firstSatwa->grid ?? 'K-10');
+            $gridName = $lap->grid_lokasi ?: ($firstSatwa->grid ?? '-');
 
             // Species icon detection
             $sNameLower = strtolower($speciesName);

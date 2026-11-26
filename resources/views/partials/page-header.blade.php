@@ -2,12 +2,14 @@
   $headerTitle = $title ?? 'Logbook Sisi Udara';
   $headerSubtitle = $subtitle ?? '';
   $headerIcon = $icon ?? 'space_dashboard';
-  $headerMaxWidth = $maxWidth ?? 'max-w-[1680px]';
 @endphp
 
 <!-- ================= UNIFIED WHMS PAGE TOP HEADER BAR ================= -->
+{{-- Header selalu selebar layar (tidak mengikuti $maxWidth konten): saat sidebar tersembunyi, tombol menu
+     menempel di tepi kiri tempat sidebar muncul dan tombol aksi (mis. Kembali) di tepi kanan. Saat sidebar
+     disematkan, body mendapat padding kiri sehingga header otomatis mulai setelah sidebar. --}}
 <header class="whms-page-header sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs select-none">
-  <div class="{{ $headerMaxWidth }} mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 min-h-[62px]">
+  <div class="w-full px-4 sm:px-6 lg:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 min-h-[62px]">
     
     <!-- Left: Hamburger Menu Trigger (Desktop) + Title & Description -->
     <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">

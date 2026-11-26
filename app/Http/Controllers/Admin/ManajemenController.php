@@ -162,6 +162,9 @@ class ManajemenController extends Controller
     public function toggleField(int $id)
     {
         $field = FormField::findOrFail($id);
+        if ($field->isLocked() || $field->isStandard()) {
+            return redirect()->route('admin.form-inspeksi.index')->with('error', 'Isian bawaan diatur di halaman Form Inspeksi; isian inti tidak bisa dinonaktifkan atau dihapus.');
+        }
         $field->aktif = ! $field->aktif;
         $field->save();
 
@@ -171,6 +174,9 @@ class ManajemenController extends Controller
     public function destroyField(int $id)
     {
         $field = FormField::findOrFail($id);
+        if ($field->isLocked() || $field->isStandard()) {
+            return redirect()->route('admin.form-inspeksi.index')->with('error', 'Isian bawaan diatur di halaman Form Inspeksi; isian inti tidak bisa dinonaktifkan atau dihapus.');
+        }
         $field->delete();
 
         return redirect()->route('admin.users', ['tab' => 'fields'])->with('sukses', 'Field berhasil dihapus.');

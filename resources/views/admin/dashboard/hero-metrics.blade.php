@@ -81,8 +81,12 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span>Rerata Respon: <strong>4.2 Menit</strong></span>
-        <span class="text-emerald-700 font-medium">100% Dispersal BA Valid</span>
+        <span title="Rerata menit dari jam pengamatan sampai tindakan pengusiran pertama yang tercatat di log pengusiran">
+          Rerata Respon: <strong>{{ isset($rerataResponMenit) ? number_format($rerataResponMenit, 1, ',', '.') . ' Menit' : '–' }}</strong>
+        </span>
+        <span class="text-emerald-700 font-medium" title="Persentase laporan yang sudah ditangani dan BA-nya sudah divalidasi">
+          {{ isset($persenBaTervalidasi) ? number_format($persenBaTervalidasi, 1, ',', '.') . '% BA Tervalidasi' : 'BA tervalidasi: –' }}
+        </span>
       </div>
     </div>
 
@@ -101,7 +105,7 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span class="truncate pr-1">Perimeter Runway 25R</span>
+        <span class="truncate pr-1">Grid dengan temuan terbanyak</span>
         <span class="font-code-coordinate bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface font-bold text-[10px]">{{ $totalLaporan }} Log</span>
       </div>
     </div>

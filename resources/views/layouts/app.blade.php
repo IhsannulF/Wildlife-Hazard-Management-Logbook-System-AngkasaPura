@@ -49,6 +49,7 @@
     };
   </script>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @include('partials.tailwind-gradient-fix')
   @yield('styles')
 </head>
 <body>

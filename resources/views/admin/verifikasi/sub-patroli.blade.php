@@ -95,7 +95,7 @@
             <td class="py-3 px-3.5">
               <div class="font-medium text-on-surface">{{ $lap->area_inspeksi ?: 'Sisi Udara' }}</div>
               <div class="font-code-coordinate text-code-coordinate text-xs font-bold text-injourney-teal">
-                GRID {{ $lap->grid_lokasi ?: 'K-10' }}
+                GRID {{ $lap->grid_lokasi ?: '-' }}
               </div>
             </td>
 

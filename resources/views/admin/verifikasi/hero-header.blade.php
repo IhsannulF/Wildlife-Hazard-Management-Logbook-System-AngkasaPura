@@ -98,7 +98,7 @@
         </div>
       </div>
       <div class="mt-2.5 pt-2.5 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
-        <span class="truncate max-w-[150px]" title="{{ $topArea ?? 'Runway 07L' }}">Zona Dominan: <strong>{{ Str::limit($topArea ?? 'Runway 07L', 16) }}</strong></span>
+        <span class="truncate max-w-[150px]" title="{{ $topArea ?? '-' }}">Zona Dominan: <strong>{{ Str::limit($topArea ?? '-', 16) }}</strong></span>
         <span>Kepadatan: <strong class="text-injourney-teal font-semibold">{{ number_format($hotspotCount ?? 0) }} Ekor</strong></span>
       </div>
     </div>

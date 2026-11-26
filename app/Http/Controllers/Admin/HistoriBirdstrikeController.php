@@ -164,7 +164,7 @@ class HistoriBirdstrikeController extends Controller
             $validator = Validator::make($row, [
                 'tanggal_kejadian' => ['required', 'date', 'before_or_equal:today'],
                 'jam_kejadian' => ['nullable'],
-                'kode_runway' => ['required', 'in:10,28,07L,25R'],
+                'kode_runway' => ['required', 'in:10,28'],
                 'titik_lokasi' => ['required', 'in:touchdown,roll,threshold,grid'],
                 'koordinat_lat' => ['nullable', 'numeric'],
                 'koordinat_lng' => ['nullable', 'numeric'],

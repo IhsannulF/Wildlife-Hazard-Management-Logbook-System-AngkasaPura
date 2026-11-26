@@ -3,7 +3,7 @@
 
 | Informasi Dokumen | Keterangan |
 | :--- | :--- |
-| **Versi** | 2.1 (revisi atas `prd.md` v2.0 dan `spec.md` 2.0.0-PROD) |
+| **Versi** | 2.1 (revisi atas `prd.md` v2.0 dan `spec.md` 2.0.0-PROD); diperbarui 26 Nov 2026 sesuai hasil implementasi F0–F1 |
 | **Tanggal** | 25 November 2026 |
 | **Sumber masukan** | Notulensi revisi Pak Bagus, 6 mockup "Gridmap Operasional Monitoring Birdstrike", dokumen "Kerangka Analisis Prediktif Peluang Birdstrike" |
 | **Versi kolaborasi** | [PRD di Claude Docs](https://claude.ai/artifact/4qPpEiAkJR4L1zUnFfMzQp) |
@@ -68,7 +68,7 @@ Catatan sumber:
 | Granularitas prediksi | Prediksi Gemini harian, satu angka untuk bandara (`config/whms_ai.php`, ambang 0,30/0,60/0,85) | Per grid/runway, jendela 15–60 menit | **Ikut Pak Bagus:** per grid per slot 30 menit, horizon 0–3 jam. Gemini hanya untuk narasi. |
 | Metode prediksi | `prd.md` §9 roadmap #4: "Analisis prediktif AI/ML" (masa depan) | Baseline logit dulu; RF/XGBoost/CatBoost setelah data cukup | **Ikut Pak Bagus:** rumus logit dengan bobot pakar sekarang, ML setelah ~50 kejadian. |
 | Tindakan pengusiran | `spec.md` §2.1: `master_alat_dispersal` + `penggunaan_alat_dispersal` (per laporan, tanpa jam/grid; belum dibuat) | Scare action dengan **jenis dan waktu**, dihitung 0–30 menit terakhir per grid | **Gabung:** `master_alat_dispersal` dipakai sebagai master alat; pencatatan pemakaian menjadi `tindakan_pengusiran` dengan waktu, grid, alat, jumlah, hasil. |
-| Ukuran grid | `spec.md` §4.2: grid A–L × 1–29 lewat geofence (± 114 m × 92 m per sel) | Grid area runway/final ± 100 × 100 m | **Sudah sejalan.** Grid A–L × 1–29 tetap dipakai. |
+| Ukuran grid | `spec.md` §4.2: grid A–L × 1–29 lewat geofence (± 114 m × 92 m per sel) | Grid area runway/final ± 100 × 100 m | Grid A–L × 1–29 tetap dipakai. Pada gambar gridmap 1 sel ≈ **143 × 143 m** (runway 3.000 m = 21 kolom), lebih besar dari usulan ± 100 m dan dari angka geofence `spec.md`. Batas geofence §4.2 perlu disesuaikan saat FR-0.8. |
 | GPS → grid | `spec.md` §4.2: geofencing (belum diimplementasi di kode) | Hitungan kawanan per grid harus akurat | Masuk F0 (FR-0.8) sebagai Could. |
 | Cuaca | `kondisi_cuaca` dropdown manual | Per 5–15 menit: hujan, visibilitas, angin (head/tail/cross), gust, suhu | Open-Meteo: widget + isi otomatis (sudah ada), snapshot server 15 menit dengan angin silang terhadap RWY 10/28 (F0). |
 | Insiden | `histori_birdstrike` hanya bird strike | Bird strike **dan near-miss**, ketinggian, jarak centerline | Tambah `jenis_kejadian`, ketinggian, jarak centerline. |
@@ -78,19 +78,22 @@ Catatan: rumus matriks ICAO di `spec.md` §4.1 (S = 0,6 × spesies + 0,4 × area
 
 ---
 
-## 4. Kondisi Saat Ini
+## 4. Kondisi Saat Ini (26 November 2026)
 
 | Kebutuhan | Yang sudah ada | Gap |
 | :--- | :--- | :--- |
-| Heatmap zonasi grid | Grid A–L × 1–29 (`GridCode`), peta di `admin/statistik` | Warna dari frekuensi laporan saja; data baseline hardcode di `StatistikController` |
-| Peluang bird strike | Prediksi Gemini harian (`prediksi_birdstrike_ai`) | Tidak deterministik, tidak per grid/slot |
-| Cuaca | Widget Open-Meteo + isi otomatis dropdown (form & dashboard pegawai); `OpenMeteoProvider` untuk AI | Belum disimpan ke laporan; jarak pandang ditulis tetap 10 km di kode; belum ada angin silang |
-| Observasi kawanan | Jenis, jumlah, grid, jam | 1.043 dari 1.250 ekor (83%) tanpa jam; arah terbang, ketinggian, perilaku belum terstruktur |
-| Tindakan pengusiran | Teks bebas `tindak_lanjut` / `detail_pengusiran` | Tidak ada jenis dan jam terstruktur |
-| Insiden | `histori_birdstrike` (1 baris) | Near-miss, ketinggian, jarak centerline |
+| Heatmap zonasi grid | Skor zonasi otomatis per grid (F1, bagian 7.1); heatmap 348 sel mengikuti periode, kategori, dan zona; ambang diubah admin; data baseline hardcode sudah dihapus | Geometri grid belum dikalibrasi dengan aerodrome chart; ambang 10/20/30 menunggu persetujuan |
+| Peluang bird strike | Prediksi Gemini harian (`prediksi_birdstrike_ai`) | Rumus logistik per grid/slot (F2) belum dibuat |
+| Cuaca | Widget Open-Meteo + isi otomatis dropdown; snapshot server 15 menit dengan angin silang RWY 10/28 (`weather:snapshot`) | Penjadwal belum berjalan terus (baru 2 snapshot); cuaca belum disimpan ke laporan (FR-4.3) |
+| Observasi kawanan | Jam wajib; perilaku, arah terbang, ketinggian terstruktur dan tampil di modal admin, BA, ekspor | Belum ada laporan asli dengan field baru (0 dari 217 detail satwa asli) |
+| Tindakan pengusiran | Master 6 alat + log terstruktur (waktu, grid, alat, jumlah, hasil); halaman admin Log Pengusiran | Belum ada log asli; tombol aksi cepat menunggu F2 |
+| Insiden | `histori_birdstrike` mendukung near-miss, ketinggian, jarak centerline, grid | Hanya 1 kejadian, tercatat di runway "07L" (perlu koreksi ke 10/28) |
 | Traffic | `kepadatan_penerbangan` per jam, take-off/landing terpisah; 6.552 slot dari movement sheet AMC | Data Feb 2026 hanya penerbangan internasional; Okt 2026 dst. belum ada |
-| P1–P9, attractor, mitigasi | Belum ada | Master data + peta |
-| Statistik | `BirdStatisticsService` + dashboard admin (KPI, tren, Top 10, keanekaragaman, aktivitas grid, jam, kejadian, korelasi) | — |
+| Kualitas data | Peringatan di dashboard admin bila cuaca/observasi kosong > 2 interval (FR-0.7) | — |
+| P1–P9, attractor, mitigasi | Belum ada | Master data + peta (F3, F7, F8) |
+| Statistik | `BirdStatisticsService` + dashboard admin (KPI, tren, Top 10, keanekaragaman, aktivitas grid, jam, kejadian, korelasi); kartu respon pengusiran & % BA tervalidasi dihitung dari data | — |
+
+**Data demo.** Untuk melihat tampilan dengan data menyerupai lapangan, database pengembangan berisi 1.152 laporan **simulasi** 12 bulan (nomor `DEMO/…`, ditandai `data_demo`). Saat ini ± 98% data di heatmap dan statistik berasal dari data demo. Data ini wajib dihapus sebelum dipakai operasional (`DEMO_HAPUS_SAJA=true php artisan db:seed --class=DemoTemuanBurungSeeder`).
 
 ---
 
@@ -99,7 +102,7 @@ Catatan: rumus matriks ICAO di `spec.md` §4.1 (S = 0,6 × spesies + 0,4 × area
 | ID | Fitur | Prioritas | Status 26 Nov 2026 |
 | :--- | :--- | :--- | :--- |
 | F0 | Kelengkapan data prediksi (jam wajib, perilaku kawanan, log pengusiran, near-miss, snapshot cuaca) | Must | Selesai (FR-0.1–0.7); FR-0.8 (Could) belum |
-| F1 | Gridmap heatmap risiko otomatis (jumlah × jarak runway) | Must | Sebagian (heatmap frekuensi) |
+| F1 | Gridmap heatmap risiko otomatis (jumlah × jarak runway) | Must | Selesai; geometri grid menunggu kalibrasi aerodrome chart |
 | F2 | Peluang bird strike per grid per slot 30 menit + kategori + aksi | Must | Belum (Gemini harian masih berjalan) |
 | F3 | Titik pengamatan P1–P9 + popup titik kumpul | Must | Belum |
 | F4 | Cuaca otomatis (Open-Meteo) | Should | Sebagian (widget + isi otomatis) |
@@ -127,7 +130,7 @@ Catatan: rumus matriks ICAO di `spec.md` §4.1 (S = 0,6 × spesies + 0,4 × area
 ### F1 — Gridmap heatmap risiko
 - **FR-1.1** Atribut per grid A–L × 1–29: zona, jarak ke runway (m), di kerucut approach/departure, runway terdekat.
 - **FR-1.2** Skor zonasi = rata-rata ekor per pengamatan × W_jarak × W_spesies × W_attractor (bagian 7.1).
-- **FR-1.3** 4 warna (hijau/kuning/oranye/merah); grid tanpa data tampil netral.
+- **FR-1.3** 4 warna (hijau/kuning/oranye/merah). Heatmap mewarnai seluruh sel seperti mockup (sel jauh dari temuan = hijau); panel detail menandai grid tanpa temuan burung sebagai "Tanpa Data Burung" (bagian 7.1).
 - **FR-1.4** Ambang dapat diubah admin tanpa deploy; legenda menampilkan batas.
 - **FR-1.5** Data baseline hardcode di `StatistikController` dihapus.
 
@@ -177,25 +180,54 @@ KPI, tren bulanan, Top 10 jenis, indeks Shannon/Simpson/Pielou, distribusi aktiv
 
 ### 7.1 Skor zonasi grid (F1)
 
-$$S_{grid} = \bar{N} \times W_{jarak} \times W_{spesies} \times W_{attractor}$$
+> **Status:** sudah diimplementasikan (26 Nov 2026). Beberapa nilai di bawah **berbeda dari usulan awal v2.1** setelah diuji dengan data demo 12 bulan; perbedaannya ditandai ⚠️ dan **perlu persetujuan Pak Bagus** (lihat bagian 11).
 
-- N̄ = rata-rata ekor per pengamatan di grid dalam jendela waktu.
-- W_spesies = 1,0 burung kecil; 1,5 sedang; 2,0 besar/berkelompok (cangak, kuntul, blekok, elang).
-- W_attractor = 1,2 bila ada attractor aktif di grid/tetangganya, selain itu 1,0.
+$$S_{grid} = \bar{N} \times W_{spesies} \times W_{jarak} \times W_{attractor}$$
 
-| Zona | W_jarak |
-| :--- | :--- |
-| Runway strip / kerucut approach-departure, ≤ 300 m | 3,0 |
-| 300–1.000 m | 1,0 |
-| 1.000–2.000 m | 0,3 |
-| > 2.000 m | 0,1 |
+- **N̄** = rata-rata ekor burung per catatan temuan di grid, dalam periode yang dipilih di halaman (Bulan ini, 3 bulan, 12 bulan, tahun, rentang bulan pilihan, atau semua). Hanya **burung** yang dihitung, karena skor ini mengukur bahaya bird strike.
+- **W_spesies** = 1,0 burung kecil; 1,5 sedang; 2,0 besar/berkelompok. Dirata-rata menurut jumlah ekor di grid. Ukuran ditentukan dari nama satwa:
+  - Besar/berkelompok (2,0): cangak, kuntul, blekok, elang, kokokan, bangau.
+  - Sedang (1,5): pecuk, dara laut, cabak, kareo, belibis, gagak, merpati, alap-alap.
+  - Kecil (1,0): burung lainnya (layang-layang, gereja, walet, jalak, dll.).
+- **W_attractor** = 1,2 bila ada attractor aktif di grid/tetangganya. ⚠️ Sementara **1,0 untuk semua grid** sampai master attractor (F8) tersedia.
+- **W_jarak** ⚠️ menurun **mulus** menurut jarak pusat sel ke garis tengah runway, sehingga semakin dekat runway semakin cepat memerah. Menggantikan tabel bertingkat usulan awal (≤ 300 m = 3,0; 300–1.000 m = 1,0; 1.000–2.000 m = 0,3; > 2.000 m = 0,1), karena hampir seluruh gridmap berada dalam ± 1 km dari runway sehingga tabel bertingkat hanya menghasilkan dua nilai (3,0 dan 1,0).
 
-| Kelas | Warna | Batas S_grid |
+$$W_{jarak} = 0{,}3 + 2{,}7 \times e^{-\,jarak/400\,m}$$
+
+| Posisi sel (contoh) | Jarak ke runway | W_jarak |
 | :--- | :--- | :--- |
-| Rendah | Hijau | < 3 |
-| Sedang | Kuning | 3 – < 9 |
-| Tinggi | Oranye | 9 – < 15 |
-| Sangat Tinggi | Merah | ≥ 15 |
+| Kerucut approach/departure RWY 10 atau 28 | — | **3,0** (tetap) |
+| Runway strip (baris G–H) | ± 70 m | 2,6 |
+| Taxiway paralel (baris F/I) | ± 215 m | 1,9 |
+| Apron / baris E–J | ± 360 m | 1,4 |
+| ± 500 m | 500 m | 1,1 |
+| Perimeter jauh | ± 930 m | 0,6 |
+
+**Geometri grid** (dari gambar gridmap yang sudah ada, ⚠️ belum dikalibrasi dengan aerodrome chart):
+
+- Runway 3.000 m membentang kolom 5–25 → 1 sel ≈ **143 m × 143 m** (bukan ± 114 × 92 m seperti di `spec.md` §4.2).
+- Garis tengah runway di batas baris G/H. Threshold RWY 10 di ujung barat (kolom 5), RWY 28 di ujung timur (kolom 25).
+- Kerucut approach/departure: di luar kedua ujung runway, setengah lebar 150 m di threshold, melebar 0,15 m untuk setiap meter menjauhi threshold (divergensi 15%).
+- Tiap sel disimpan di tabel `grid_cell` (zona, jarak runway, di approach, runway terdekat, `terkalibrasi`). Setelah aerodrome chart tersedia, nilai dihitung ulang dengan `php artisan grid:sinkron-geometri`.
+
+**Kelas dan ambang** ⚠️ (dapat diubah admin di halaman Statistik tanpa deploy):
+
+| Kelas | Warna | Batas S_grid (bawaan) | Usulan awal v2.1 |
+| :--- | :--- | :--- | :--- |
+| Rendah | Hijau | < 10 | < 3 |
+| Sedang | Kuning | 10 – < 20 | 3 – < 9 |
+| Tinggi | Oranye | 20 – < 30 | 9 – < 15 |
+| Sangat Tinggi | Merah | ≥ 30 | ≥ 15 |
+
+Alasan perubahan: rata-rata kawanan di lapangan ± 11 ekor, sehingga dengan ambang 3/9/15 hampir semua grid berwarna merah (160 dari 348 sel). Ambang 10/20/30 menghasilkan sebaran ± 57% hijau, 23% kuning, 11% oranye, 9% merah — mendekati mockup. Ambang ini dikalibrasi dengan **data demo**; wajib disetel ulang setelah data lapangan asli terkumpul.
+
+**Tampilan heatmap peta** ⚠️ (menggantikan "grid tanpa data tampil netral"):
+
+- Seluruh 348 sel diwarnai, seperti mockup. Aktivitas burung tiap grid (N̄ × W_spesies) disebar ke sel sekitarnya (radius 2 sel, pengaruh menurun), lalu dikali W_jarak sel tujuan. Sel jauh dari temuan berwarna hijau.
+- Angka **B:n** di sel = total ekor burung di grid itu pada periode terpilih.
+- Panel detail dan tabel tetap memakai S_grid asli grid tersebut (tanpa penyebaran) dan menulis "Tanpa Data Burung" untuk grid tanpa temuan burung.
+- Heatmap mengikuti filter halaman: kategori Reptil/Mamalia menyembunyikan heatmap (risiko bird strike hanya dari burung); filter zona hanya mewarnai dan menghitung sel di zona itu. Keterangan di bawah peta menjelaskan isi heatmap yang sedang tampil.
+- Grid berkelas Tinggi/Sangat Tinggi juga dipakai sebagai **daftar hotspot** pada matriks ICAO per laporan (menggantikan daftar grid tetap di kode).
 
 Mode **Aktivitas** (total ekor per grid 6 bulan: ≤ 50 / 51–150 / 151–300 / > 300) sudah dipakai di dashboard admin.
 
@@ -211,7 +243,7 @@ $$p = \frac{1}{1 + e^{-\text{logit}(p)}}$$
 | Hujan | 1 bila hujan ringan–sedang pada slot | `cuaca_snapshot` | +0,4 |
 | Angin silang | Komponen angin tegak lurus RWY 10/28 (kt) ÷ 10 | `cuaca_snapshot` | +0,3 |
 | Traffic | Pergerakan per jam ÷ 10 | `kepadatan_penerbangan` | +0,3 |
-| Kawanan | ln(1 + S_30m); S_30m = Σ ekor × W_jarak × W_spesies, 30 menit terakhir di grid | Laporan inspeksi | +1,2 |
+| Kawanan | ln(1 + S_30m); S_30m = Σ ekor × W_jarak × W_spesies (W_jarak dan W_spesies sama dengan bagian 7.1), 30 menit terakhir di grid | Laporan inspeksi | +1,2 |
 | Pengusiran | 1 bila ada tindakan pengusiran di grid 30 menit terakhir | `tindakan_pengusiran` | −0,7 |
 | Jam aktif | 1 bila slot di 05.00–08.00 atau 16.00–18.00 WIB | Jam slot | +0,5 |
 
@@ -254,22 +286,23 @@ Rincian kolom ada di `spec.md` §9.
 | `master_alat_dispersal` | Baru (dari `spec.md`) | F0, F2 |
 | `tindakan_pengusiran` | Baru (menggantikan `penggunaan_alat_dispersal` di `spec.md`) | F0, F2 |
 | `cuaca_snapshot` | Baru | F0, F2, F4 |
-| `grid_cell` | Baru | F1, F2 |
+| `grid_cell` | Baru (sudah dibuat, 348 sel, belum terkalibrasi) | F1, F2 |
 | `titik_pengamatan` | Baru | F3 |
 | `prediksi_risiko_slot` | Baru (cache) | F2 |
-| `skor_risiko_grid` | Baru (cache) | F1 |
+| `skor_risiko_grid` | Ditunda: skor zonasi dihitung saat halaman dibuka; cache dibuat bila dibutuhkan F2 | F1 |
+| `pengaturan` | Baru (sudah dibuat): ambang kelas zonasi yang diubah admin | F1 |
 | `mitigasi`, `attractor`, `bandara` | Baru | F7, F8, F9 |
 | `laporan` | Ubah: jam wajib, cuaca terstruktur, titik pengamatan | F0, F3, F4 |
 | `detail_satwa` | Ubah: perilaku, arah terbang, ketinggian | F0, F2 |
 | `histori_birdstrike` | Ubah: jenis kejadian, ketinggian, jarak centerline, grid | F0 |
 | `kepadatan_penerbangan` | Ubah: take-off/landing | F5, F2 |
-| `jenis_satwa` | Ubah: ukuran, berkelompok | F1, F2 |
+| `jenis_satwa` | Ditunda: ukuran burung untuk W_spesies sementara dari kata kunci nama di config (bagian 7.1), karena nama di laporan sering berbeda dengan master | F1, F2 |
 
 ---
 
 ## 9. Kriteria Penerimaan (demo ke Pak Bagus)
 
-- [ ] Peta tidak menampilkan data hardcode.
+- [x] Peta tidak menampilkan data hardcode.
 - [ ] Laporan 6 ekor di grid dekat threshold RWY 10 pada jam aktif membuat grid itu Tinggi (p > 0,25) dan P1 naik ke urutan teratas.
 - [ ] Peluang tampil 0–1 dengan panel faktor penyumbang dan timeline 0–3 jam, tanpa input manual.
 - [ ] Tombol aksi cepat mencatat tindakan pengusiran dan menurunkan risiko slot berikutnya.
@@ -304,12 +337,15 @@ gantt
 
 **Pertanyaan untuk Pak Bagus / tim bandara**
 - [ ] Apakah β awal dan ambang 0,10/0,25 disetujui sebagai titik awal?
+- [ ] Skor zonasi F1 (bagian 7.1): setuju W_jarak menurun mulus (3,0 di approach, ± 2,6 di runway strip, ± 1,1 pada 500 m) dan ambang kelas 10/20/30 menggantikan 3/9/15?
+- [ ] Ukuran sel ± 143 m dan posisi runway kolom 5–25 di gridmap: cocok dengan aerodrome chart?
+- [ ] Satu catatan histori bird strike tercatat di runway "07L" (Juanda hanya RWY 10/28): seharusnya RWY 10 atau 28?
 - [ ] Grid pasti P1–P9 dan grid ujung threshold RWY 10/28 (perlu aerodrome chart).
 - [ ] Apakah ada catatan near-miss dan tindakan pengusiran masa lalu yang bisa diimpor?
 - [ ] Kapasitas tim WHM per jam (untuk membatasi alarm Tinggi).
 - [ ] Jadwal penerbangan ke depan tersedia, atau cukup rata-rata historis?
 - [ ] Jam aktif burung 05.00–08.00 dan 16.00–18.00 WIB sesuai pengamatan lapangan?
-- [ ] Format database traffic: per jam atau per penerbangan?
+- [x] Format database traffic: per jam atau per penerbangan? → **Per penerbangan** (movement sheet AMC bulanan); diolah menjadi take-off/landing per jam.
 - [ ] Konfirmasi angka kejadian 66% landing dan 21% take-off.
 - [ ] Nama resmi aplikasi web.
 
@@ -323,3 +359,6 @@ gantt
 | Terlalu banyak alarm Tinggi | Tim kewalahan, alarm diabaikan | Setel ambang ke kapasitas tim; uji balik |
 | Open-Meteo tidak bisa dihubungi | Variabel cuaca kosong | Snapshot terakhir; variabel cuaca netral (x = 0) |
 | Waktu ± 5 minggu | Fitur Should/Could tidak selesai | Kunci F0–F3; F4–F8 bertahap |
+| Data demo tercampur data asli | Statistik, heatmap, dan ambang terlihat lebih ramai dari kondisi nyata | Data demo ditandai dan bisa dihapus dengan satu perintah; ambang dikalibrasi ulang dengan data asli |
+| Penjadwal cuaca tidak berjalan | Variabel hujan & angin silang F2 kosong; peringatan kualitas data terus muncul | `composer run dev` di lokal; cron `schedule:run` setiap menit di server |
+| Gridmap belum dikalibrasi | Jarak ke runway & kerucut approach bisa meleset | Kalibrasi dengan aerodrome chart, lalu `grid:sinkron-geometri` |

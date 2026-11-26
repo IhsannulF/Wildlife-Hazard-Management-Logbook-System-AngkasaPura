@@ -6,7 +6,7 @@
       $risk = strtolower($satwa->tingkat_risiko ?: 'sedang');
       $habitat = strtolower($satwa->grid_hotspot ?: 'runway');
       $idCode = 'WHMS-' . strtoupper(substr($cat, 0, 3)) . '-' . str_pad($satwa->id, 3, '0', STR_PAD_LEFT);
-      $gridDisplay = $satwa->grid_hotspot ?: 'K-10';
+      $gridDisplay = $satwa->grid_hotspot ?: '-';
       $descText = $satwa->deskripsi ?: 'Pemantauan intensif di area perimeter keselamatan penerbangan bandara.';
       $sopLines = array_filter(array_map('trim', explode("\n", $satwa->sop_pengusiran ?: "Sirene Patroli AMC\nBio-Akustik / Repellent")));
     @endphp
@@ -76,9 +76,9 @@
               <span class="text-secondary text-[10px] uppercase font-bold tracking-wider">Hotspot &amp; Habitat</span>
               <span class="px-1.5 py-0.2 rounded bg-injourney-teal/10 text-injourney-teal font-code-coordinate text-[11px] font-bold shrink-0">Grid {{ $gridDisplay }}</span>
             </div>
-            <p class="text-xs font-medium text-slate-navy flex items-center gap-1.5 truncate" title="{{ $satwa->grid_hotspot ?: 'Runway 07L/25R & Perimeter' }}">
+            <p class="text-xs font-medium text-slate-navy flex items-center gap-1.5 truncate" title="{{ $satwa->grid_hotspot ?: '-' }}">
               <span class="material-symbols-outlined text-sm text-injourney-teal shrink-0">location_on</span>
-              <span class="truncate">{{ $satwa->grid_hotspot ?: 'Runway 07L/25R & Perimeter' }}</span>
+              <span class="truncate">{{ $satwa->grid_hotspot ?: '-' }}</span>
             </p>
           </div>
 

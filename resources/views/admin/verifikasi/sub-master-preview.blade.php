@@ -42,7 +42,7 @@
         <div class="h-44 bg-slate-100 overflow-hidden relative cursor-pointer" onclick="openPhotoPreview('{{ $fotoUrl }}', '{{ $p->nama_satwa }}')">
           <img src="{{ $fotoUrl }}" alt="{{ $p->nama_satwa }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
           <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-code-coordinate">
-            GRID {{ $p->grid ?: ($lap?->grid_lokasi ?: 'K-10') }}
+            GRID {{ $p->grid ?: ($lap?->grid_lokasi ?: '-') }}
           </div>
           <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-cyan-900/80 text-white text-[10px] font-semibold">
             {{ $p->jumlah }} Ekor

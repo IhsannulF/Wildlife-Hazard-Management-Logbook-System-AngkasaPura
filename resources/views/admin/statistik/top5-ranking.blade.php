@@ -30,7 +30,7 @@
               </span>
               <span class="truncate">Grid {{ $top['grid'] }} ({{ $top['name'] }})</span>
             </span>
-            <span class="font-code-coordinate font-bold text-slate-700 whitespace-nowrap">{{ $top['count'] }} Laporan</span>
+            <span class="font-code-coordinate font-bold text-slate-700 whitespace-nowrap">{{ $top['count'] }} temuan</span>
           </div>
           <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div class="{{ $top['color'] }} h-1.5 rounded-full transition-all duration-500" style="width: {{ $top['bar_width'] }}%"></div>

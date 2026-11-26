@@ -12,7 +12,8 @@ class IcaoRiskMatrixTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new IcaoRiskMatrixService;
+        // Hotspot diberikan langsung agar tes unit tidak bergantung pada database.
+        $this->service = new IcaoRiskMatrixService(fn (): array => ['K-10', 'D-9']);
     }
 
     public function test_kalkulasi_probabilitas_soliter_dan_kawanan(): void

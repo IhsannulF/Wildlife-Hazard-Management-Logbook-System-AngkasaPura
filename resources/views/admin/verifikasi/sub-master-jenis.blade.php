@@ -52,7 +52,7 @@
             $nama = $isObj ? $j->nama : $j['nama'];
             $kategori = $isObj ? ($j->kategori ?? 'Avian / Burung') : ($j['kategori'] ?? 'Avian');
             $risiko = $isObj ? ($j->tingkat_risiko ?? 'Sedang') : ($j['tingkat_risiko'] ?? 'Sedang');
-            $hotspot = $isObj ? ($j->grid_hotspot ?? 'K-10') : ($j['grid_hotspot'] ?? 'K-10');
+            $hotspot = $isObj ? ($j->grid_hotspot ?? '-') : ($j['grid_hotspot'] ?? '-');
             $deskripsi = $isObj ? ($j->deskripsi ?? 'Aktivitas pengamatan berkala di sisi udara.') : ($j['deskripsi'] ?? '-');
             $fotoPath = $isObj ? ($j->foto_path ?? null) : ($j['foto_path'] ?? null);
             $imgSrc = $fotoPath ? asset('images/' . $fotoPath) : asset('images/biawak.jpeg');

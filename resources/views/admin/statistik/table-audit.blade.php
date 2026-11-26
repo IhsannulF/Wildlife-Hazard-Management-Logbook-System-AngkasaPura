@@ -49,7 +49,7 @@
               </td>
               <td class="py-2.5 px-2.5 sm:px-3 whitespace-nowrap">
                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold {{ $gRow['risk_badge_class'] }}">
-                  <span class="w-1.5 h-1.5 rounded-full {{ $gRow['risk_level'] === 'Kritis' ? 'bg-warning-rose animate-pulse' : ($gRow['risk_level'] === 'Sedang' ? 'bg-alert-amber' : 'bg-injourney-teal') }}"></span>
+                  <span class="w-1.5 h-1.5 rounded-full {{ $gRow['zonasi_bar'] }} {{ ($gRow['zonasi_kelas'] ?? null) === 'sangat_tinggi' ? 'animate-pulse' : '' }}"></span>
                   {{ $gRow['risk_category'] }}
                 </span>
               </td>

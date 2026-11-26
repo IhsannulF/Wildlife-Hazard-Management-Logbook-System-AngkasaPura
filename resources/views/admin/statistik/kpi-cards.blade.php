@@ -16,7 +16,7 @@
     </div>
     <div class="mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-[11px] text-secondary">
       <span>{{ $gridTerpadatCount }} Temuan / {{ $gridTerpadatPct }}% insiden</span>
-      <span class="font-code-coordinate text-warning-rose font-bold">Bahu RWY 25R</span>
+      <span class="font-code-coordinate text-warning-rose font-bold truncate">{{ $top5Grids[0]['name'] ?? '-' }}</span>
     </div>
   </div>
 

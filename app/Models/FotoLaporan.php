@@ -5,7 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * Foto bukti inspeksi. Lokasi GPS perangkat & waktu ambil juga tercetak di watermark foto.
+ *
+ * @property float|null $gps_lat
+ * @property float|null $gps_lng
+ * @property int|null $gps_akurasi_m
+ * @property Carbon|null $diambil_at
+ * @property string|null $sumber
+ */
 class FotoLaporan extends Model
 {
     use HasFactory;
@@ -18,7 +28,25 @@ class FotoLaporan extends Model
         'nama_file',
         'tipe',
         'foto_path',
+        'gps_lat',
+        'gps_lng',
+        'gps_akurasi_m',
+        'diambil_at',
+        'sumber',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'gps_lat' => 'float',
+            'gps_lng' => 'float',
+            'gps_akurasi_m' => 'integer',
+            'diambil_at' => 'datetime',
+        ];
+    }
 
     public function laporan(): BelongsTo
     {

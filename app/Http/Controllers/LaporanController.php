@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DetailSatwa;
 use App\Models\FormField;
 use App\Models\FotoLaporan;
+use App\Models\GridCell;
 use App\Models\IdentifikasiSatwaAi;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
@@ -12,7 +13,10 @@ use App\Models\MasterAlatDispersal;
 use App\Models\TindakanPengusiran;
 use App\Models\User;
 use App\Services\IcaoRiskMatrixService;
+use App\Services\Risk\GridRiskService;
+use App\Support\GridCode;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +25,39 @@ use Illuminate\Validation\Rule;
 
 class LaporanController extends Controller
 {
+    /**
+     * Lokasi GPS perangkat & waktu saat foto bukti diambil/diunggah (diisi skrip watermark di form).
+     *
+     * @var array<string, list<string>>
+     */
+    private const PHOTO_LOCATION_RULES = [
+        'gps_lat' => ['nullable', 'numeric', 'between:-90,90'],
+        'gps_lng' => ['nullable', 'numeric', 'between:-180,180'],
+        'gps_akurasi_m' => ['nullable', 'integer', 'min:0', 'max:100000'],
+        'foto_diambil_at' => ['nullable', 'date'],
+        'foto_sumber' => ['nullable', 'in:kamera,galeri'],
+    ];
+
+    /**
+     * Metadata lokasi foto dari input form/payload sinkron; kosong bila perangkat tidak memberi lokasi.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{gps_lat: float|null, gps_lng: float|null, gps_akurasi_m: int|null, diambil_at: string|null, sumber: string|null}
+     */
+    private function photoLocationAttributes(array $input): array
+    {
+        $number = fn (string $key): ?float => isset($input[$key]) && is_numeric($input[$key]) ? (float) $input[$key] : null;
+        $takenAt = $input['foto_diambil_at'] ?? null;
+
+        return [
+            'gps_lat' => $number('gps_lat'),
+            'gps_lng' => $number('gps_lng'),
+            'gps_akurasi_m' => $number('gps_akurasi_m') !== null ? (int) round($number('gps_akurasi_m')) : null,
+            'diambil_at' => $takenAt && strtotime((string) $takenAt) ? date('Y-m-d H:i:s', strtotime((string) $takenAt)) : null,
+            'sumber' => in_array($input['foto_sumber'] ?? null, ['kamera', 'galeri'], true) ? $input['foto_sumber'] : null,
+        ];
+    }
+
     public function create()
     {
         $user = Auth::user();
@@ -54,6 +91,16 @@ class LaporanController extends Controller
             $aktifFields[$f->nama_field] = true;
         }
 
+        // Pengaturan halaman admin "Form Inspeksi": tampil/wajib/label per isian bawaan + isian tambahan.
+        $allFields = FormField::query()->with('options')->orderBy('urutan')->orderBy('id')->get();
+        $fieldConfig = $allFields->mapWithKeys(fn (FormField $field): array => [$field->nama_field => [
+            'label' => $field->label,
+            'placeholder' => $field->placeholder,
+            'aktif' => $field->aktif || $field->isLocked(),
+            'wajib' => $field->wajib || $field->isLocked(),
+        ]])->all();
+        $customFields = $allFields->filter(fn (FormField $field): bool => $field->aktif && ! $field->isStandard())->values();
+
         $kondisi_cuaca_opt = $this->getDropdownOpsi('kondisi_cuaca', ['Cerah', 'Berawan', 'Hujan Ringan', 'Hujan Lebat', 'Berkabut']);
         $unit_kerja_opt = $this->getDropdownOpsi('unit_kerja', ['Apron Movement Control', 'Airport Rescue & Fire Fighting', 'Airport Security', 'SMS & OHS']);
         $area_opt = $this->getDropdownOpsi('area_inspeksi', ['Apron', 'Taxiway', 'Runway', 'Perimeter', 'Terminal', 'Gedung Operasional', 'Area Parkir']);
@@ -72,6 +119,8 @@ class LaporanController extends Controller
             'user',
             'unitKerjaUser',
             'formFields',
+            'fieldConfig',
+            'customFields',
             'fieldLabels',
             'aktifFields',
             'kondisi_cuaca_opt',
@@ -85,109 +134,52 @@ class LaporanController extends Controller
         ));
     }
 
+    /**
+     * Ringkasan temuan per grid untuk peta form pegawai: data laporan asli dalam jendela zonasi
+     * (default 180 hari) dan kelas risiko F1. Tidak ada data baseline hardcode.
+     *
+     * @return array<string, array<string, mixed>>
+     */
     private function getGridAggregation(): array
     {
-        $baselineGrids = [
-            'K-10' => ['count' => 38, 'satwa' => 'Biawak Air', 'total' => 38, 'area' => 'Kanal Drainase Perimeter Selatan Terminal 2', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Zona perimeter strip selatan Juanda berdekatan dengan kanal drainase induk Terminal 2.'],
-            'D-9' => ['count' => 44, 'satwa' => 'Burung Blekok Sawah', 'total' => 44, 'area' => 'Rawa Buffer Barat & Runway 10 Approach', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Zona buffer rawa terbuka sering didatangi koloni burung air saat musim penghujan.'],
-            'E-12' => ['count' => 29, 'satwa' => 'Kuntul Kerbau', 'total' => 29, 'area' => 'Apron C & Taxiway NP-2', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Area rumput terbuka sekitar Apron C Juanda menjadi tempat mencari serangga.'],
-            'A-2' => ['count' => 22, 'satwa' => 'Burung Layang-layang Api', 'total' => 22, 'area' => 'Perimeter Barat Laut', 'type' => 'perimeter', 'category' => 'burung', 'desc' => 'Burung walet dan layang-layang melintas di area perimeter barat laut.'],
-            'G-18' => ['count' => 28, 'satwa' => 'Burung Cangak Abu', 'total' => 28, 'area' => 'Bahu Runway 10/28 (Tengah Landasan)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung air berukuran sedang sering hinggap di bahu rumput runway 10/28 saat menjelang senja.'],
-            'H-8' => ['count' => 19, 'satwa' => 'Burung Elang Tikus', 'total' => 19, 'area' => 'Runway Strip 10 (Barat)', 'type' => 'runway', 'category' => 'burung', 'desc' => 'Burung pemangsa bertengger di rambu navigasi runway strip barat.'],
-            'F-5' => ['count' => 16, 'satwa' => 'Kera Ekor Panjang', 'total' => 16, 'area' => 'Regulating Pond 1 & Perimeter Barat', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Kawanan kera dari vegetasi luar melompati kawat perimeter dekat kolam retensi.'],
-            'B-4' => ['count' => 12, 'satwa' => 'Anjing Liar', 'total' => 12, 'area' => 'Perimeter Utara Buffer', 'type' => 'perimeter', 'category' => 'mamalia', 'desc' => 'Anjing liar terpantau melintas di area perimeter utara.'],
-            'L-10' => ['count' => 11, 'satwa' => 'Biawak Air', 'total' => 11, 'area' => 'Kanal Drainase Perimeter Selatan', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Saluran drainase primer perimeter selatan menjadi jalur jelajah biawak.'],
-            'C-6' => ['count' => 8,  'satwa' => 'Ular Sanca Kembang', 'total' => 8,  'area' => 'Perimeter Barat Hanggar', 'type' => 'perimeter', 'category' => 'reptil', 'desc' => 'Ditemukan di sudut saluran drainase sekitar fasilitas teknis perimeter barat.'],
-            'J-11' => ['count' => 17, 'satwa' => 'Kucing Liar', 'total' => 17, 'area' => 'Apron A Terminal 2', 'type' => 'apron', 'category' => 'mamalia', 'desc' => 'Kucing liar berkeliaran di dekat area ground support equipment Apron A Terminal 2.'],
-            'E-18' => ['count' => 14, 'satwa' => 'Burung Blekok Sawah', 'total' => 14, 'area' => 'Apron B Terminal 1', 'type' => 'apron', 'category' => 'burung', 'desc' => 'Kawanan burung melintas rendah di jalur pergerakan pesawat Apron B Terminal 1.'],
-        ];
+        $gridRisk = app(GridRiskService::class);
+        $from = CarbonImmutable::now(config('whms_risk.zona_waktu'))->subDays((int) config('whms_risk.zonasi.jendela_hari'));
+        $zonasi = $gridRisk->scores($from);
+        $cells = GridCell::query()->get()->keyBy('grid');
+
+        $rows = DetailSatwa::query()
+            ->join('laporan', 'laporan.id', '=', 'detail_satwa.laporan_id')
+            ->whereDate('laporan.tanggal', '>=', $from->toDateString())
+            ->whereNotNull('detail_satwa.grid')
+            ->where('detail_satwa.grid', '!=', '')
+            ->get(['detail_satwa.grid', 'detail_satwa.nama_satwa', 'detail_satwa.jumlah']);
 
         $gridAgg = [];
-        foreach ($baselineGrids as $bgKey => $bgVal) {
-            $gridAgg[$bgKey] = [
-                'grid' => $bgKey,
-                'count' => $bgVal['count'],
-                'total_satwa' => $bgVal['total'],
-                'dominant_species' => $bgVal['satwa'],
-                'dominant_count' => $bgVal['total'],
-                'species_counts' => [$bgVal['satwa'] => $bgVal['total']],
-                'status' => 'Telah Ditangani',
-                'zone_name' => $bgVal['area'],
-                'zone_type' => $bgVal['type'],
-                'desc' => $bgVal['desc'],
-                'last_mitigation' => 'Aktivasi Sirene Patroli & Repellent Trap',
-                'peak_hours' => '06:30 - 08:30 WIB & 16:00 - 17:30 WIB',
-            ];
-        }
-
-        try {
-            $details = DetailSatwa::with('laporan')
-                ->whereNotNull('grid')
-                ->where('grid', '!=', '')
-                ->get();
-
-            foreach ($details as $d) {
-                $rawG = strtoupper(trim(str_replace('=', '-', $d->grid)));
-                if (empty($rawG)) {
-                    continue;
-                }
-
-                $rowLetter = substr($rawG, 0, 1);
-                $zoneType = in_array($rowLetter, ['G', 'H']) ? 'runway' : (in_array($rowLetter, ['E', 'F']) ? 'taxiway' : (in_array($rowLetter, ['D', 'J']) ? 'apron' : 'perimeter'));
-                $zoneName = $zoneType === 'runway' ? 'Bahu Runway 10/28 Juanda' : ($zoneType === 'taxiway' ? 'Taxiway & Rawa Buffer' : ($zoneType === 'apron' ? 'Apron Area Pergerakan' : 'Perimeter Sisi Udara'));
-
-                if (! isset($gridAgg[$rawG])) {
-                    $gridAgg[$rawG] = [
-                        'grid' => $rawG,
-                        'count' => 0,
-                        'total_satwa' => 0,
-                        'dominant_species' => $d->nama_satwa ?: 'Satwa Liar',
-                        'dominant_count' => 0,
-                        'species_counts' => [],
-                        'status' => 'Belum Ditangani',
-                        'zone_name' => $zoneName,
-                        'zone_type' => $zoneType,
-                        'desc' => "Lokasi temuan satwa di zona {$zoneName}.",
-                        'last_mitigation' => 'Patroli Regu AMC',
-                        'peak_hours' => '07:00 - 17:00 WIB',
-                    ];
-                }
-
-                $sp = $d->nama_satwa ?: 'Satwa Liar';
-                $gridAgg[$rawG]['count'] += 1;
-                $gridAgg[$rawG]['total_satwa'] += ($d->jumlah ?: 1);
-                $gridAgg[$rawG]['species_counts'][$sp] = ($gridAgg[$rawG]['species_counts'][$sp] ?? 0) + ($d->jumlah ?: 1);
+        foreach ($rows as $row) {
+            $grid = (string) GridCode::normalize($row->grid);
+            if (! GridCode::isValid($grid)) {
+                continue;
             }
-        } catch (\Throwable $e) {
-            // Silently fallback to baseline grids
+
+            $species = $row->nama_satwa ?: 'Satwa Liar';
+            $gridAgg[$grid] ??= ['grid' => $grid, 'count' => 0, 'total_satwa' => 0, 'species_counts' => []];
+            $gridAgg[$grid]['count']++;
+            $gridAgg[$grid]['total_satwa'] += max(1, (int) $row->jumlah);
+            $gridAgg[$grid]['species_counts'][$species] = ($gridAgg[$grid]['species_counts'][$species] ?? 0) + max(1, (int) $row->jumlah);
         }
 
-        foreach ($gridAgg as $gCode => &$gItem) {
-            $c = $gItem['count'];
-            if ($c >= 30) {
-                $gItem['risk_level'] = 'Kritis';
-                $gItem['risk_category'] = 'Kategori 4 - Kritis';
-                $gItem['risk_badge'] = 'bg-rose-500 text-white';
-                $gItem['risk_border'] = 'border-rose-500';
-                $gItem['risk_bg'] = 'bg-rose-500/20';
-                $gItem['risk_text'] = 'text-rose-400';
-            } elseif ($c >= 15) {
-                $gItem['risk_level'] = 'Sedang';
-                $gItem['risk_category'] = 'Kategori 3 - Flocking Sedang';
-                $gItem['risk_badge'] = 'bg-amber-500 text-slate-900';
-                $gItem['risk_border'] = 'border-amber-500';
-                $gItem['risk_bg'] = 'bg-amber-500/20';
-                $gItem['risk_text'] = 'text-amber-400';
-            } else {
-                $gItem['risk_level'] = 'Rendah';
-                $gItem['risk_category'] = 'Kategori 2 - Terpantau';
-                $gItem['risk_badge'] = 'bg-sky-500 text-white';
-                $gItem['risk_border'] = 'border-sky-500';
-                $gItem['risk_bg'] = 'bg-sky-500/20';
-                $gItem['risk_text'] = 'text-sky-400';
-            }
+        foreach ($gridAgg as $grid => &$item) {
+            arsort($item['species_counts']);
+            $zone = $zonasi[$grid] ?? null;
+            $label = $zone ? GridRiskService::CLASS_LABELS[$zone['kelas']] : 'Tanpa Data Burung';
+
+            $item['dominant_species'] = array_key_first($item['species_counts']);
+            $item['zone_type'] = $cells->get($grid)?->zona ?? 'perimeter';
+            $item['skor_zonasi'] = $zone['skor'] ?? null;
+            $item['risk_level'] = $label;
+            $item['risk_category'] = $zone ? sprintf('%s (S = %s)', $label, number_format($zone['skor'], 1, ',', '.')) : $label;
         }
-        unset($gItem);
+        unset($item);
 
         return $gridAgg;
     }
@@ -297,6 +289,7 @@ class LaporanController extends Controller
             'satwa.*.lokasi.*.ketinggian' => ['nullable', Rule::in(array_keys(DetailSatwa::KETINGGIAN))],
             'pengusiran_alat_id' => ['nullable', 'integer', Rule::exists('master_alat_dispersal', 'id')->where('aktif', true)],
             'pengusiran_hasil' => ['nullable', Rule::in(array_keys(TindakanPengusiran::HASIL))],
+            ...self::PHOTO_LOCATION_RULES,
         ];
 
         foreach ($requiredFields as $rf) {
@@ -305,6 +298,21 @@ class LaporanController extends Controller
             } elseif (! in_array($rf->nama_field, ['grid_lokasi', 'satwa', 'foto_lainnya'])) {
                 $rules[$rf->nama_field] = 'required';
             }
+        }
+
+        // Isian tambahan buatan admin: wajib/opsional + jenis nilai (angka, tanggal, pilihan yang tersedia).
+        $customFields = FormField::query()->with('options')->where('aktif', true)->whereNotIn('nama_field', FormField::STANDARD_FIELDS)->get();
+        foreach ($customFields as $customField) {
+            $rules[$customField->nama_field] = array_values(array_filter([
+                $customField->wajib ? 'required' : 'nullable',
+                match ($customField->tipe) {
+                    'number' => 'numeric',
+                    'date' => 'date',
+                    'dropdown' => $customField->options->isNotEmpty() ? Rule::in($customField->options->pluck('nilai')->all()) : null,
+                    default => 'string',
+                },
+                in_array($customField->tipe, ['text', 'textarea'], true) ? 'max:2000' : null,
+            ]));
         }
 
         $validated = $request->validate($rules);
@@ -418,6 +426,7 @@ class LaporanController extends Controller
                                 'nama_file' => $filename,
                                 'tipe' => 'satwa',
                                 'foto_path' => 'uploads/satwa/'.$filename,
+                                ...$this->photoLocationAttributes($request->all()),
                             ]);
                         }
                     }
@@ -653,6 +662,7 @@ class LaporanController extends Controller
                     'nama_file' => $filename,
                     'tipe' => $tipe,
                     'foto_path' => 'uploads/'.$subFolder.'/'.$filename,
+                    ...$this->photoLocationAttributes($payload),
                 ]);
             }
         }

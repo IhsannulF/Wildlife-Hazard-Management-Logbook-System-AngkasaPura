@@ -19,7 +19,7 @@
             $cat = strtolower($satwa->kategori ?: (str_contains($satwa->nama, 'Burung') ? 'burung' : (str_contains($satwa->nama, 'Biawak') || str_contains($satwa->nama, 'Ular') ? 'reptil' : 'mamalia')));
             $risk = strtolower($satwa->tingkat_risiko ?: 'sedang');
             $habitat = strtolower($satwa->grid_hotspot ?: 'runway');
-            $gridDisplay = $satwa->grid_hotspot ?: 'K-10';
+            $gridDisplay = $satwa->grid_hotspot ?: '-';
           @endphp
           <tr class="species-table-row hover:bg-surface-container-low transition-colors"
               data-category="{{ $cat }}"

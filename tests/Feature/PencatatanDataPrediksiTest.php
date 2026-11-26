@@ -31,6 +31,18 @@ class PencatatanDataPrediksiTest extends TestCase
         $this->assertDatabaseMissing('laporan', ['user_id' => $pegawai->id]);
     }
 
+    public function test_ciri_ukuran_dan_aktivitas_satwa_boleh_dikosongkan(): void
+    {
+        $pegawai = User::factory()->create(['role' => 'pegawai']);
+        $payload = $this->laporanPayload();
+        unset($payload['ciri_ukuran'], $payload['aktivitas_satwa']);
+
+        $response = $this->actingAs($pegawai)->post(route('laporan.store'), $payload);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('laporan', ['user_id' => $pegawai->id, 'jam' => '06:15:00']);
+    }
+
     public function test_laporan_menyimpan_jam_perilaku_kawanan_dan_tindakan_pengusiran(): void
     {
         $pegawai = User::factory()->create();

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CuacaSnapshot;
 use App\Models\DetailSatwa;
 use App\Models\FormField;
+use App\Models\FotoLaporan;
 use App\Models\JenisSatwa;
 use App\Models\Laporan;
 use App\Models\User;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -32,6 +35,11 @@ class DashboardController extends Controller
         $totalLaporan = Laporan::count();
         $belum = Laporan::where('status', 'belum')->orWhereNull('status')->count();
         $ditangani = Laporan::where('status', 'sudah')->count();
+        // Kartu "Mitigasi Telah Ditangani": dihitung dari data, bukan angka tetap.
+        $rerataResponMenit = $this->averageDispersalResponseMinutes();
+        $persenBaTervalidasi = $ditangani > 0
+            ? round(Laporan::where('status', 'sudah')->whereNotNull('validated_at')->count() / $ditangani * 100, 1)
+            : null;
 
         // Metrik Telemetry & Bento Cards
         $belumRunway = Laporan::where(function ($q) {
@@ -47,7 +55,7 @@ class DashboardController extends Controller
             ->limit(2)
             ->pluck('grid_lokasi')
             ->toArray();
-        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : 'K-10 & D-9';
+        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : '-';
 
         $totalSatwa = DetailSatwa::count();
         $burungCount = DetailSatwa::where(function ($q) {
@@ -147,6 +155,8 @@ class DashboardController extends Controller
             'statistik',
             'statistikTahun',
             'statistikTahunTersedia',
+            'rerataResponMenit',
+            'persenBaTervalidasi',
             'peringatanKualitasData',
             'availableGrids'
         ));
@@ -234,7 +244,7 @@ class DashboardController extends Controller
                 ->pluck('grid_lokasi')
                 ->toArray();
         }
-        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : 'K-10 & K-09';
+        $hotspotGrid = ! empty($topGrids) ? implode(' & ', $topGrids) : '-';
         $hotspotCount = (int) DetailSatwa::whereIn('grid', $topGrids)->sum('jumlah');
 
         $topArea = Laporan::selectRaw('area_inspeksi, count(*) as count')
@@ -242,7 +252,7 @@ class DashboardController extends Controller
             ->where('area_inspeksi', '!=', '')
             ->groupBy('area_inspeksi')
             ->orderByDesc('count')
-            ->value('area_inspeksi') ?? 'Runway 07L/25R';
+            ->value('area_inspeksi') ?? '-';
 
         $satwaRecords = DetailSatwa::all();
         $totalSatwa = count($satwaRecords);
@@ -349,23 +359,24 @@ class DashboardController extends Controller
         }
         $backupTemuanList = $backupTemuanQuery->paginate($perPage, ['*'], 'backup_page')->withQueryString();
 
-        // Sub-data: Master Titik & Zona Juanda
+        // Sub-data: Master Titik & Zona Juanda (RWY 10/28). Grid diperkirakan dari gridmap
+        // (runway kolom 5–25, baris G–H; utara = baris A, selatan = baris L); diganti master P1–P9 di F3.
         $masterTitikList = [
-            ['kode' => 'Titik 1', 'zona' => 'Runway 07L', 'grid' => 'K-10', 'deskripsi' => 'Bahu landasan barat & runway strip dekat threshold 07L', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
-            ['kode' => 'Titik 2', 'zona' => 'Taxiway A & B', 'grid' => 'D-9', 'deskripsi' => 'Intersection taxiway Alpha/Bravo & kanal drainase terbuka', 'tipe' => 'Movement Area', 'status' => 'Aktif'],
-            ['kode' => 'Titik 3', 'zona' => 'Runway 25R', 'grid' => 'F-5', 'deskripsi' => 'Bahu landasan timur & area rumput terbuka dekat runway strip 25R', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
-            ['kode' => 'Titik 4', 'zona' => 'Perimeter Selatan', 'grid' => 'C-12', 'deskripsi' => 'Pagar perimeter batas selatan berdekatan vegetasi tambak', 'tipe' => 'Perimeter Strip', 'status' => 'Aktif'],
-            ['kode' => 'Titik 5', 'zona' => 'Apron Komersial', 'grid' => 'H-3', 'deskripsi' => 'Pelataran parkir pesawat barat, area GSE & hanggar ARFF', 'tipe' => 'Apron Area', 'status' => 'Aktif'],
-            ['kode' => 'Titik 6', 'zona' => 'Runway Strip Tengah', 'grid' => 'K-11', 'deskripsi' => 'Area rumput antara runway 07L/25R dan parallel taxiway', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
-            ['kode' => 'Titik 7', 'zona' => 'Kolam Retensi Airside', 'grid' => 'E-7', 'deskripsi' => 'Kolam retensi penampungan air hujan sisi utara taxiway', 'tipe' => 'Retention Basin', 'status' => 'Aktif'],
-            ['kode' => 'Titik 8', 'zona' => 'Perimeter Timur & Radar', 'grid' => 'G-8', 'deskripsi' => 'Kawasan radar navigasi DVOR & perimeter batas timur', 'tipe' => 'Perimeter Strip', 'status' => 'Aktif'],
-            ['kode' => 'Zona 1-1', 'zona' => 'Sector Runway 07L Barat', 'grid' => 'K-09', 'deskripsi' => 'Sektor pengamatan intensif threshold barat runway', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
-            ['kode' => 'Zona 1-2', 'zona' => 'Sector Runway Strip Tengah', 'grid' => 'K-10', 'deskripsi' => 'Sektor pengamatan tengah runway runway strip', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
-            ['kode' => 'Zona 1-3', 'zona' => 'Sector Runway 25R Timur', 'grid' => 'K-11', 'deskripsi' => 'Sektor pengamatan ujung timur landasan pacu', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
-            ['kode' => 'Zona 1-4', 'zona' => 'Sector Taxiway & Apron', 'grid' => 'D-10', 'deskripsi' => 'Sektor jalur pergerakan taxiway komersial & apron', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
-            ['kode' => 'Zona 2', 'zona' => 'Sector Perimeter Luar', 'grid' => 'B-08', 'deskripsi' => 'Sektor batas pagar luar kawasan KKOP Bandara Juanda', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
-            ['kode' => 'Zona 2-1', 'zona' => 'Sector Kanal Utara', 'grid' => 'C-09', 'deskripsi' => 'Sektor kanal terbuka saluran drainase sisi utara', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
-            ['kode' => 'Zona 2-5', 'zona' => 'Sector Tambak Perimeter', 'grid' => 'A-12', 'deskripsi' => 'Sektor perbatasan tambak warga sisi selatan perimeter', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
+            ['kode' => 'Titik 1', 'zona' => 'Threshold RWY 10 (Barat)', 'grid' => 'G-5', 'deskripsi' => 'Bahu landasan & runway strip dekat threshold RWY 10', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
+            ['kode' => 'Titik 2', 'zona' => 'Taxiway Paralel Utara', 'grid' => 'F-12', 'deskripsi' => 'Persimpangan taxiway dekat Apron C & kanal drainase terbuka', 'tipe' => 'Movement Area', 'status' => 'Aktif'],
+            ['kode' => 'Titik 3', 'zona' => 'Threshold RWY 28 (Timur)', 'grid' => 'G-25', 'deskripsi' => 'Bahu landasan timur & area rumput terbuka dekat threshold RWY 28', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
+            ['kode' => 'Titik 4', 'zona' => 'Perimeter Selatan', 'grid' => 'K-12', 'deskripsi' => 'Pagar perimeter batas selatan berdekatan kanal & tambak', 'tipe' => 'Perimeter Strip', 'status' => 'Aktif'],
+            ['kode' => 'Titik 5', 'zona' => 'Apron A / Terminal 2', 'grid' => 'J-11', 'deskripsi' => 'Pelataran parkir pesawat Terminal 2 & area GSE', 'tipe' => 'Apron Area', 'status' => 'Aktif'],
+            ['kode' => 'Titik 6', 'zona' => 'Runway Strip Tengah', 'grid' => 'H-15', 'deskripsi' => 'Area rumput antara runway 10/28 dan taxiway paralel', 'tipe' => 'Airside Critical', 'status' => 'Aktif'],
+            ['kode' => 'Titik 7', 'zona' => 'Regulating Pond 1', 'grid' => 'F-10', 'deskripsi' => 'Kolam retensi air hujan sisi utara taxiway (habitat burung air)', 'tipe' => 'Retention Basin', 'status' => 'Aktif'],
+            ['kode' => 'Titik 8', 'zona' => 'Perimeter Timur', 'grid' => 'G-28', 'deskripsi' => 'Perimeter batas timur di luar ujung RWY 28', 'tipe' => 'Perimeter Strip', 'status' => 'Aktif'],
+            ['kode' => 'Zona 1-1', 'zona' => 'Sektor Approach RWY 10', 'grid' => 'G-3', 'deskripsi' => 'Sektor pengamatan intensif kerucut approach/departure barat', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
+            ['kode' => 'Zona 1-2', 'zona' => 'Sektor Runway Strip Tengah', 'grid' => 'G-15', 'deskripsi' => 'Sektor pengamatan tengah runway strip', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
+            ['kode' => 'Zona 1-3', 'zona' => 'Sektor Approach RWY 28', 'grid' => 'G-27', 'deskripsi' => 'Sektor pengamatan kerucut approach/departure timur', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
+            ['kode' => 'Zona 1-4', 'zona' => 'Sektor Taxiway & Apron B', 'grid' => 'E-18', 'deskripsi' => 'Sektor jalur pergerakan taxiway & Apron B Terminal 1', 'tipe' => 'Special Sector', 'status' => 'Aktif'],
+            ['kode' => 'Zona 2', 'zona' => 'Sektor Perimeter Utara', 'grid' => 'A-15', 'deskripsi' => 'Sektor batas pagar luar sisi utara bandara', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
+            ['kode' => 'Zona 2-1', 'zona' => 'Sektor Kanal Utara', 'grid' => 'B-9', 'deskripsi' => 'Sektor kanal terbuka saluran drainase sisi utara', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
+            ['kode' => 'Zona 2-5', 'zona' => 'Sektor Tambak Selatan', 'grid' => 'L-20', 'deskripsi' => 'Sektor perbatasan tambak warga sisi selatan perimeter', 'tipe' => 'Buffer Zone', 'status' => 'Aktif'],
         ];
 
         // Sub-data: Master Jenis
@@ -513,6 +524,7 @@ class DashboardController extends Controller
                 'grid' => $ds->grid,
                 'perilaku_kawanan' => $ds->flockBehaviorSummary(),
                 'foto_path' => $fotoUrl,
+                'foto_lokasi' => $this->photoLocation($foto, $laporan),
             ];
         }
 
@@ -553,6 +565,8 @@ class DashboardController extends Controller
         $data['validated_at_human'] = $laporan->validated_at
             ? $laporan->validated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB'
             : null;
+        $data['waktu_pengamatan'] = $this->observationTimeText($laporan);
+        $data['cuaca_ringkas'] = $this->weatherSummary($laporan);
         $data['satwa'] = $satwaData;
         $data['foto_extra'] = $fotoExtra;
         $data['tanggapan'] = $tanggapanList;
@@ -560,6 +574,112 @@ class DashboardController extends Controller
         $data['extra_data'] = $laporan->extra_data ?: [];
 
         return response()->json($data);
+    }
+
+    /**
+     * Titik GPS perangkat saat foto bukti diambil/diunggah; laporan tanpa metadata foto memakai GPS laporan.
+     *
+     * @return array{lat: string, lng: string, keterangan: string, peta_url: string}|null
+     */
+    private function photoLocation(?FotoLaporan $foto, Laporan $laporan): ?array
+    {
+        $lat = $foto?->gps_lat ?? $laporan->gps_lat;
+        $lng = $foto?->gps_lng ?? $laporan->gps_lng;
+        if ($lat === null || $lng === null) {
+            return null;
+        }
+
+        $parts = [sprintf('%.6f, %.6f', $lat, $lng)];
+        if ($foto?->gps_lat !== null) {
+            if ($foto->gps_akurasi_m !== null) {
+                $parts[0] .= ' (±'.$foto->gps_akurasi_m.' m)';
+            }
+            $parts[] = $foto->sumber === 'galeri' ? 'lokasi saat unggah galeri' : 'lokasi saat foto diambil';
+            if ($foto->diambil_at) {
+                $parts[] = $foto->diambil_at->format('d/m/Y H:i').' WIB';
+            }
+        } else {
+            $parts[] = 'lokasi laporan';
+        }
+
+        return [
+            'lat' => sprintf('%.6f', $lat),
+            'lng' => sprintf('%.6f', $lng),
+            'keterangan' => implode(' · ', $parts),
+            'peta_url' => sprintf('https://www.google.com/maps?q=%.7f,%.7f', $lat, $lng),
+        ];
+    }
+
+    /**
+     * Tanggal & jam pengamatan (WIB); laporan lama tanpa jam memakai waktu input yang dikonversi ke WIB.
+     */
+    private function observationTimeText(Laporan $laporan): string
+    {
+        $date = $laporan->tanggal?->locale('id')->translatedFormat('d M Y') ?? '-';
+
+        if ($laporan->jam) {
+            return $date.', '.substr((string) $laporan->jam, 0, 5).' WIB';
+        }
+
+        return $laporan->created_at
+            ? $date.', '.$laporan->created_at->copy()->timezone(config('whms_risk.zona_waktu'))->format('H:i').' WIB (waktu input)'
+            : $date;
+    }
+
+    /**
+     * Kondisi cuaca isian petugas + snapshot server terdekat (±60 menit) bila ada; tanpa angka karangan.
+     */
+    private function weatherSummary(Laporan $laporan): string
+    {
+        $condition = $laporan->kondisi_cuaca ?: 'Kondisi cuaca tidak diisi';
+
+        if (! $laporan->tanggal || ! $laporan->jam) {
+            return $condition;
+        }
+
+        $observedAt = $laporan->tanggal->format('Y-m-d').' '.substr((string) $laporan->jam, 0, 5).':00';
+        $snapshot = CuacaSnapshot::query()
+            ->whereBetween('waktu', [
+                date('Y-m-d H:i:s', strtotime($observedAt.' -60 minutes')),
+                date('Y-m-d H:i:s', strtotime($observedAt.' +60 minutes')),
+            ])
+            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, waktu, ?))', [$observedAt])
+            ->first();
+
+        if (! $snapshot) {
+            return $condition;
+        }
+
+        $directions = ['U', 'TL', 'T', 'TG', 'S', 'BD', 'B', 'BL'];
+        $direction = $snapshot->arah_angin_derajat !== null ? ' dari '.$directions[(int) round($snapshot->arah_angin_derajat / 45) % 8] : '';
+
+        return sprintf(
+            '%s / %s°C / Angin %s kt%s (silang %s kt)',
+            $condition,
+            number_format((float) $snapshot->suhu_c, 1, ',', '.'),
+            number_format((float) $snapshot->kecepatan_angin_kt, 1, ',', '.'),
+            $direction,
+            number_format((float) $snapshot->angin_silang_kt, 1, ',', '.'),
+        );
+    }
+
+    /**
+     * Rerata menit dari jam pengamatan sampai tindakan pengusiran pertama yang tercatat untuk laporan itu
+     * (log pengusiran F0). Null bila belum ada pasangan laporan berjam + tindakan pengusiran.
+     */
+    private function averageDispersalResponseMinutes(): ?float
+    {
+        $average = DB::table('tindakan_pengusiran as t')
+            ->join('laporan as l', 'l.id', '=', 't.laporan_id')
+            ->whereNotNull('l.jam')
+            ->groupBy('l.id', 'l.tanggal', 'l.jam')
+            ->selectRaw('TIMESTAMPDIFF(MINUTE, TIMESTAMP(l.tanggal, l.jam), MIN(t.waktu)) as menit')
+            ->get()
+            ->pluck('menit')
+            ->filter(fn ($minutes): bool => $minutes !== null && $minutes >= 0)
+            ->avg();
+
+        return $average === null ? null : round((float) $average, 1);
     }
 
     public function update(Request $request, int $id)

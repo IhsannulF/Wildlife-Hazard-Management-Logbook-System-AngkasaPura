@@ -38,7 +38,7 @@
   let isPanning = false;
   let startX = 0;
   let startY = 0;
-  let activeSelectedCode = '{{ $selectedGrid['grid'] ?? 'K-10' }}';
+  let activeSelectedCode = document.getElementById('detailCard')?.dataset.selectedGrid || '-';
 
   function setMapMode(mode) {
     const gisWrapper = document.getElementById('gisMapLayerWrapper');
@@ -190,8 +190,8 @@
       count: 0,
       dominant_species: 'Tidak Ada',
       status: 'Steril Aman',
-      risk_category: 'Steril / Terkendali',
-      peak_hours: 'Kondisi steril terpantau normal 24 jam.',
+      risk_category: 'Tanpa Data pada Periode Ini',
+      peak_hours: 'Belum ada data jam',
       mitigation_sop: [
         'Pertahankan inspeksi patroli berkala regu AMC.',
         'Pemotongan rumput berkala sesuai batas standar ICAO 35m.',
@@ -240,9 +240,9 @@
     if (hudCoord) hudCoord.innerText = `TERPILIH: ${compactCode} (${standardCode})`;
     if (hudInfo) {
       if (data.bird_stats && data.bird_stats.total_birds > 0) {
-        hudInfo.innerText = `${data.zone_name} • ${data.count} Lap. • ${data.bird_stats.total_birds} Ekor Burung (${data.bird_stats.dominant_bird})`;
+        hudInfo.innerText = `${data.zone_name} • ${data.count} temuan • ${data.bird_stats.total_birds} Ekor Burung (${data.bird_stats.dominant_bird})`;
       } else {
-        hudInfo.innerText = `${data.zone_name} • ${data.count} Laporan (${data.dominant_species})`;
+        hudInfo.innerText = `${data.zone_name} • ${data.count} temuan (${data.dominant_species})`;
       }
     }
 
@@ -260,7 +260,10 @@
     if (descEl) descEl.innerText = data.desc || 'Area terpantau aman.';
     
     const countEl = document.getElementById('detailCount');
-    if (countEl) countEl.innerText = (data.count || 0) + ' Kejadian';
+    if (countEl) countEl.innerText = (data.count || 0) + ' Temuan';
+
+    const freqEl = document.getElementById('detailFreq');
+    if (freqEl) freqEl.innerText = 'Jam puncak: ' + (data.peak_hours || 'Belum ada data jam');
     
     const speciesEl = document.getElementById('detailSpecies');
     if (speciesEl) speciesEl.innerText = data.dominant_species || 'Tidak Ada';
@@ -514,7 +517,8 @@
 
   // Auto-initialize selection on load
   document.addEventListener('DOMContentLoaded', () => {
-    selectGrid(activeSelectedCode, false);
+    // Tanpa temuan pada periode ini tidak ada grid yang dipilih otomatis.
+    if (/^[A-L]-?\d{1,2}$/.test(activeSelectedCode)) selectGrid(activeSelectedCode, false);
     renderAuditTablePagination();
   });
 
@@ -562,10 +566,24 @@
       const currFilter = document.getElementById('quickFilterCard');
       if (newFilter && currFilter) currFilter.innerHTML = newFilter.innerHTML;
 
-      // 6. Update Time Filter Pills
-      const newTime = doc.getElementById('timeFilterPills');
-      const currTime = document.getElementById('timeFilterPills');
-      if (newTime && currTime) currTime.innerHTML = newTime.innerHTML;
+      // 6. Update Time Filter Pills + pemilih periode bulan + label periode aktif
+      const newPeriod = doc.getElementById('periodeFilterBar');
+      const currPeriod = document.getElementById('periodeFilterBar');
+      if (newPeriod && currPeriod) {
+        currPeriod.innerHTML = newPeriod.innerHTML;
+      } else {
+        const newTime = doc.getElementById('timeFilterPills');
+        const currTime = document.getElementById('timeFilterPills');
+        if (newTime && currTime) currTime.innerHTML = newTime.innerHTML;
+      }
+
+      // 6b. Update heatmap zonasi (F1) agar warna mengikuti periode & filter baru
+      const newHeat = doc.getElementById('layerHeatmapZonasi');
+      const currHeat = document.getElementById('layerHeatmapZonasi');
+      if (newHeat && currHeat) currHeat.innerHTML = newHeat.innerHTML;
+      const newHeatNote = doc.getElementById('heatmapFilterNote');
+      const currHeatNote = document.getElementById('heatmapFilterNote');
+      if (newHeatNote && currHeatNote) currHeatNote.innerHTML = newHeatNote.innerHTML;
 
       // 7. Update Table
       const newTable = doc.getElementById('tblGridAuditContainer');
@@ -591,7 +609,7 @@
       if (gridData[activeSelectedCode]) {
         selectGrid(activeSelectedCode, false);
       } else {
-        const firstKey = Object.keys(gridData)[0] || 'K-10';
+        const firstKey = Object.keys(gridData)[0] || 'A-1';
         selectGrid(firstKey, true);
       }
 
@@ -622,6 +640,15 @@
       e.preventDefault();
       filterRealtime(link.href);
     }
+  });
+
+  // Periode pilihan sendiri (rentang bulan) juga diterapkan tanpa memuat ulang halaman
+  document.addEventListener('submit', function(e) {
+    const form = e.target.closest('#customPeriodForm');
+    if (!form) return;
+    e.preventDefault();
+    const params = new URLSearchParams(new FormData(form));
+    filterRealtime(form.action + '?' + params.toString());
   });
 
   // Browser navigation (Back / Forward)

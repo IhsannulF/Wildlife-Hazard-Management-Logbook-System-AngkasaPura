@@ -50,7 +50,7 @@
       <div>
         <h3 class="text-xs sm:text-sm font-bold text-slate-800">Peta Sebaran Grid Runway</h3>
         <p class="text-[11px] text-secondary mt-0.5">
-          Analisis spasial konsentrasi satwa di sepanjang runway 07L/25R, taxiway, kanal terbuka, dan perimeter bandara.
+          Analisis spasial konsentrasi satwa di sepanjang runway 10/28, taxiway, kanal terbuka, dan perimeter bandara.
         </p>
       </div>
     </div>

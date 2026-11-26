@@ -784,7 +784,16 @@ Pemicu: scheduler `risk:predict` tiap 15 menit, event simpan/sinkron laporan, da
 
 $$S_{grid} = \bar{N} \times W_{jarak} \times W_{spesies} \times W_{attractor}$$
 
-Kelas: < 3 Rendah, 3–< 9 Sedang, 9–< 15 Tinggi, ≥ 15 Sangat Tinggi. Dihitung oleh `App\Services\Risk\GridRiskService` dan disimpan di `skor_risiko_grid`.
+Kelas awal: < 10 Rendah, 10–< 20 Sedang, 20–< 30 Tinggi, ≥ 30 Sangat Tinggi (PRD awal 3/9/15 membuat hampir semua grid merah karena kawanan lapangan rata-rata ±11 ekor; dikalibrasi ulang ke sebaran ±55/24/12/9% pada data 12 bulan); admin dapat mengubah ambang di halaman statistik (`PUT /admin/statistik/ambang-zonasi`, disimpan di tabel `pengaturan` kunci `zonasi.ambang`). Dihitung oleh `App\Services\Risk\GridRiskService` saat halaman dibuka, pada rentang filter waktu halaman; cache `skor_risiko_grid` ditunda sampai dibutuhkan F2.
+
+Implementasi:
+* Hanya burung yang dihitung. N̄ = Σ ekor ÷ jumlah catatan burung di grid; W_spesies dirata-rata menurut jumlah ekor.
+* W_spesies memakai kata kunci nama di `config/whms_risk.php` (`zonasi.w_spesies`), bukan kolom `jenis_satwa.ukuran`, karena nama di laporan tidak selalu sama dengan master jenis satwa.
+* `grid_cell` diisi dari geometri gridmap (`App\Support\AirportGridGeometry`: runway kolom 5–25, garis tengah di batas bawah baris G, sel 142,9 × 142,9 m = 3.000 m ÷ 21 kolom pada gambar gridmap; kerucut approach setengah lebar 150 m + divergensi 15%) dengan `terkalibrasi = false` sampai dicocokkan dengan aerodrome chart.
+* W_attractor = 1,0 sampai F8 tersedia.
+* W_jarak menurun mulus (permintaan tim, menggantikan tabel bertingkat PRD §7.1): W = 0,3 + 2,7 × e^(−jarak/400 m); kerucut approach tetap 3,0. Atribut grid dihitung ulang dengan `php artisan grid:sinkron-geometri` (sel `terkalibrasi` dilewati).
+* Heatmap peta mewarnai seluruh 348 sel: aktivitas burung (N̄ × W_spesies) tiap grid disebar ke sel sekitarnya dengan kernel Gauss (σ = 1 sel, radius 2, diambil pengaruh terbesar), dikali W_jarak sel tujuan, lalu diklasifikasi dengan ambang yang sama. Skor per grid di tabel/panel tetap S_grid tanpa penghalusan.
+* Data demo 12 bulan: `php artisan db:seed --class=DemoTemuanBurungSeeder` (ditandai `extra_data.data_demo`, nomor `DEMO/…`); hapus dengan `DEMO_HAPUS_SAJA=true` pada seeder yang sama.
 
 ### 9.4 Route Tambahan
 

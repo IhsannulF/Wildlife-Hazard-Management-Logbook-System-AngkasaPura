@@ -199,8 +199,6 @@
             <option value="">Semua Runway</option>
             <option value="10" {{ request('runway') == '10' ? 'selected' : '' }}>Runway 10</option>
             <option value="28" {{ request('runway') == '28' ? 'selected' : '' }}>Runway 28</option>
-            <option value="07L" {{ request('runway') == '07L' ? 'selected' : '' }}>Runway 07L</option>
-            <option value="25R" {{ request('runway') == '25R' ? 'selected' : '' }}>Runway 25R</option>
           </select>
 
           <select name="kerusakan" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200/90 focus:outline-none focus:border-[#00A9C1] bg-slate-50/80 text-slate-700">
@@ -372,8 +370,6 @@
             <select name="kode_runway" id="h_runway" required class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-[#00A9C1]">
               <option value="10">Runway 10</option>
               <option value="28">Runway 28</option>
-              <option value="07L">Runway 07L</option>
-              <option value="25R">Runway 25R</option>
             </select>
           </div>
           <div>
